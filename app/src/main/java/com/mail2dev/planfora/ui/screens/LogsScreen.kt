@@ -25,7 +25,6 @@ import com.mail2dev.planfora.ui.logs.LogsViewModel
 import com.mail2dev.planfora.ui.navigation.Screen
 import com.mail2dev.planfora.ui.theme.DarkBackground
 import com.mail2dev.planfora.ui.theme.ForestGreen
-import com.mail2dev.planfora.ui.theme.SageGreen
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -246,13 +245,13 @@ fun LogsHeader(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(6.dp))
-                        .background(if (isSelected) SageGreen else Color.Transparent)
+                        .background(if (isSelected) ForestGreen else Color.Transparent)
                         .clickable { onCalendarModeChange(mode) }
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
                     Text(
                         text = mode.name.lowercase().replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
-                        color = if (isSelected) DarkBackground else Color.LightGray,
+                        color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -265,7 +264,7 @@ fun LogsHeader(
                 Icon(
                     imageVector = Icons.Default.FilterList,
                     contentDescription = "Filters",
-                    tint = if (filtersActive) SageGreen else Color.White
+                    tint = if (filtersActive) ForestGreen else Color.White
                 )
             }
             IconButton(onClick = onLayoutModeChange) {
@@ -316,7 +315,18 @@ fun FilterStrip(
                 selected = selectedLocation == null,
                 onClick = { onLocationSelected(null) },
                 label = { Text("All Zones") },
-                colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SageGreen, selectedLabelColor = DarkBackground)
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = ForestGreen,
+                    selectedLabelColor = Color.White,
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                    labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    enabled = true,
+                    selected = selectedLocation == null,
+                    borderColor = Color.Gray.copy(alpha = 0.2f),
+                    selectedBorderColor = Color.Transparent
+                )
             )
         }
 
@@ -325,7 +335,18 @@ fun FilterStrip(
                 selected = selectedLocation == loc,
                 onClick = { onLocationSelected(loc) },
                 label = { Text(loc) },
-                colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SageGreen, selectedLabelColor = DarkBackground)
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = ForestGreen,
+                    selectedLabelColor = Color.White,
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                    labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    enabled = true,
+                    selected = selectedLocation == loc,
+                    borderColor = Color.Gray.copy(alpha = 0.2f),
+                    selectedBorderColor = Color.Transparent
+                )
             )
         }
     }

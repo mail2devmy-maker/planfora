@@ -16,7 +16,7 @@ import com.mail2dev.planfora.ui.navigation.Screen
 import com.mail2dev.planfora.ui.navigation.bottomNavItems
 import com.mail2dev.planfora.ui.theme.DarkBackground
 import com.mail2dev.planfora.ui.theme.DeepCharcoal
-import com.mail2dev.planfora.ui.theme.SageGreen
+import com.mail2dev.planfora.ui.theme.ForestGreen
 
 @Composable
 fun PlanForaBottomBar(navController: NavController) {
@@ -43,9 +43,9 @@ fun PlanForaBottomBar(navController: NavController) {
                     }
                 },
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = DarkBackground,
-                    selectedTextColor = SageGreen,
-                    indicatorColor = SageGreen,
+                    selectedIconColor = Color.White,
+                    selectedTextColor = Color.White,
+                    indicatorColor = ForestGreen,
                     unselectedIconColor = Color.Gray,
                     unselectedTextColor = Color.Gray
                 )

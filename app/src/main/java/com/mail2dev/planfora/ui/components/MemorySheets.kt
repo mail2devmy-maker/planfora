@@ -18,7 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mail2dev.planfora.ui.theme.DarkBackground
-import com.mail2dev.planfora.ui.theme.SageGreen
+import com.mail2dev.planfora.ui.theme.ForestGreen
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
@@ -76,7 +76,7 @@ fun TagPickerSheet(
                 placeholder = { Text("Search or type tag...", color = Color.Gray) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                leadingIcon = { Icon(Icons.Default.Search, null, tint = SageGreen) },
+                leadingIcon = { Icon(Icons.Default.Search, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
                         IconButton(onClick = { searchQuery = "" }) {
@@ -87,8 +87,10 @@ fun TagPickerSheet(
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedTextColor = Color.White,
                     unfocusedTextColor = Color.White,
-                    focusedBorderColor = SageGreen,
-                    unfocusedBorderColor = Color.Gray.copy(alpha = 0.5f)
+                    focusedBorderColor = ForestGreen,
+                    unfocusedBorderColor = Color.Gray.copy(alpha = 0.2f),
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f),
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f)
                 ),
                 shape = RoundedCornerShape(12.dp)
             )
@@ -108,12 +110,12 @@ fun TagPickerSheet(
                     label = { Text("Create \"$searchQuery\"") },
                     leadingIcon = { Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp)) },
                     colors = InputChipDefaults.inputChipColors(
-                        containerColor = SageGreen.copy(alpha = 0.1f),
-                        labelColor = SageGreen
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                        labelColor = MaterialTheme.colorScheme.onSurfaceVariant
                     ),
                     border = InputChipDefaults.inputChipBorder(
-                        borderColor = SageGreen,
-                        selectedBorderColor = SageGreen,
+                        borderColor = Color.Gray.copy(alpha = 0.2f),
+                        selectedBorderColor = Color.Transparent,
                         enabled = true,
                         selected = false
                     )
@@ -142,9 +144,9 @@ fun TagPickerSheet(
                             }
                         ),
                         shape = RoundedCornerShape(8.dp),
-                        color = if (isSelected) SageGreen else Color.White.copy(alpha = 0.05f),
-                        contentColor = if (isSelected) DarkBackground else Color.LightGray,
-                        border = if (isSelected) null else BorderStroke(1.dp, Color.Gray.copy(alpha = 0.3f))
+                        color = if (isSelected) ForestGreen else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                        contentColor = if (isSelected) Color.White else Color.LightGray,
+                        border = if (isSelected) null else BorderStroke(1.dp, Color.Gray.copy(alpha = 0.2f))
                     ) {
                         Text(
                             text = tag,
@@ -163,7 +165,7 @@ fun TagPickerSheet(
                     text = { Text("Actions for \"$tagToManage\"", color = Color.LightGray) },
                     confirmButton = {
                         TextButton(onClick = { showRenameDialog = true }) {
-                            Text("Rename", color = SageGreen)
+                            Text("Rename", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     },
                     dismissButton = {
@@ -196,8 +198,9 @@ fun TagPickerSheet(
                                 showRenameDialog = false
                                 tagToManage = null
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = SageGreen)
-                        ) { Text("Update", color = DarkBackground) }
+                            colors = ButtonDefaults.buttonColors(containerColor = ForestGreen),
+                            shape = MaterialTheme.shapes.medium
+                        ) { Text("Update", color = Color.White) }
                     },
                     dismissButton = {
                         TextButton(onClick = { showRenameDialog = false; tagToManage = null }) {

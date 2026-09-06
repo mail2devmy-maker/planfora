@@ -10,7 +10,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.mail2dev.planfora.ui.theme.SageGreen
 
 @Composable
 fun PlanForaSurfaceCard(
@@ -32,7 +31,7 @@ fun PlanForaSurfaceCard(
                 Text(
                     text = title,
                     style = MaterialTheme.typography.labelLarge,
-                    color = SageGreen,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontWeight = FontWeight.SemiBold
                 )
             }

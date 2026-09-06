@@ -21,7 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mail2dev.planfora.ui.theme.DarkBackground
-import com.mail2dev.planfora.ui.theme.SageGreen
+import com.mail2dev.planfora.ui.theme.ForestGreen
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
@@ -57,8 +57,12 @@ fun LocationSelectionBottomSheet(
                 Button(
                     onClick = { isAddingNew = true },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = SageGreen.copy(alpha = 0.1f), contentColor = SageGreen),
-                    shape = RoundedCornerShape(12.dp)
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.3f))
                 ) {
                     Icon(Icons.Default.Add, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
@@ -78,13 +82,15 @@ fun LocationSelectionBottomSheet(
                                 newLocName = ""
                                 isAddingNew = false
                             }
-                        }) { Icon(Icons.Default.Check, contentDescription = null, tint = SageGreen) }
+                        }) { Icon(Icons.Default.Check, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) }
                     },
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = Color.White,
                         unfocusedTextColor = Color.White,
-                        focusedBorderColor = SageGreen,
-                        unfocusedBorderColor = Color.Gray.copy(alpha = 0.5f)
+                        focusedBorderColor = ForestGreen,
+                        unfocusedBorderColor = Color.Gray.copy(alpha = 0.2f),
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f),
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f)
                     ),
                     shape = RoundedCornerShape(12.dp)
                 )
@@ -112,9 +118,9 @@ fun LocationSelectionBottomSheet(
                             }
                         ),
                         shape = RoundedCornerShape(8.dp),
-                        color = if (isSelected) SageGreen else Color.White.copy(alpha = 0.05f),
-                        contentColor = if (isSelected) DarkBackground else Color.White,
-                        border = if (isSelected) null else BorderStroke(1.dp, Color.Gray.copy(alpha = 0.3f))
+                        color = if (isSelected) ForestGreen else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                        contentColor = if (isSelected) Color.White else Color.White,
+                        border = if (isSelected) null else BorderStroke(1.dp, Color.Gray.copy(alpha = 0.2f))
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
@@ -143,7 +149,7 @@ fun LocationSelectionBottomSheet(
                     text = { Text("Actions for \"$locationToManage\"", color = Color.LightGray) },
                     confirmButton = {
                         TextButton(onClick = { showRenameDialog = true }) {
-                            Text("Rename", color = SageGreen)
+                            Text("Rename", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     },
                     dismissButton = {
@@ -176,8 +182,9 @@ fun LocationSelectionBottomSheet(
                                 showRenameDialog = false
                                 locationToManage = null
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = SageGreen)
-                        ) { Text("Update", color = DarkBackground) }
+                            colors = ButtonDefaults.buttonColors(containerColor = ForestGreen),
+                            shape = MaterialTheme.shapes.medium
+                        ) { Text("Update", color = Color.White) }
                     },
                     dismissButton = {
                         TextButton(onClick = { showRenameDialog = false; locationToManage = null }) {

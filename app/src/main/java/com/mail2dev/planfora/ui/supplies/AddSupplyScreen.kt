@@ -43,7 +43,6 @@ import com.mail2dev.planfora.ui.components.StringPickerSheet
 import com.mail2dev.planfora.ui.components.TagPickerSheet
 import com.mail2dev.planfora.ui.theme.DarkBackground
 import com.mail2dev.planfora.ui.theme.ForestGreen
-import com.mail2dev.planfora.ui.theme.SageGreen
 import com.mail2dev.planfora.ui.assets.CustomFieldInputCompact
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -114,7 +113,7 @@ fun AddSupplyScreen(
             // Primary Identification & Storage
             PlanForaSurfaceCard(title = "Identification & Storage") {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("Category", style = MaterialTheme.typography.labelLarge, color = SageGreen)
+                    Text("Category", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     FlowRow(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -125,10 +124,16 @@ fun AddSupplyScreen(
                                 onClick = { viewModel.updateCategory(cat) },
                                 label = { Text(cat.displayName) },
                                 colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = SageGreen,
-                                    selectedLabelColor = DarkBackground,
-                                    containerColor = Color.Transparent,
-                                    labelColor = Color.Gray
+                                    selectedContainerColor = ForestGreen,
+                                    selectedLabelColor = Color.White,
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                                    labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                ),
+                                border = FilterChipDefaults.filterChipBorder(
+                                    enabled = true,
+                                    selected = category == cat,
+                                    borderColor = Color.Gray.copy(alpha = 0.2f),
+                                    selectedBorderColor = Color.Transparent
                                 )
                             )
                         }
@@ -213,7 +218,7 @@ fun AddSupplyScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 trailingIcon = {
                                     IconButton(onClick = { showUnitPicker = true }) {
-                                        Icon(Icons.Default.ArrowDropDown, null, tint = SageGreen)
+                                        Icon(Icons.Default.ArrowDropDown, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                 },
                                 colors = textFieldColors()
@@ -241,7 +246,7 @@ fun AddSupplyScreen(
                             modifier = Modifier.fillMaxWidth(),
                             trailingIcon = {
                                 IconButton(onClick = { showFormTypePicker = true }) {
-                                    Icon(Icons.Default.ArrowDropDown, null, tint = SageGreen)
+                                    Icon(Icons.Default.ArrowDropDown, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             },
                             colors = textFieldColors()
@@ -264,7 +269,7 @@ fun AddSupplyScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 trailingIcon = {
                                     IconButton(onClick = { showFormulationPicker = true }) {
-                                        Icon(Icons.Default.ArrowDropDown, null, tint = SageGreen)
+                                        Icon(Icons.Default.ArrowDropDown, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                 },
                                 colors = textFieldColors()
@@ -382,12 +387,13 @@ fun ReadonlyTriggerField(label: String, value: String, icon: ImageVector, onClic
         readOnly = true,
         label = { Text(label) },
         modifier = modifier.clickable { onClick() },
-        leadingIcon = { Icon(icon, null, tint = SageGreen, modifier = Modifier.size(18.dp)) },
+        leadingIcon = { Icon(icon, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp)) },
         enabled = false,
         colors = OutlinedTextFieldDefaults.colors(
             disabledTextColor = Color.White,
-            disabledBorderColor = Color.Gray.copy(alpha = 0.3f),
-            disabledLabelColor = SageGreen
+            disabledBorderColor = Color.Gray.copy(alpha = 0.2f),
+            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f)
         ),
         shape = RoundedCornerShape(8.dp)
     )
@@ -402,7 +408,7 @@ fun OptionalSupplyPalette(
     onAddCustomField: () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text("Quick-Add Metrics & Metadata", style = MaterialTheme.typography.labelLarge, color = SageGreen, fontWeight = FontWeight.SemiBold)
+        Text("Quick-Add Metrics & Metadata", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.SemiBold)
         
         Row(
             modifier = Modifier
@@ -423,15 +429,16 @@ fun OptionalSupplyPalette(
                     onClick = { onToggleField(field) },
                     label = { Text("+ ${field.displayName}", fontSize = 11.sp) },
                     colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = SageGreen,
-                        selectedLabelColor = DarkBackground,
-                        labelColor = Color.Gray
+                        selectedContainerColor = ForestGreen,
+                        selectedLabelColor = Color.White,
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                        labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     ),
                     border = FilterChipDefaults.filterChipBorder(
                         enabled = true,
                         selected = isVisible,
-                        borderColor = Color.Gray.copy(alpha = 0.3f),
-                        selectedBorderColor = SageGreen
+                        borderColor = Color.Gray.copy(alpha = 0.2f),
+                        selectedBorderColor = Color.Transparent
                     )
                 )
             }
@@ -440,8 +447,11 @@ fun OptionalSupplyPalette(
                 onClick = onAddCustomField,
                 label = { Text("Custom", fontSize = 11.sp) },
                 leadingIcon = { Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp)) },
-                colors = AssistChipDefaults.assistChipColors(labelColor = SageGreen),
-                border = BorderStroke(0.5.dp, SageGreen.copy(alpha = 0.5f))
+                colors = AssistChipDefaults.assistChipColors(
+                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+                ),
+                border = BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.3f))
             )
         }
     }
@@ -523,8 +533,10 @@ fun RowScope.SimpleTextFieldCompact(value: String, onValueChange: (String) -> Un
         colors = OutlinedTextFieldDefaults.colors(
             focusedTextColor = Color.White,
             unfocusedTextColor = Color.White,
-            focusedBorderColor = SageGreen,
-            unfocusedBorderColor = Color.Transparent
+            focusedBorderColor = ForestGreen,
+            unfocusedBorderColor = Color.Transparent,
+            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f),
+            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f)
         )
     )
 }
@@ -550,7 +562,23 @@ fun CustomFieldCreatorDialog(onDismiss: () -> Unit, onFieldCreated: (String, Str
                 Text("Input Type", color = Color.Gray, fontSize = 12.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf("TEXT", "NUMBER", "RADIO").forEach { t ->
-                        FilterChip(selected = type == t, onClick = { type = t }, label = { Text(t) }, colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SageGreen))
+                        FilterChip(
+                            selected = type == t,
+                            onClick = { type = t },
+                            label = { Text(t) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = ForestGreen,
+                                selectedLabelColor = Color.White,
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                                labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            ),
+                            border = FilterChipDefaults.filterChipBorder(
+                                enabled = true,
+                                selected = type == t,
+                                borderColor = Color.Gray.copy(alpha = 0.2f),
+                                selectedBorderColor = Color.Transparent
+                            )
+                        )
                     }
                 }
                 if (type == "RADIO") {
@@ -559,8 +587,13 @@ fun CustomFieldCreatorDialog(onDismiss: () -> Unit, onFieldCreated: (String, Str
             }
         },
         confirmButton = {
-            Button(onClick = { onFieldCreated(name, type, options.ifBlank { null }, isGlobal) }, enabled = name.isNotBlank(), colors = ButtonDefaults.buttonColors(containerColor = SageGreen)) {
-                Text("Create", color = Color.Black)
+            Button(
+                onClick = { onFieldCreated(name, type, options.ifBlank { null }, isGlobal) },
+                enabled = name.isNotBlank(),
+                colors = ButtonDefaults.buttonColors(containerColor = ForestGreen),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Text("Create", color = Color.White)
             }
         },
         dismissButton = {
@@ -584,7 +617,10 @@ fun SimpleTextField(label: String, value: String, onValueChange: (String) -> Uni
 fun textFieldColors() = OutlinedTextFieldDefaults.colors(
     focusedTextColor = Color.White,
     unfocusedTextColor = Color.White,
-    focusedBorderColor = SageGreen,
-    unfocusedBorderColor = Color.Gray.copy(alpha = 0.5f),
-    focusedLabelColor = SageGreen
+    focusedBorderColor = ForestGreen,
+    unfocusedBorderColor = Color.Gray.copy(alpha = 0.2f),
+    focusedLabelColor = ForestGreen,
+    unfocusedLabelColor = Color.Gray,
+    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f),
+    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f)
 )

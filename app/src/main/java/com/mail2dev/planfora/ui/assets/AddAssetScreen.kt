@@ -41,7 +41,6 @@ import com.mail2dev.planfora.ui.components.PlanForaSurfaceCard
 import com.mail2dev.planfora.ui.components.TagPickerSheet
 import com.mail2dev.planfora.ui.theme.DarkBackground
 import com.mail2dev.planfora.ui.theme.ForestGreen
-import com.mail2dev.planfora.ui.theme.SageGreen
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -279,10 +278,10 @@ fun HeaderSection(onDismiss: () -> Unit) {
 @Composable
 fun LivePreviewCard(name: String, category: AssetCategory, location: String, tags: Set<String>) {
     Surface(
-        color = SageGreen.copy(alpha = 0.05f),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f),
         shape = RoundedCornerShape(12.dp),
         modifier = Modifier.fillMaxWidth(),
-        border = androidx.compose.foundation.BorderStroke(1.dp, SageGreen.copy(alpha = 0.2f))
+        border = BorderStroke(1.dp, Color.Gray.copy(alpha = 0.1f))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -298,7 +297,7 @@ fun LivePreviewCard(name: String, category: AssetCategory, location: String, tag
                     Text(
                         text = "${category.displayName} • 📍 ${location.ifBlank { "Unassigned" }}",
                         style = MaterialTheme.typography.bodySmall,
-                        color = SageGreen
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -318,7 +317,7 @@ fun LivePreviewCard(name: String, category: AssetCategory, location: String, tag
 @Composable
 fun CategorySelector(selected: AssetCategory, onSelect: (AssetCategory) -> Unit) {
     Column {
-        Text("Category", style = MaterialTheme.typography.labelLarge, color = SageGreen)
+        Text("Category", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(modifier = Modifier.height(8.dp))
         FlowRow(
             modifier = Modifier.fillMaxWidth(),
@@ -330,10 +329,16 @@ fun CategorySelector(selected: AssetCategory, onSelect: (AssetCategory) -> Unit)
                     onClick = { onSelect(cat) },
                     label = { Text("${cat.icon} ${cat.displayName}") },
                     colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = SageGreen,
-                        selectedLabelColor = DarkBackground,
-                        containerColor = Color.Transparent,
-                        labelColor = Color.Gray
+                        selectedContainerColor = ForestGreen,
+                        selectedLabelColor = Color.White,
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                        labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = selected == cat,
+                        borderColor = Color.Gray.copy(alpha = 0.2f),
+                        selectedBorderColor = Color.Transparent
                     )
                 )
             }
@@ -349,14 +354,15 @@ fun ReadonlyTriggerField(label: String, value: String, icon: ImageVector, onClic
         readOnly = true,
         label = { Text(label) },
         modifier = modifier.clickable { onClick() },
-        leadingIcon = { Icon(icon, contentDescription = null, tint = SageGreen, modifier = Modifier.size(18.dp)) },
+        leadingIcon = { Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp)) },
         trailingIcon = { Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(18.dp)) },
         enabled = false,
         colors = OutlinedTextFieldDefaults.colors(
             disabledTextColor = Color.White,
-            disabledBorderColor = Color.Gray.copy(alpha = 0.5f),
-            disabledLabelColor = SageGreen,
-            disabledLeadingIconColor = SageGreen
+            disabledBorderColor = Color.Gray.copy(alpha = 0.2f),
+            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f)
         )
     )
 }
@@ -370,7 +376,7 @@ fun OptionalFieldPalette(
     onAddCustomField: () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text("Quick-Add Milestones & Metrics", style = MaterialTheme.typography.labelLarge, color = SageGreen, fontWeight = FontWeight.SemiBold)
+        Text("Quick-Add Milestones & Metrics", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.SemiBold)
         
         Row(
             modifier = Modifier
@@ -386,15 +392,16 @@ fun OptionalFieldPalette(
                     onClick = { onToggleField(field) },
                     label = { Text("+ ${field.displayName}", fontSize = 11.sp) },
                     colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = SageGreen,
-                        selectedLabelColor = DarkBackground,
-                        labelColor = Color.Gray
+                        selectedContainerColor = ForestGreen,
+                        selectedLabelColor = Color.White,
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                        labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     ),
                     border = FilterChipDefaults.filterChipBorder(
                         enabled = true,
                         selected = isVisible,
-                        borderColor = Color.Gray.copy(alpha = 0.3f),
-                        selectedBorderColor = SageGreen
+                        borderColor = Color.Gray.copy(alpha = 0.2f),
+                        selectedBorderColor = Color.Transparent
                     )
                 )
             }
@@ -403,8 +410,11 @@ fun OptionalFieldPalette(
                 onClick = onAddCustomField,
                 label = { Text("Custom", fontSize = 11.sp) },
                 leadingIcon = { Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp)) },
-                colors = AssistChipDefaults.assistChipColors(labelColor = SageGreen),
-                border = BorderStroke(0.5.dp, SageGreen.copy(alpha = 0.5f))
+                colors = AssistChipDefaults.assistChipColors(
+                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+                ),
+                border = BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.3f))
             )
         }
     }
@@ -557,8 +567,10 @@ fun RowScope.SimpleTextFieldCompact(value: String, onValueChange: (String) -> Un
         colors = OutlinedTextFieldDefaults.colors(
             focusedTextColor = Color.White,
             unfocusedTextColor = Color.White,
-            focusedBorderColor = SageGreen,
-            unfocusedBorderColor = Color.Transparent
+            focusedBorderColor = ForestGreen,
+            unfocusedBorderColor = Color.Transparent,
+            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f),
+            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f)
         )
     )
 }
@@ -622,7 +634,23 @@ fun CustomFieldCreatorDialog(onDismiss: () -> Unit, onFieldCreated: (String, Str
                 Text("Field Type", color = Color.Gray, fontSize = 12.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf("TEXT", "NUMBER", "RADIO").forEach { t ->
-                        FilterChip(selected = type == t, onClick = { type = t }, label = { Text(t) }, colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SageGreen))
+                        FilterChip(
+                            selected = type == t,
+                            onClick = { type = t },
+                            label = { Text(t) },
+                            colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = ForestGreen,
+                            selectedLabelColor = Color.White,
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                            labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        ),
+                            border = FilterChipDefaults.filterChipBorder(
+                                enabled = true,
+                                selected = type == t,
+                                borderColor = Color.Gray.copy(alpha = 0.2f),
+                                selectedBorderColor = Color.Transparent
+                            )
+                        )
                     }
                 }
                 if (type == "RADIO") {
@@ -631,8 +659,13 @@ fun CustomFieldCreatorDialog(onDismiss: () -> Unit, onFieldCreated: (String, Str
             }
         },
         confirmButton = {
-            Button(onClick = { onFieldCreated(name, type, options.ifBlank { null }, isGlobal) }, enabled = name.isNotBlank(), colors = ButtonDefaults.buttonColors(containerColor = SageGreen)) {
-                Text("Create", color = Color.Black)
+            Button(
+                onClick = { onFieldCreated(name, type, options.ifBlank { null }, isGlobal) },
+                enabled = name.isNotBlank(),
+                colors = ButtonDefaults.buttonColors(containerColor = ForestGreen),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Text("Create", color = Color.White)
             }
         },
         dismissButton = {
@@ -666,7 +699,7 @@ fun DatePickerField(label: String, value: Long?, onDateSelected: (Long?) -> Unit
         modifier = Modifier.fillMaxWidth(),
         trailingIcon = {
             IconButton(onClick = { showPicker = true }) {
-                Icon(Icons.Default.CalendarToday, contentDescription = null, tint = SageGreen)
+                Icon(Icons.Default.CalendarToday, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         },
         colors = textFieldColors()
@@ -695,7 +728,10 @@ fun DatePickerField(label: String, value: Long?, onDateSelected: (Long?) -> Unit
 fun textFieldColors() = OutlinedTextFieldDefaults.colors(
     focusedTextColor = Color.White,
     unfocusedTextColor = Color.White,
-    focusedBorderColor = SageGreen,
-    unfocusedBorderColor = Color.Gray.copy(alpha = 0.5f),
-    focusedLabelColor = SageGreen
+    focusedBorderColor = ForestGreen,
+    unfocusedBorderColor = Color.Gray.copy(alpha = 0.2f),
+    focusedLabelColor = ForestGreen,
+    unfocusedLabelColor = Color.Gray,
+    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f),
+    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f)
 )

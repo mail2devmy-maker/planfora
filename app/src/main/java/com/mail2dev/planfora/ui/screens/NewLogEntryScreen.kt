@@ -52,7 +52,6 @@ import com.mail2dev.planfora.ui.components.TagPickerSheet
 import com.mail2dev.planfora.ui.logs.LogsViewModel
 import com.mail2dev.planfora.ui.theme.DarkBackground
 import com.mail2dev.planfora.ui.theme.ForestGreen
-import com.mail2dev.planfora.ui.theme.SageGreen
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
@@ -275,8 +274,8 @@ fun NewLogEntryScreen(
                             unfocusedContainerColor = Color.Transparent,
                             focusedTextColor = Color.White,
                             unfocusedTextColor = Color.White,
-                            cursorColor = SageGreen,
-                            focusedIndicatorColor = SageGreen.copy(alpha = 0.5f),
+                            cursorColor = ForestGreen,
+                            focusedIndicatorColor = ForestGreen.copy(alpha = 0.5f),
                             unfocusedIndicatorColor = Color.Transparent
                         ),
                         textStyle = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -307,7 +306,7 @@ fun NewLogEntryScreen(
             if (parentLog != null) {
                 PlanForaSurfaceCard {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Link, contentDescription = null, tint = SageGreen, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.Link, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(12.dp))
                         Text("Follow-up: ${parentLog?.title}", color = Color.White, style = MaterialTheme.typography.bodyMedium)
                     }
@@ -326,7 +325,7 @@ fun NewLogEntryScreen(
                             modifier = Modifier.fillMaxWidth(),
                             trailingIcon = {
                                 if (parentLogId == null) {
-                                    Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = SageGreen)
+                                    Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             },
                             singleLine = true,
@@ -334,8 +333,9 @@ fun NewLogEntryScreen(
                             shape = RoundedCornerShape(8.dp),
                             colors = OutlinedTextFieldDefaults.colors(
                                 disabledTextColor = Color.Gray,
-                                disabledBorderColor = Color.Gray.copy(alpha = 0.5f),
-                                disabledLabelColor = SageGreen
+                                disabledBorderColor = Color.Gray.copy(alpha = 0.2f),
+                                disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f)
                             )
                         )
                     }
@@ -366,7 +366,11 @@ fun NewLogEntryScreen(
                                 onClick = { showAssetPicker = true },
                                 label = { Text("Add More") },
                                 leadingIcon = { Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp)) },
-                                colors = AssistChipDefaults.assistChipColors(labelColor = SageGreen)
+                                colors = AssistChipDefaults.assistChipColors(
+                                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+                                ),
+                                border = BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.3f))
                             )
                         }
                     }
@@ -388,10 +392,16 @@ fun NewLogEntryScreen(
                             },
                             label = { Text(type, style = MaterialTheme.typography.bodySmall) },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = SageGreen,
-                                selectedLabelColor = DarkBackground,
-                                labelColor = Color.Gray,
-                                containerColor = Color.Transparent
+                                selectedContainerColor = ForestGreen,
+                                selectedLabelColor = Color.White,
+                                labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+                            ),
+                            border = FilterChipDefaults.filterChipBorder(
+                                enabled = true,
+                                selected = activityType == type,
+                                borderColor = Color.Gray.copy(alpha = 0.2f),
+                                selectedBorderColor = Color.Transparent
                             ),
                             shape = RoundedCornerShape(8.dp)
                         )
@@ -407,7 +417,14 @@ fun NewLogEntryScreen(
                         singleLine = true,
                         maxLines = 1,
                         shape = RoundedCornerShape(8.dp),
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = SageGreen, focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = ForestGreen,
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            unfocusedBorderColor = Color.Gray.copy(alpha = 0.2f),
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f),
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f)
+                        )
                     )
                 }
             }
@@ -472,8 +489,10 @@ fun NewLogEntryScreen(
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedTextColor = Color.White,
                     unfocusedTextColor = Color.White,
-                    focusedBorderColor = SageGreen,
-                    unfocusedBorderColor = Color.Gray.copy(alpha = 0.5f)
+                    focusedBorderColor = ForestGreen,
+                    unfocusedBorderColor = Color.Gray.copy(alpha = 0.2f),
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f),
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f)
                 )
             )
 
@@ -484,7 +503,11 @@ fun NewLogEntryScreen(
                         onClick = { showTagSheet = true },
                         label = { Text("Tags") },
                         leadingIcon = { Icon(Icons.Default.Tag, null, modifier = Modifier.size(16.dp)) },
-                        colors = AssistChipDefaults.assistChipColors(labelColor = SageGreen)
+                        colors = AssistChipDefaults.assistChipColors(
+                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+                        ),
+                        border = BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.3f))
                     )
                 }
 
@@ -740,8 +763,16 @@ fun TreatmentDetailsCard(
                         onClick = { onToggleZone(zone) },
                         label = { Text(zone, fontSize = 10.sp) },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = SageGreen,
-                            selectedLabelColor = DarkBackground
+                            selectedContainerColor = ForestGreen,
+                            selectedLabelColor = Color.White,
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                            labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = isSelected,
+                            borderColor = Color.Gray.copy(alpha = 0.2f),
+                            selectedBorderColor = Color.Transparent
                         )
                     )
                 }
@@ -755,9 +786,13 @@ fun TreatmentDetailsCard(
             readOnly = true,
             modifier = Modifier.fillMaxWidth().clickable { onSupplyClick() },
             enabled = false,
-            leadingIcon = { Icon(Icons.Default.Science, null, tint = SageGreen, modifier = Modifier.size(20.dp)) },
-            trailingIcon = { Icon(Icons.Default.ArrowDropDown, null, tint = SageGreen) },
-            colors = OutlinedTextFieldDefaults.colors(disabledTextColor = Color.White, disabledBorderColor = Color.Gray.copy(alpha = 0.3f))
+            leadingIcon = { Icon(Icons.Default.Science, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp)) },
+            trailingIcon = { Icon(Icons.Default.ArrowDropDown, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
+            colors = OutlinedTextFieldDefaults.colors(
+                disabledTextColor = Color.White,
+                disabledBorderColor = Color.Gray.copy(alpha = 0.2f),
+                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f)
+            )
         )
 
         AnimatedVisibility(
@@ -793,7 +828,18 @@ fun TreatmentDetailsCard(
                         selected = customInputCategory == cat,
                         onClick = { onCustomInputCategoryChange(cat) },
                         label = { Text(cat, fontSize = 10.sp) },
-                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SageGreen)
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = ForestGreen,
+                            selectedLabelColor = Color.White,
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                            labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = customInputCategory == cat,
+                            borderColor = Color.Gray.copy(alpha = 0.2f),
+                            selectedBorderColor = Color.Transparent
+                        )
                     )
                 }
             }
@@ -804,12 +850,12 @@ fun TreatmentDetailsCard(
                 val isSelected = appMethod == method
                 Surface(
                     onClick = { onMethodChange(method) },
-                    color = if (isSelected) SageGreen else Color.White.copy(alpha = 0.05f),
+                    color = if (isSelected) ForestGreen else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.weight(1f),
                     border = if (!isSelected) BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.2f)) else null
                 ) {
-                    Text(method, color = if (isSelected) DarkBackground else Color.Gray, fontSize = 9.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 8.dp))
+                    Text(method, color = if (isSelected) Color.White else Color.Gray, fontSize = 9.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 8.dp))
                 }
             }
         }
@@ -834,7 +880,24 @@ fun PruningCard(pruningType: String, onTypeChange: (String) -> Unit) {
     PlanForaSurfaceCard(title = "Pruning Type") {
         PlanForaFieldGroup {
             listOf("Sanitary", "Structural", "Thinning").forEach { type ->
-                FilterChip(selected = pruningType == type, onClick = { onTypeChange(type) }, label = { Text(type) }, modifier = Modifier.weight(1f), colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SageGreen))
+                FilterChip(
+                    selected = pruningType == type,
+                    onClick = { onTypeChange(type) },
+                    label = { Text(type) },
+                    modifier = Modifier.weight(1f),
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = ForestGreen,
+                        selectedLabelColor = Color.White,
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                        labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = pruningType == type,
+                        borderColor = Color.Gray.copy(alpha = 0.2f),
+                        selectedBorderColor = Color.Transparent
+                    )
+                )
             }
         }
     }
@@ -860,12 +923,21 @@ fun SupplyPickerBottomSheet(
             Spacer(modifier = Modifier.height(20.dp))
             LazyColumn(modifier = Modifier.fillMaxHeight(0.7f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 item {
-                    Surface(onClick = onCustomInput, color = Color.White.copy(alpha = 0.05f), shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
-                        Row(modifier = Modifier.padding(16.dp)) { Icon(Icons.Default.Edit, null, tint = SageGreen); Spacer(modifier = Modifier.width(12.dp)); Text("One-off Custom Input", color = Color.White) }
+                    Surface(
+                        onClick = onCustomInput,
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(modifier = Modifier.padding(16.dp)) {
+                            Icon(Icons.Default.Edit, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text("One-off Custom Input", color = Color.White)
+                        }
                     }
                 }
                 if (recentlyUsed.isNotEmpty() && searchQuery.isBlank()) {
-                    item { Text("RECENTLY USED", color = SageGreen, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 8.dp)) }
+                    item { Text("RECENTLY USED", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 8.dp)) }
                     items(recentlyUsed) { s -> SupplyItemRow(s) {
                         val activity = when {
                             s.category.contains("icide", ignoreCase = true) -> "Pest Control"
@@ -876,7 +948,7 @@ fun SupplyPickerBottomSheet(
                         onSelect(s.id, activity, ai)
                     } }
                 }
-                item { Text("ALL SUPPLIES", color = SageGreen, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 8.dp)) }
+                item { Text("ALL SUPPLIES", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 8.dp)) }
                 items(filtered) { s -> SupplyItemRow(s) {
                     val activity = when {
                         s.category.contains("icide", ignoreCase = true) -> "Pest Control"
@@ -923,27 +995,94 @@ fun AssetPickerBottomSheet(
             Spacer(modifier = Modifier.height(12.dp))
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(AssetCategory.entries) { cat ->
-                    FilterChip(selected = selectedCategory == cat, onClick = { selectedCategory = cat }, label = { Text("${cat.icon} ${cat.displayName}", fontSize = 11.sp) }, colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SageGreen))
+                    FilterChip(
+                        selected = selectedCategory == cat,
+                        onClick = { selectedCategory = cat },
+                        label = { Text("${cat.icon} ${cat.displayName}", fontSize = 11.sp) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = ForestGreen,
+                            selectedLabelColor = Color.White,
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                            labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = selectedCategory == cat,
+                            borderColor = Color.Gray.copy(alpha = 0.2f),
+                            selectedBorderColor = Color.Transparent
+                        )
+                    )
                 }
             }
             Spacer(modifier = Modifier.height(8.dp))
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                item { FilterChip(selected = selectedLocation == "All", onClick = { selectedLocation = "All" }, label = { Text("All Locations") }, colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SageGreen)) }
-                items(masterLocations) { loc -> FilterChip(selected = selectedLocation == loc, onClick = { selectedLocation = loc }, label = { Text(loc) }, colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SageGreen)) }
+                item {
+                    FilterChip(
+                        selected = selectedLocation == "All",
+                        onClick = { selectedLocation = "All" },
+                        label = { Text("All Locations") },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = ForestGreen,
+                            selectedLabelColor = Color.White,
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                            labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = selectedLocation == "All",
+                            borderColor = Color.Gray.copy(alpha = 0.2f),
+                            selectedBorderColor = Color.Transparent
+                        )
+                    )
+                }
+                items(masterLocations) { loc ->
+                    FilterChip(
+                        selected = selectedLocation == loc,
+                        onClick = { selectedLocation = loc },
+                        label = { Text(loc) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = ForestGreen,
+                            selectedLabelColor = Color.White,
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                            labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = selectedLocation == loc,
+                            borderColor = Color.Gray.copy(alpha = 0.2f),
+                            selectedBorderColor = Color.Transparent
+                        )
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(16.dp))
             LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                item { Surface(onClick = { onAssetSelected(null) }, color = Color.White.copy(alpha = 0.05f), shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) { Text("None / General Log", color = Color.White, modifier = Modifier.padding(16.dp)) } }
+                item {
+                    Surface(
+                        onClick = { onAssetSelected(null) },
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("None / General Log", color = Color.White, modifier = Modifier.padding(16.dp))
+                    }
+                }
                 items(filteredAssets) { asset ->
                     val catIcon = AssetCategory.entries.find { it.displayName == asset.category }?.icon ?: "🌿"
-                    Surface(onClick = { onAssetSelected(asset.id) }, color = Color.White.copy(alpha = 0.05f), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth(), border = BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.1f))) {
+                    Surface(
+                        onClick = { onAssetSelected(asset.id) },
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                        border = BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.1f))
+                    ) {
                         Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Box(modifier = Modifier.size(44.dp).background(SageGreen.copy(alpha = 0.1f), CircleShape), contentAlignment = Alignment.Center) { Text(catIcon, fontSize = 20.sp) }
+                            Box(modifier = Modifier.size(44.dp).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f), CircleShape), contentAlignment = Alignment.Center) { Text(catIcon, fontSize = 20.sp) }
                             Spacer(modifier = Modifier.width(16.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(asset.name, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Default.LocationOn, null, tint = SageGreen, modifier = Modifier.size(10.dp))
+                                    Icon(Icons.Default.LocationOn, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(10.dp))
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(asset.locationNote.ifBlank { "Unassigned" }, color = Color.Gray, fontSize = 10.sp)
                                 }
@@ -960,13 +1099,13 @@ fun AssetPickerBottomSheet(
 fun SupplyItemRow(supply: DiySupplyEntity, onClick: () -> Unit) {
     Surface(onClick = onClick, color = Color.Transparent, modifier = Modifier.fillMaxWidth()) {
         Row(modifier = Modifier.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(modifier = Modifier.size(40.dp).background(SageGreen.copy(alpha = 0.1f), CircleShape), contentAlignment = Alignment.Center) { Icon(Icons.Default.Inventory, null, tint = SageGreen, modifier = Modifier.size(20.dp)) }
+            Box(modifier = Modifier.size(40.dp).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f), CircleShape), contentAlignment = Alignment.Center) { Icon(Icons.Default.Inventory, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp)) }
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(supply.batchCode, color = Color.White, fontWeight = FontWeight.Bold)
                 if (!supply.activeIngredient.isNullOrBlank()) Text("A.I.: ${supply.activeIngredient}", color = Color.Gray, fontSize = 12.sp)
             }
-            Surface(color = SageGreen.copy(alpha = 0.2f), shape = RoundedCornerShape(4.dp)) { Text(supply.category, color = SageGreen, fontSize = 10.sp, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)) }
+            Surface(color = ForestGreen.copy(alpha = 0.2f), shape = RoundedCornerShape(4.dp)) { Text(supply.category, color = ForestGreen, fontSize = 10.sp, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)) }
         }
     }
 }

@@ -16,7 +16,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mail2dev.planfora.ui.theme.ForestGreen
-import com.mail2dev.planfora.ui.theme.SageGreen
 import kotlinx.coroutines.delay
 import java.io.File
 
@@ -78,7 +77,7 @@ fun InlineAudioPlayer(filePath: String) {
             Icon(
                 imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                 contentDescription = null,
-                tint = SageGreen
+                tint = ForestGreen
             )
         }
 
@@ -89,7 +88,7 @@ fun InlineAudioPlayer(filePath: String) {
                 .padding(horizontal = 12.dp)
                 .height(4.dp)
                 .clip(RoundedCornerShape(2.dp)),
-            color = SageGreen,
+            color = ForestGreen,
             trackColor = Color.DarkGray
         )
 

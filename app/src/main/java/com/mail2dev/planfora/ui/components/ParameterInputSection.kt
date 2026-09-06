@@ -22,7 +22,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.mail2dev.planfora.ui.theme.SageGreen
+import com.mail2dev.planfora.ui.theme.ForestGreen
 import com.mail2dev.planfora.ui.theme.DarkBackground
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
@@ -46,7 +46,7 @@ fun ParameterInputSection(
     var renameValue by remember { mutableStateOf("") }
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text("Quick-Add Metrics", style = MaterialTheme.typography.labelLarge, color = SageGreen, fontWeight = FontWeight.SemiBold)
+        Text("Quick-Add Metrics", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.SemiBold)
         
         Row(
             modifier = Modifier
@@ -64,15 +64,16 @@ fun ParameterInputSection(
                     },
                     label = { Text("+ $preset", fontSize = 11.sp) },
                     colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = SageGreen,
-                        selectedLabelColor = DarkBackground,
+                        selectedContainerColor = ForestGreen,
+                        selectedLabelColor = Color.White,
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
                         labelColor = Color.Gray
                     ),
                     border = FilterChipDefaults.filterChipBorder(
                         enabled = true,
                         selected = isAdded,
-                        borderColor = Color.Gray.copy(alpha = 0.3f),
-                        selectedBorderColor = SageGreen
+                        borderColor = Color.Gray.copy(alpha = 0.2f),
+                        selectedBorderColor = Color.Transparent
                     ),
                     modifier = Modifier.combinedClickable(
                         onClick = {
@@ -92,17 +93,20 @@ fun ParameterInputSection(
                 onClick = { showCustomInput = !showCustomInput },
                 label = { Text("Custom", fontSize = 11.sp) },
                 leadingIcon = { Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp)) },
-                colors = AssistChipDefaults.assistChipColors(labelColor = SageGreen),
-                border = BorderStroke(0.5.dp, SageGreen.copy(alpha = 0.5f))
+                colors = AssistChipDefaults.assistChipColors(
+                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+                ),
+                border = BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.3f))
             )
         }
 
         if (showCustomInput) {
             Surface(
-                color = Color.White.copy(alpha = 0.05f),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier.fillMaxWidth(),
-                border = BorderStroke(0.5.dp, SageGreen.copy(alpha = 0.3f))
+                border = BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.2f))
             ) {
                 Row(
                     modifier = Modifier.padding(8.dp),
@@ -119,7 +123,9 @@ fun ParameterInputSection(
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = Color.White,
                             unfocusedTextColor = Color.White,
-                            focusedBorderColor = SageGreen
+                            focusedBorderColor = ForestGreen,
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f),
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f)
                         )
                     )
                     IconButton(
@@ -132,7 +138,7 @@ fun ParameterInputSection(
                         },
                         modifier = Modifier.size(36.dp)
                     ) {
-                        Icon(Icons.Default.Check, null, tint = SageGreen)
+                        Icon(Icons.Default.Check, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -160,7 +166,7 @@ fun ParameterInputSection(
             text = { Text("Actions for \"$parameterToManage\"", color = Color.LightGray) },
             confirmButton = {
                 TextButton(onClick = { showRenameDialog = true }) {
-                    Text("Rename", color = SageGreen)
+                    Text("Rename", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             },
             dismissButton = {
@@ -184,7 +190,7 @@ fun ParameterInputSection(
                     modifier = Modifier.fillMaxWidth()
                 )
             },
-            confirmButton = {
+                    confirmButton = {
                 Button(
                     onClick = {
                         if (renameValue.isNotBlank() && renameValue != parameterToManage) {
@@ -193,8 +199,9 @@ fun ParameterInputSection(
                         showRenameDialog = false
                         parameterToManage = null
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = SageGreen)
-                ) { Text("Update", color = DarkBackground) }
+                    colors = ButtonDefaults.buttonColors(containerColor = ForestGreen),
+                    shape = MaterialTheme.shapes.medium
+                ) { Text("Update", color = Color.White) }
             },
             dismissButton = {
                 TextButton(onClick = { showRenameDialog = false; parameterToManage = null }) {
@@ -264,8 +271,10 @@ fun ParameterLedgerRow(
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedTextColor = Color.White,
                     unfocusedTextColor = Color.White,
-                    focusedBorderColor = SageGreen,
-                    unfocusedBorderColor = Color.Transparent
+                    focusedBorderColor = ForestGreen,
+                    unfocusedBorderColor = Color.Transparent,
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f),
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f)
                 )
             )
             IconButton(onClick = onRemove, modifier = Modifier.size(24.dp)) {

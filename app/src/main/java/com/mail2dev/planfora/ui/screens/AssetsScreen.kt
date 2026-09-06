@@ -33,7 +33,6 @@ import com.mail2dev.planfora.ui.assets.AssetsViewModel
 import com.mail2dev.planfora.ui.navigation.Screen
 import com.mail2dev.planfora.ui.theme.DarkBackground
 import com.mail2dev.planfora.ui.theme.ForestGreen
-import com.mail2dev.planfora.ui.theme.SageGreen
 import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -102,7 +101,7 @@ fun AssetsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = SageGreen) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
                         IconButton(onClick = { viewModel.setSearchQuery("") }) {
@@ -115,8 +114,10 @@ fun AssetsScreen(
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedTextColor = Color.White,
                     unfocusedTextColor = Color.White,
-                    focusedBorderColor = SageGreen,
-                    unfocusedBorderColor = Color.Gray.copy(alpha = 0.5f)
+                    focusedBorderColor = ForestGreen,
+                    unfocusedBorderColor = Color.Gray.copy(alpha = 0.2f),
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f),
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f)
                 )
             )
 
@@ -208,17 +209,17 @@ fun LocationHeader(location: String, onSelectAll: () -> Unit) {
             .padding(top = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(Icons.Default.LocationOn, contentDescription = null, tint = SageGreen, modifier = Modifier.size(16.dp))
+        Icon(Icons.Default.LocationOn, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
         Spacer(modifier = Modifier.width(8.dp))
         Text(
             text = location,
             style = MaterialTheme.typography.labelLarge,
-            color = SageGreen,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.weight(1f)
         )
         TextButton(onClick = onSelectAll) {
-            Text("Select Zone", color = SageGreen, fontSize = 12.sp)
+            Text("Select Zone", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
         }
     }
 }
@@ -248,16 +249,16 @@ fun CategoryFilters(
                     }
                 },
                 colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = SageGreen,
-                    selectedLabelColor = DarkBackground,
-                    labelColor = Color.Gray,
-                    containerColor = Color.Transparent
+                    selectedContainerColor = ForestGreen,
+                    selectedLabelColor = Color.White,
+                    labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
                 ),
                 border = FilterChipDefaults.filterChipBorder(
                     enabled = true,
                     selected = selectedCategory == category,
-                    borderColor = Color.Gray,
-                    selectedBorderColor = SageGreen
+                    borderColor = Color.Gray.copy(alpha = 0.2f),
+                    selectedBorderColor = Color.Transparent
                 )
             )
         }
@@ -283,7 +284,7 @@ fun AssetCard(
 
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) SageGreen.copy(alpha = 0.15f) else Color(0xFF1E2120)
+            containerColor = if (isSelected) ForestGreen.copy(alpha = 0.1f) else Color(0xFF1E2120)
         ),
         shape = RoundedCornerShape(12.dp),
         modifier = Modifier
@@ -296,7 +297,7 @@ fun AssetCard(
             },
         border = androidx.compose.foundation.BorderStroke(
             width = if (isSelected) 1.5.dp else 0.5.dp,
-            color = if (isSelected) SageGreen else Color.Gray.copy(alpha = 0.2f)
+            color = if (isSelected) ForestGreen else Color.Gray.copy(alpha = 0.2f)
         )
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -309,15 +310,15 @@ fun AssetCard(
                         checked = isSelected,
                         onCheckedChange = { onClick() },
                         colors = CheckboxDefaults.colors(
-                            checkedColor = SageGreen,
-                            uncheckedColor = Color.Gray
+                            checkedColor = ForestGreen,
+                            uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant
                         ),
                         modifier = Modifier.padding(end = 8.dp)
                     )
                 }
 
                 Surface(
-                    color = SageGreen.copy(alpha = 0.1f),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(category.icon, fontSize = 20.sp, modifier = Modifier.padding(6.dp))
@@ -329,7 +330,7 @@ fun AssetCard(
                     Text(asset.name, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     val physId = asset.tags.split(",").find { it.startsWith("PhysID:") }?.substringAfter(":") ?: ""
                     if (physId.isNotBlank()) {
-                        Text("ID: $physId", color = SageGreen, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                        Text("ID: $physId", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
 
@@ -367,7 +368,7 @@ fun AssetCard(
                         ) {
                             Text(
                                 text = "#$tag",
-                                color = SageGreen,
+                                color = Color.White,
                                 modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
                                 fontSize = 10.sp
                             )
@@ -406,7 +407,7 @@ fun BatchSelectionBar(
                 )
                 Text(
                     text = "Ready for batch logging",
-                    color = SageGreen,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp
                 )
             }
