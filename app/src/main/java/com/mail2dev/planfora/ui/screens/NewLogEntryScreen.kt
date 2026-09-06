@@ -46,6 +46,8 @@ import com.mail2dev.planfora.ui.assets.AssetsViewModel
 import com.mail2dev.planfora.ui.components.HarvestActivityCard
 import com.mail2dev.planfora.ui.components.MediaAttachmentStrip
 import com.mail2dev.planfora.ui.components.ParameterInputSection
+import com.mail2dev.planfora.ui.components.PlanForaFieldGroup
+import com.mail2dev.planfora.ui.components.PlanForaSurfaceCard
 import com.mail2dev.planfora.ui.components.TagPickerSheet
 import com.mail2dev.planfora.ui.logs.LogsViewModel
 import com.mail2dev.planfora.ui.theme.DarkBackground
@@ -303,13 +305,8 @@ fun NewLogEntryScreen(
             Spacer(modifier = Modifier.height(8.dp))
             
             if (parentLog != null) {
-                Surface(
-                    color = SageGreen.copy(alpha = 0.1f),
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(0.5.dp, SageGreen.copy(alpha = 0.3f)),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                PlanForaSurfaceCard {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Link, contentDescription = null, tint = SageGreen, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(12.dp))
                         Text("Follow-up: ${parentLog?.title}", color = Color.White, style = MaterialTheme.typography.bodyMedium)
@@ -318,117 +315,100 @@ fun NewLogEntryScreen(
             }
 
             // 1. Target Asset Section
-            Surface(
-                color = Color(0xFF1E2120).copy(alpha = 0.5f),
-                shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Associated Plant(s)", style = MaterialTheme.typography.labelLarge, color = SageGreen, fontWeight = FontWeight.SemiBold)
-                    
-                    if (selectedAssetIds.isEmpty()) {
-                        Box(modifier = Modifier.fillMaxWidth().clickable(enabled = parentLogId == null) { showAssetPicker = true }) {
-                            OutlinedTextField(
-                                value = "Optional Plant Link",
-                                onValueChange = {},
-                                readOnly = true,
-                                enabled = false,
-                                modifier = Modifier.fillMaxWidth(),
+            PlanForaSurfaceCard(title = "Associated Plant(s)") {
+                if (selectedAssetIds.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxWidth().clickable(enabled = parentLogId == null) { showAssetPicker = true }) {
+                        OutlinedTextField(
+                            value = "Optional Plant Link",
+                            onValueChange = {},
+                            readOnly = true,
+                            enabled = false,
+                            modifier = Modifier.fillMaxWidth(),
+                            trailingIcon = {
+                                if (parentLogId == null) {
+                                    Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = SageGreen)
+                                }
+                            },
+                            singleLine = true,
+                            maxLines = 1,
+                            shape = RoundedCornerShape(8.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                disabledTextColor = Color.Gray,
+                                disabledBorderColor = Color.Gray.copy(alpha = 0.5f),
+                                disabledLabelColor = SageGreen
+                            )
+                        )
+                    }
+                } else {
+                    androidx.compose.foundation.layout.FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        selectedAssetIds.forEach { id ->
+                            val asset = assets.find { it.id == id }
+                            val category = AssetCategory.entries.find { it.displayName == asset?.category }
+                            AssistChip(
+                                onClick = { /* Could remove individual if desired */ },
+                                label = { Text(asset?.name ?: "Unknown") },
+                                leadingIcon = { Text(category?.icon ?: "🌿") },
                                 trailingIcon = {
                                     if (parentLogId == null) {
-                                        Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = SageGreen)
+                                        IconButton(onClick = { selectedAssetIds = selectedAssetIds - id }, modifier = Modifier.size(16.dp)) {
+                                            Icon(Icons.Default.Close, null, modifier = Modifier.size(12.dp))
+                                        }
                                     }
                                 },
-                                singleLine = true,
-                                maxLines = 1,
-                                shape = RoundedCornerShape(8.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    disabledTextColor = Color.Gray,
-                                    disabledBorderColor = Color.Gray.copy(alpha = 0.5f),
-                                    disabledLabelColor = SageGreen
-                                )
+                                colors = AssistChipDefaults.assistChipColors(labelColor = Color.White)
                             )
                         }
-                    } else {
-                        androidx.compose.foundation.layout.FlowRow(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            selectedAssetIds.forEach { id ->
-                                val asset = assets.find { it.id == id }
-                                val category = AssetCategory.entries.find { it.displayName == asset?.category }
-                                AssistChip(
-                                    onClick = { /* Could remove individual if desired */ },
-                                    label = { Text(asset?.name ?: "Unknown") },
-                                    leadingIcon = { Text(category?.icon ?: "🌿") },
-                                    trailingIcon = {
-                                        if (parentLogId == null) {
-                                            IconButton(onClick = { selectedAssetIds = selectedAssetIds - id }, modifier = Modifier.size(16.dp)) {
-                                                Icon(Icons.Default.Close, null, modifier = Modifier.size(12.dp))
-                                            }
-                                        }
-                                    },
-                                    colors = AssistChipDefaults.assistChipColors(labelColor = Color.White)
-                                )
-                            }
-                            if (parentLogId == null) {
-                                AssistChip(
-                                    onClick = { showAssetPicker = true },
-                                    label = { Text("Add More") },
-                                    leadingIcon = { Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp)) },
-                                    colors = AssistChipDefaults.assistChipColors(labelColor = SageGreen)
-                                )
-                            }
+                        if (parentLogId == null) {
+                            AssistChip(
+                                onClick = { showAssetPicker = true },
+                                label = { Text("Add More") },
+                                leadingIcon = { Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp)) },
+                                colors = AssistChipDefaults.assistChipColors(labelColor = SageGreen)
+                            )
                         }
                     }
                 }
             }
 
             // 2. Activity Type Section
-            Surface(
-                color = Color(0xFF1E2120).copy(alpha = 0.5f),
-                shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Activity Type", style = MaterialTheme.typography.labelLarge, color = SageGreen, fontWeight = FontWeight.SemiBold)
-                    androidx.compose.foundation.layout.FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        activityTypes.forEach { type ->
-                            FilterChip(
-                                selected = activityType == type,
-                                onClick = { 
-                                    activityType = type
-                                    showCustomActivityInput = type == "Other"
-                                },
-                                label = { Text(type, style = MaterialTheme.typography.bodySmall) },
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = SageGreen,
-                                    selectedLabelColor = DarkBackground,
-                                    labelColor = Color.Gray,
-                                    containerColor = Color.Transparent
-                                ),
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                        }
-                    }
-                    if (showCustomActivityInput) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedTextField(
-                            value = customActivity,
-                            onValueChange = { customActivity = it },
-                            placeholder = { Text("Specify Activity") },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
-                            maxLines = 1,
-                            shape = RoundedCornerShape(8.dp),
-                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = SageGreen, focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+            PlanForaSurfaceCard(title = "Activity Type") {
+                androidx.compose.foundation.layout.FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    activityTypes.forEach { type ->
+                        FilterChip(
+                            selected = activityType == type,
+                            onClick = { 
+                                activityType = type
+                                showCustomActivityInput = type == "Other"
+                            },
+                            label = { Text(type, style = MaterialTheme.typography.bodySmall) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = SageGreen,
+                                selectedLabelColor = DarkBackground,
+                                labelColor = Color.Gray,
+                                containerColor = Color.Transparent
+                            ),
+                            shape = RoundedCornerShape(8.dp)
                         )
                     }
+                }
+                if (showCustomActivityInput) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = customActivity,
+                        onValueChange = { customActivity = it },
+                        placeholder = { Text("Specify Activity") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        maxLines = 1,
+                        shape = RoundedCornerShape(8.dp),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = SageGreen, focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                    )
                 }
             }
 
@@ -498,90 +478,82 @@ fun NewLogEntryScreen(
             )
 
             // 5. Streamlined Attachments & Tags
-            Surface(
-                color = Color(0xFF1E2120).copy(alpha = 0.5f),
-                shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text("Attachments & Metadata", style = MaterialTheme.typography.labelLarge, color = SageGreen, fontWeight = FontWeight.SemiBold)
-                        AssistChip(
-                            onClick = { showTagSheet = true },
-                            label = { Text("Tags") },
-                            leadingIcon = { Icon(Icons.Default.Tag, null, modifier = Modifier.size(16.dp)) },
-                            colors = AssistChipDefaults.assistChipColors(labelColor = SageGreen)
-                        )
-                    }
-
-                    MediaAttachmentStrip(
-                        imageUris = imageUris,
-                        audioPath = audioPath,
-                        onImagesAdd = { imageUris = imageUris + it },
-                        onImageRemove = { imageUris = imageUris - it },
-                        onAudioCaptured = { audioPath = it },
-                        onAudioRemove = { audioPath = null }
-                    )
-
-                    if (tags.isNotEmpty()) {
-                        androidx.compose.foundation.layout.FlowRow(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            tags.forEach { tag ->
-                                AssistChip(
-                                    onClick = { tags = tags - tag },
-                                    label = { Text(tag, fontSize = 10.sp) },
-                                    trailingIcon = { Icon(Icons.Default.Close, null, modifier = Modifier.size(12.dp)) },
-                                    colors = AssistChipDefaults.assistChipColors(labelColor = Color.White, containerColor = ForestGreen.copy(alpha = 0.3f))
-                                )
-                            }
-                        }
-                    }
-
-                    HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
-
-                    // Option A: Quick-Add Metric Chips & Ledger
-                    val masterParameters by viewModel.masterParameters.collectAsState()
-                    ParameterInputSection(
-                        parameters = parameters,
-                        masterParameters = masterParameters,
-                        onParameterChange = { k, v ->
-                            val n = parameters.toMutableMap()
-                            n[k] = v
-                            parameters = n
-                        },
-                        onParameterRemove = { k ->
-                            val n = parameters.toMutableMap()
-                            n.remove(k)
-                            parameters = n
-                        },
-                        onCustomAdd = { k ->
-                            viewModel.addMasterParameter(k)
-                            val n = parameters.toMutableMap()
-                            n[k] = ""
-                            parameters = n
-                        },
-                        onRenameParameter = { old, new ->
-                            viewModel.updateMasterParameter(old, new)
-                            if (parameters.containsKey(old)) {
-                                val n = parameters.toMutableMap()
-                                n[new] = n[old] ?: ""
-                                n.remove(old)
-                                parameters = n
-                            }
-                        },
-                        onDeleteParameter = { name ->
-                            viewModel.deleteMasterParameter(name)
-                            if (parameters.containsKey(name)) {
-                                val n = parameters.toMutableMap()
-                                n.remove(name)
-                                parameters = n
-                            }
-                        }
+            PlanForaSurfaceCard(title = "Attachments & Metadata") {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    AssistChip(
+                        onClick = { showTagSheet = true },
+                        label = { Text("Tags") },
+                        leadingIcon = { Icon(Icons.Default.Tag, null, modifier = Modifier.size(16.dp)) },
+                        colors = AssistChipDefaults.assistChipColors(labelColor = SageGreen)
                     )
                 }
+
+                MediaAttachmentStrip(
+                    imageUris = imageUris,
+                    audioPath = audioPath,
+                    onImagesAdd = { imageUris = imageUris + it },
+                    onImageRemove = { imageUris = imageUris - it },
+                    onAudioCaptured = { audioPath = it },
+                    onAudioRemove = { audioPath = null }
+                )
+
+                if (tags.isNotEmpty()) {
+                    androidx.compose.foundation.layout.FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        tags.forEach { tag ->
+                            AssistChip(
+                                onClick = { tags = tags - tag },
+                                label = { Text(tag, fontSize = 10.sp) },
+                                trailingIcon = { Icon(Icons.Default.Close, null, modifier = Modifier.size(12.dp)) },
+                                colors = AssistChipDefaults.assistChipColors(labelColor = Color.White, containerColor = ForestGreen.copy(alpha = 0.3f))
+                            )
+                        }
+                    }
+                }
+
+                HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
+
+                // Option A: Quick-Add Metric Chips & Ledger
+                val masterParameters by viewModel.masterParameters.collectAsState()
+                ParameterInputSection(
+                    parameters = parameters,
+                    masterParameters = masterParameters,
+                    onParameterChange = { k, v ->
+                        val n = parameters.toMutableMap()
+                        n[k] = v
+                        parameters = n
+                    },
+                    onParameterRemove = { k ->
+                        val n = parameters.toMutableMap()
+                        n.remove(k)
+                        parameters = n
+                    },
+                    onCustomAdd = { k ->
+                        viewModel.addMasterParameter(k)
+                        val n = parameters.toMutableMap()
+                        n[k] = ""
+                        parameters = n
+                    },
+                    onRenameParameter = { old, new ->
+                        viewModel.updateMasterParameter(old, new)
+                        if (parameters.containsKey(old)) {
+                            val n = parameters.toMutableMap()
+                            n[new] = n[old] ?: ""
+                            n.remove(old)
+                            parameters = n
+                        }
+                    },
+                    onDeleteParameter = { name ->
+                        viewModel.deleteMasterParameter(name)
+                        if (parameters.containsKey(name)) {
+                            val n = parameters.toMutableMap()
+                            n.remove(name)
+                            parameters = n
+                        }
+                    }
+                )
             }
 
             Button(
@@ -753,141 +725,116 @@ fun TreatmentDetailsCard(
     onCustomInputCategoryChange: (String) -> Unit,
     onToggleZone: (String) -> Unit
 ) {
-    Surface(
-        color = Color(0xFF1E2120).copy(alpha = 0.5f),
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Treatment Details", style = MaterialTheme.typography.labelLarge, color = SageGreen, fontWeight = FontWeight.SemiBold)
-
-            val selectedSupply = supplies.find { it.id == selectedSupplyId }
-            
-            if (availableZones.isNotEmpty()) {
-                Text("Target Zones / Rows", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                androidx.compose.foundation.layout.FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    availableZones.forEach { zone ->
-                        val isSelected = selectedZones.contains(zone)
-                        FilterChip(
-                            selected = isSelected,
-                            onClick = { onToggleZone(zone) },
-                            label = { Text(zone, fontSize = 10.sp) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = SageGreen,
-                                selectedLabelColor = DarkBackground
-                            )
-                        )
-                    }
-                }
-                HorizontalDivider(color = Color.Gray.copy(alpha = 0.1f))
-            }
-
-            OutlinedTextField(
-                value = selectedSupply?.batchCode ?: customInputName.ifBlank { "Select Product" },
-                onValueChange = {},
-                readOnly = true,
-                modifier = Modifier.fillMaxWidth().clickable { onSupplyClick() },
-                enabled = false,
-                leadingIcon = { Icon(Icons.Default.Science, null, tint = SageGreen, modifier = Modifier.size(20.dp)) },
-                trailingIcon = { Icon(Icons.Default.ArrowDropDown, null, tint = SageGreen) },
-                colors = OutlinedTextFieldDefaults.colors(disabledTextColor = Color.White, disabledBorderColor = Color.Gray.copy(alpha = 0.3f))
-            )
-
-            AnimatedVisibility(
-                visible = selectedSupply?.notes?.isNotBlank() == true,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically()
+    PlanForaSurfaceCard(title = "Treatment Details") {
+        val selectedSupply = supplies.find { it.id == selectedSupplyId }
+        
+        if (availableZones.isNotEmpty()) {
+            Text("Target Zones / Rows", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+            androidx.compose.foundation.layout.FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                selectedSupply?.notes?.let { notes ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(start = 4.dp, top = 4.dp, bottom = 4.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Info,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
-                            modifier = Modifier.size(14.dp)
+                availableZones.forEach { zone ->
+                    val isSelected = selectedZones.contains(zone)
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { onToggleZone(zone) },
+                        label = { Text(zone, fontSize = 10.sp) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = SageGreen,
+                            selectedLabelColor = DarkBackground
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "Dosage/Note: $notes",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
-                        )
-                    }
+                    )
                 }
             }
+            HorizontalDivider(color = Color.Gray.copy(alpha = 0.1f))
+        }
 
-            if (selectedSupplyId == null && customInputName.isNotBlank()) {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf("Pesticide", "Fungicide", "Organic").forEach { cat ->
-                        FilterChip(
-                            selected = customInputCategory == cat,
-                            onClick = { onCustomInputCategoryChange(cat) },
-                            label = { Text(cat, fontSize = 10.sp) },
-                            colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SageGreen)
-                        )
-                    }
+        OutlinedTextField(
+            value = selectedSupply?.batchCode ?: customInputName.ifBlank { "Select Product" },
+            onValueChange = {},
+            readOnly = true,
+            modifier = Modifier.fillMaxWidth().clickable { onSupplyClick() },
+            enabled = false,
+            leadingIcon = { Icon(Icons.Default.Science, null, tint = SageGreen, modifier = Modifier.size(20.dp)) },
+            trailingIcon = { Icon(Icons.Default.ArrowDropDown, null, tint = SageGreen) },
+            colors = OutlinedTextFieldDefaults.colors(disabledTextColor = Color.White, disabledBorderColor = Color.Gray.copy(alpha = 0.3f))
+        )
+
+        AnimatedVisibility(
+            visible = selectedSupply?.notes?.isNotBlank() == true,
+            enter = fadeIn() + expandVertically(),
+            exit = fadeOut() + shrinkVertically()
+        ) {
+            selectedSupply?.notes?.let { notes ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(start = 4.dp, top = 4.dp, bottom = 4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "Dosage/Note: $notes",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                    )
                 }
             }
+        }
 
+        if (selectedSupplyId == null && customInputName.isNotBlank()) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("FOLIAR SPRAY", "SOIL DRENCH", "SPOT").forEach { method ->
-                    val isSelected = appMethod == method
-                    Surface(
-                        onClick = { onMethodChange(method) },
-                        color = if (isSelected) SageGreen else Color.White.copy(alpha = 0.05f),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.weight(1f),
-                        border = if (!isSelected) BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.2f)) else null
-                    ) {
-                        Text(method, color = if (isSelected) DarkBackground else Color.Gray, fontSize = 9.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 8.dp))
-                    }
+                listOf("Pesticide", "Fungicide", "Organic").forEach { cat ->
+                    FilterChip(
+                        selected = customInputCategory == cat,
+                        onClick = { onCustomInputCategoryChange(cat) },
+                        label = { Text(cat, fontSize = 10.sp) },
+                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SageGreen)
+                    )
                 }
             }
+        }
 
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = dosageAmount, onValueChange = onDosageAmountChange, label = { Text("Amount") }, modifier = Modifier.weight(1f), singleLine = true)
-                OutlinedTextField(value = dosageRatio, onValueChange = onDosageRatioChange, label = { Text("Unit/Ratio") }, modifier = Modifier.weight(1.5f), singleLine = true)
+        PlanForaFieldGroup {
+            listOf("FOLIAR SPRAY", "SOIL DRENCH", "SPOT").forEach { method ->
+                val isSelected = appMethod == method
+                Surface(
+                    onClick = { onMethodChange(method) },
+                    color = if (isSelected) SageGreen else Color.White.copy(alpha = 0.05f),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.weight(1f),
+                    border = if (!isSelected) BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.2f)) else null
+                ) {
+                    Text(method, color = if (isSelected) DarkBackground else Color.Gray, fontSize = 9.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 8.dp))
+                }
             }
+        }
+
+        PlanForaFieldGroup {
+            OutlinedTextField(value = dosageAmount, onValueChange = onDosageAmountChange, label = { Text("Amount") }, modifier = Modifier.weight(1f), singleLine = true)
+            OutlinedTextField(value = dosageRatio, onValueChange = onDosageRatioChange, label = { Text("Unit/Ratio") }, modifier = Modifier.weight(1.5f), singleLine = true)
         }
     }
 }
 
 @Composable
 fun RepottingCard(substrateMix: String, potSize: String, onSubstrateChange: (String) -> Unit, onPotSizeChange: (String) -> Unit) {
-    Surface(
-        color = Color(0xFF1E2120).copy(alpha = 0.5f),
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Substrate & Container", style = MaterialTheme.typography.labelLarge, color = SageGreen, fontWeight = FontWeight.SemiBold)
-            OutlinedTextField(value = substrateMix, onValueChange = onSubstrateChange, label = { Text("Substrate Mix") }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("e.g. Coco/Perlite 70/30") })
-            OutlinedTextField(value = potSize, onValueChange = onPotSizeChange, label = { Text("Pot Size / Bed ID") }, modifier = Modifier.fillMaxWidth())
-        }
+    PlanForaSurfaceCard(title = "Substrate & Container") {
+        OutlinedTextField(value = substrateMix, onValueChange = onSubstrateChange, label = { Text("Substrate Mix") }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("e.g. Coco/Perlite 70/30") })
+        OutlinedTextField(value = potSize, onValueChange = onPotSizeChange, label = { Text("Pot Size / Bed ID") }, modifier = Modifier.fillMaxWidth())
     }
 }
 
 @Composable
 fun PruningCard(pruningType: String, onTypeChange: (String) -> Unit) {
-    Surface(
-        color = Color(0xFF1E2120).copy(alpha = 0.5f),
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Pruning Type", style = MaterialTheme.typography.labelLarge, color = SageGreen, fontWeight = FontWeight.SemiBold)
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("Sanitary", "Structural", "Thinning").forEach { type ->
-                    FilterChip(selected = pruningType == type, onClick = { onTypeChange(type) }, label = { Text(type) }, modifier = Modifier.weight(1f), colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SageGreen))
-                }
+    PlanForaSurfaceCard(title = "Pruning Type") {
+        PlanForaFieldGroup {
+            listOf("Sanitary", "Structural", "Thinning").forEach { type ->
+                FilterChip(selected = pruningType == type, onClick = { onTypeChange(type) }, label = { Text(type) }, modifier = Modifier.weight(1f), colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SageGreen))
             }
         }
     }

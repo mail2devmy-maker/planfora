@@ -1,6 +1,5 @@
 package com.mail2dev.planfora.ui.assets
 
-import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -37,6 +36,8 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.mail2dev.planfora.ui.components.LocationSelectionBottomSheet
 import com.mail2dev.planfora.ui.components.MediaAttachmentStrip
+import com.mail2dev.planfora.ui.components.PlanForaFieldGroup
+import com.mail2dev.planfora.ui.components.PlanForaSurfaceCard
 import com.mail2dev.planfora.ui.components.TagPickerSheet
 import com.mail2dev.planfora.ui.theme.DarkBackground
 import com.mail2dev.planfora.ui.theme.ForestGreen
@@ -62,7 +63,6 @@ fun AddAssetScreen(
     val customFieldValues by viewModel.customFieldValues.collectAsState()
     val editingAssetId by viewModel.editingAssetId.collectAsState()
 
-    val context = LocalContext.current
     var showLocationSheet by remember { mutableStateOf(false) }
     var showTagSheet by remember { mutableStateOf(false) }
     var showCustomFieldDialog by remember { mutableStateOf(false) }
@@ -79,7 +79,8 @@ fun AddAssetScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(rememberScrollState())
+                .imePadding(),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Row(
@@ -101,60 +102,66 @@ fun AddAssetScreen(
             // Live Preview Card (Memento Style)
             LivePreviewCard(name, selectedCategory, location, selectedTags)
 
-            // Core Name Field
-            OutlinedTextField(
-                value = name,
-                onValueChange = viewModel::updateName,
-                label = { Text("Asset Name / Variety") },
-                modifier = Modifier.fillMaxWidth(),
-                colors = textFieldColors()
-            )
-
-            CategorySelector(selectedCategory, viewModel::updateCategory)
-
-            // side-by-side Location & Tags
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                ReadonlyTriggerField(
-                    label = "Location",
-                    value = location.ifBlank { "Select" },
-                    icon = Icons.Default.LocationOn,
-                    onClick = { showLocationSheet = true },
-                    modifier = Modifier.weight(1f)
+            // Asset Identity
+            PlanForaSurfaceCard(title = "Asset Identity") {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = viewModel::updateName,
+                    label = { Text("Asset Name / Variety") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = textFieldColors()
                 )
-                ReadonlyTriggerField(
-                    label = "Tags",
-                    value = if (selectedTags.isEmpty()) "Select" else "${selectedTags.size} tags",
-                    icon = Icons.Default.Tag,
-                    onClick = { showTagSheet = true },
-                    modifier = Modifier.weight(1f)
-                )
+                CategorySelector(selectedCategory, viewModel::updateCategory)
             }
 
-            // Category-Specific Core Fields
-            CategoryCoreFields(selectedCategory, viewModel)
+            // Location & Taxonomy
+            PlanForaSurfaceCard(title = "Location & Taxonomy") {
+                PlanForaFieldGroup {
+                    ReadonlyTriggerField(
+                        label = "Location",
+                        value = location.ifBlank { "Select" },
+                        icon = Icons.Default.LocationOn,
+                        onClick = { showLocationSheet = true },
+                        modifier = Modifier.weight(1f)
+                    )
+                    ReadonlyTriggerField(
+                        label = "Tags",
+                        value = if (selectedTags.isEmpty()) "Select" else "${selectedTags.size} tags",
+                        icon = Icons.Default.Tag,
+                        onClick = { showTagSheet = true },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
 
-            MediaAttachmentStrip(
-                imageUris = imageUris,
-                audioPath = audioPath,
-                onImagesAdd = { uris -> uris.forEach { viewModel.addImageUri(it) } },
-                onImageRemove = { viewModel.removeImageUri(it) },
-                onAudioCaptured = { viewModel.setAudioPath(it) },
-                onAudioRemove = { viewModel.setAudioPath(null) }
-            )
+            // Lifecycle Details
+            if (selectedCategory != AssetCategory.ALL) {
+                PlanForaSurfaceCard(title = "${selectedCategory.displayName} Details") {
+                    CategoryCoreFields(selectedCategory, viewModel)
+                }
+            }
 
-            // Asset Notes (Permanent)
-            OutlinedTextField(
-                value = notes,
-                onValueChange = viewModel::updateNotes,
-                label = { Text("Asset Notes") },
-                placeholder = { Text("Quick observation or asset details...") },
-                modifier = Modifier.fillMaxWidth().height(80.dp),
-                colors = textFieldColors(),
-                maxLines = 3
-            )
+            // Attachments & Notes
+            PlanForaSurfaceCard(title = "Attachments & Notes") {
+                MediaAttachmentStrip(
+                    imageUris = imageUris,
+                    audioPath = audioPath,
+                    onImagesAdd = { uris -> uris.forEach { viewModel.addImageUri(it) } },
+                    onImageRemove = { viewModel.removeImageUri(it) },
+                    onAudioCaptured = { viewModel.setAudioPath(it) },
+                    onAudioRemove = { viewModel.setAudioPath(null) }
+                )
+
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = viewModel::updateNotes,
+                    label = { Text("Asset Notes") },
+                    placeholder = { Text("Quick observation or asset details...") },
+                    modifier = Modifier.fillMaxWidth().height(80.dp),
+                    colors = textFieldColors(),
+                    maxLines = 3
+                )
+            }
 
             // Optional Field Palette
             OptionalFieldPalette(

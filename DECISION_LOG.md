@@ -1256,6 +1256,25 @@ Improved the logging experience by surfacing product-specific dosage instruction
 
 ---
 
+## [v10.14 - Standardized Tonal Surface Components]
+
+### Overview
+Introduced a standardized UI component library to unify the visual language of data entry forms across the application. This refactor replaces hardcoded surface blocks and disparate field layouts with a cohesive tonal system based on the Material 3 `surfaceVariant` specification.
+
+### Modified Files
+- `app/src/main/java/com/mail2dev/planfora/ui/components/SharedComponents.kt`: Created new shared library for `PlanForaSurfaceCard` and `PlanForaFieldGroup`.
+- `app/src/main/java/com/mail2dev/planfora/ui/supplies/AddSupplyScreen.kt`: Refactored to use the new standardized components.
+- `DECISION_LOG.md`: Documented the component standardization.
+
+### UI & Architecture Changes
+- **PlanForaSurfaceCard**: A reusable container using `surfaceVariant` (alpha 0.6f), `16.dp` corner rounding, and `2.dp` tonal elevation. This provides a consistent "laboratory card" aesthetic.
+- **PlanForaFieldGroup**: A standardized row container for grouping horizontal field pairs (e.g., Stock & Unit) with consistent `8.dp` spacing.
+- **Consolidated Layouts**: Refactored `AddSupplyScreen.kt` to group related inputs into logical sections: "Identification & Storage", "Stock & Safety", and "Product Formulation".
+- **Keyboard Handling**: Enforced `imePadding()` at the root scroll container project-wide to ensure input visibility when the soft keyboard is active.
+- **AddAssetScreen Refactor**: Applied the standardized tonal surface design system to the asset creation form. Grouped inputs into "Asset Identity", "Location & Taxonomy", "Lifecycle Details", and "Attachments & Notes" cards. Fixed keyboard overlap by adding `imePadding()` to the root layout.
+
+---
+
 ## 5. Navigation & App Routing
 
 Managed via `navigation-compose` with `Screen` sealed class contracts:

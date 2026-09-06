@@ -37,6 +37,8 @@ import coil.compose.AsyncImage
 import com.mail2dev.planfora.data.local.entity.SupplyFormType
 import com.mail2dev.planfora.ui.components.LocationSelectionBottomSheet
 import com.mail2dev.planfora.ui.components.MediaAttachmentStrip
+import com.mail2dev.planfora.ui.components.PlanForaFieldGroup
+import com.mail2dev.planfora.ui.components.PlanForaSurfaceCard
 import com.mail2dev.planfora.ui.components.StringPickerSheet
 import com.mail2dev.planfora.ui.components.TagPickerSheet
 import com.mail2dev.planfora.ui.theme.DarkBackground
@@ -80,7 +82,8 @@ fun AddSupplyScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(rememberScrollState())
+                .imePadding(),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Row(
@@ -108,182 +111,175 @@ fun AddSupplyScreen(
                 colors = textFieldColors()
             )
 
-            // Category Selector
-            Column {
-                Text("Category", style = MaterialTheme.typography.labelLarge, color = SageGreen)
-                Spacer(modifier = Modifier.height(8.dp))
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    SupplyCategory.entries.filter { it != SupplyCategory.ALL }.forEach { cat ->
-                        FilterChip(
-                            selected = category == cat,
-                            onClick = { viewModel.updateCategory(cat) },
-                            label = { Text(cat.displayName) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = SageGreen,
-                                selectedLabelColor = DarkBackground,
-                                containerColor = Color.Transparent,
-                                labelColor = Color.Gray
+            // Primary Identification & Storage
+            PlanForaSurfaceCard(title = "Identification & Storage") {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Category", style = MaterialTheme.typography.labelLarge, color = SageGreen)
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        SupplyCategory.entries.filter { it != SupplyCategory.ALL }.forEach { cat ->
+                            FilterChip(
+                                selected = category == cat,
+                                onClick = { viewModel.updateCategory(cat) },
+                                label = { Text(cat.displayName) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = SageGreen,
+                                    selectedLabelColor = DarkBackground,
+                                    containerColor = Color.Transparent,
+                                    labelColor = Color.Gray
+                                )
                             )
+                        }
+                    }
+
+                    PlanForaFieldGroup {
+                        ReadonlyTriggerField(
+                            label = "📍 Storage Location",
+                            value = location.ifBlank { "Select Location" },
+                            icon = Icons.Default.LocationOn,
+                            onClick = { showLocationSheet = true },
+                            modifier = Modifier.weight(1f)
+                        )
+                        ReadonlyTriggerField(
+                            label = "Tags",
+                            value = if (selectedTags.isEmpty()) "Select" else "${selectedTags.size} tags",
+                            icon = Icons.Default.Tag,
+                            onClick = { showTagSheet = true },
+                            modifier = Modifier.weight(1f)
                         )
                     }
                 }
             }
 
-            // Side-by-Side Metadata Row (Location & Tags)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                ReadonlyTriggerField(
-                    label = "📍 Storage Location",
-                    value = location.ifBlank { "Select Location" },
-                    icon = Icons.Default.LocationOn,
-                    onClick = { showLocationSheet = true },
-                    modifier = Modifier.weight(1.2f)
-                )
-                ReadonlyTriggerField(
-                    label = "Tags",
-                    value = if (selectedTags.isEmpty()) "Select" else "${selectedTags.size} tags",
-                    icon = Icons.Default.Tag,
-                    onClick = { showTagSheet = true },
-                    modifier = Modifier.weight(0.8f)
-                )
-            }
-
             // High-Speed Safety/Stock Fields
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                var showIngredientSheet by remember { mutableStateOf(false) }
-                val activeIngredientValue = viewModel.activeIngredient.collectAsState().value
-                
-                ReadonlyTriggerField(
-                    label = "Active Ingredient",
-                    value = activeIngredientValue.ifBlank { "Select A.I." },
-                    icon = Icons.Default.Tag,
-                    onClick = { showIngredientSheet = true },
-                    modifier = Modifier.weight(1.5f)
-                )
+            PlanForaSurfaceCard(title = "Stock & Safety") {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    PlanForaFieldGroup {
+                        var showIngredientSheet by remember { mutableStateOf(false) }
+                        val activeIngredientValue = viewModel.activeIngredient.collectAsState().value
+                        
+                        ReadonlyTriggerField(
+                            label = "Active Ingredient",
+                            value = activeIngredientValue.ifBlank { "Select A.I." },
+                            icon = Icons.Default.Tag,
+                            onClick = { showIngredientSheet = true },
+                            modifier = Modifier.weight(1.5f)
+                        )
 
-                if (showIngredientSheet) {
-                    val masterIngredients by viewModel.masterIngredients.collectAsState()
-                    StringPickerSheet(
-                        title = "Active Ingredient",
-                        selectedValue = activeIngredientValue,
-                        items = masterIngredients,
-                        onItemSelected = viewModel::updateActiveIngredient,
-                        onItemCreated = viewModel::addMasterIngredient,
-                        onItemRenamed = viewModel::updateMasterIngredient,
-                        onItemDeleted = viewModel::deleteMasterIngredient,
-                        onDismiss = { showIngredientSheet = false },
-                        placeholder = "Search or type chemical...",
-                        addLabel = "Add"
-                    )
-                }
-                
-                OutlinedTextField(
-                    value = viewModel.phiDays.collectAsState().value,
-                    onValueChange = viewModel::updatePhiDays,
-                    label = { Text("PHI (Days)") },
-                    modifier = Modifier.weight(1f),
-                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
-                    colors = textFieldColors()
-                )
-            }
+                        if (showIngredientSheet) {
+                            val masterIngredients by viewModel.masterIngredients.collectAsState()
+                            StringPickerSheet(
+                                title = "Active Ingredient",
+                                selectedValue = activeIngredientValue,
+                                items = masterIngredients,
+                                onItemSelected = viewModel::updateActiveIngredient,
+                                onItemCreated = viewModel::addMasterIngredient,
+                                onItemRenamed = viewModel::updateMasterIngredient,
+                                onItemDeleted = viewModel::deleteMasterIngredient,
+                                onDismiss = { showIngredientSheet = false },
+                                placeholder = "Search or type chemical...",
+                                addLabel = "Add"
+                            )
+                        }
+                        
+                        OutlinedTextField(
+                            value = viewModel.phiDays.collectAsState().value,
+                            onValueChange = viewModel::updatePhiDays,
+                            label = { Text("PHI (Days)") },
+                            modifier = Modifier.weight(1f),
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                            colors = textFieldColors()
+                        )
+                    }
 
-            // Compact Form & Formulation Row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                var showFormTypePicker by remember { mutableStateOf(false) }
-                Box(modifier = Modifier.weight(1f)) {
-                    OutlinedTextField(
-                        value = formType.displayName,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Form / Type") },
-                        modifier = Modifier.fillMaxWidth(),
-                        trailingIcon = {
-                            IconButton(onClick = { showFormTypePicker = true }) {
-                                Icon(Icons.Default.ArrowDropDown, null, tint = SageGreen)
+                    PlanForaFieldGroup {
+                        OutlinedTextField(
+                            value = viewModel.stockQuantity.collectAsState().value,
+                            onValueChange = viewModel::updateStockQuantity,
+                            label = { Text("Stock Amount") },
+                            modifier = Modifier.weight(1f),
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                            colors = textFieldColors()
+                        )
+                        var showUnitPicker by remember { mutableStateOf(false) }
+                        Box(modifier = Modifier.weight(1f)) {
+                            OutlinedTextField(
+                                value = viewModel.stockUnit.collectAsState().value,
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text("Unit") },
+                                modifier = Modifier.fillMaxWidth(),
+                                trailingIcon = {
+                                    IconButton(onClick = { showUnitPicker = true }) {
+                                        Icon(Icons.Default.ArrowDropDown, null, tint = SageGreen)
+                                    }
+                                },
+                                colors = textFieldColors()
+                            )
+                            DropdownMenu(expanded = showUnitPicker, onDismissRequest = { showUnitPicker = false }) {
+                                listOf("L", "mL", "kg", "g", "units", "bottles").forEach { unit ->
+                                    DropdownMenuItem(text = { Text(unit) }, onClick = { viewModel.updateStockUnit(unit); showUnitPicker = false })
+                                }
                             }
-                        },
-                        colors = textFieldColors()
-                    )
-                    DropdownMenu(expanded = showFormTypePicker, onDismissRequest = { showFormTypePicker = false }) {
-                        SupplyFormType.entries.forEach { type ->
-                            DropdownMenuItem(text = { Text(type.displayName) }, onClick = { viewModel.updateFormType(type); showFormTypePicker = false })
                         }
                     }
                 }
+            }
 
-                if (category != SupplyCategory.HARDWARE && category != SupplyCategory.SUBSTRATE) {
-                    var showFormulationPicker by remember { mutableStateOf(false) }
+            // Product Formulation Row
+            PlanForaSurfaceCard(title = "Product Formulation") {
+                PlanForaFieldGroup {
+                    var showFormTypePicker by remember { mutableStateOf(false) }
                     Box(modifier = Modifier.weight(1f)) {
                         OutlinedTextField(
-                            value = formulationCode ?: "N/A",
+                            value = formType.displayName,
                             onValueChange = {},
                             readOnly = true,
-                            label = { Text("Form. Code") },
+                            label = { Text("Form / Type") },
                             modifier = Modifier.fillMaxWidth(),
                             trailingIcon = {
-                                IconButton(onClick = { showFormulationPicker = true }) {
+                                IconButton(onClick = { showFormTypePicker = true }) {
                                     Icon(Icons.Default.ArrowDropDown, null, tint = SageGreen)
                                 }
                             },
                             colors = textFieldColors()
                         )
-                        DropdownMenu(expanded = showFormulationPicker, onDismissRequest = { showFormulationPicker = false }) {
-                            val availableCodes = when (formType) {
-                                com.mail2dev.planfora.data.local.entity.SupplyFormType.LIQUID -> listOf("SL", "SC", "EC", "Other")
-                                com.mail2dev.planfora.data.local.entity.SupplyFormType.POWDER -> listOf("WP", "SP", "Other")
-                                com.mail2dev.planfora.data.local.entity.SupplyFormType.GRANULAR -> listOf("WG", "GR", "Other")
-                                com.mail2dev.planfora.data.local.entity.SupplyFormType.SOLID -> listOf("Other")
-                            }
-                            availableCodes.forEach { code ->
-                                DropdownMenuItem(text = { Text(code) }, onClick = { viewModel.updateFormulationCode(code); showFormulationPicker = false })
+                        DropdownMenu(expanded = showFormTypePicker, onDismissRequest = { showFormTypePicker = false }) {
+                            SupplyFormType.entries.forEach { type ->
+                                DropdownMenuItem(text = { Text(type.displayName) }, onClick = { viewModel.updateFormType(type); showFormTypePicker = false })
                             }
                         }
                     }
-                }
-            }
 
-            // Stock & Unit Picker Row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedTextField(
-                    value = viewModel.stockQuantity.collectAsState().value,
-                    onValueChange = viewModel::updateStockQuantity,
-                    label = { Text("Stock Amount") },
-                    modifier = Modifier.weight(1f),
-                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
-                    colors = textFieldColors()
-                )
-                var showUnitPicker by remember { mutableStateOf(false) }
-                Box(modifier = Modifier.weight(1f)) {
-                    OutlinedTextField(
-                        value = viewModel.stockUnit.collectAsState().value,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Unit") },
-                        modifier = Modifier.fillMaxWidth(),
-                        trailingIcon = {
-                            IconButton(onClick = { showUnitPicker = true }) {
-                                Icon(Icons.Default.ArrowDropDown, null, tint = SageGreen)
+                    if (category != SupplyCategory.HARDWARE && category != SupplyCategory.SUBSTRATE) {
+                        var showFormulationPicker by remember { mutableStateOf(false) }
+                        Box(modifier = Modifier.weight(1f)) {
+                            OutlinedTextField(
+                                value = formulationCode ?: "N/A",
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text("Form. Code") },
+                                modifier = Modifier.fillMaxWidth(),
+                                trailingIcon = {
+                                    IconButton(onClick = { showFormulationPicker = true }) {
+                                        Icon(Icons.Default.ArrowDropDown, null, tint = SageGreen)
+                                    }
+                                },
+                                colors = textFieldColors()
+                            )
+                            DropdownMenu(expanded = showFormulationPicker, onDismissRequest = { showFormulationPicker = false }) {
+                                val availableCodes = when (formType) {
+                                    com.mail2dev.planfora.data.local.entity.SupplyFormType.LIQUID -> listOf("SL", "SC", "EC", "Other")
+                                    com.mail2dev.planfora.data.local.entity.SupplyFormType.POWDER -> listOf("WP", "SP", "Other")
+                                    com.mail2dev.planfora.data.local.entity.SupplyFormType.GRANULAR -> listOf("WG", "GR", "Other")
+                                    com.mail2dev.planfora.data.local.entity.SupplyFormType.SOLID -> listOf("Other")
+                                }
+                                availableCodes.forEach { code ->
+                                    DropdownMenuItem(text = { Text(code) }, onClick = { viewModel.updateFormulationCode(code); showFormulationPicker = false })
+                                }
                             }
-                        },
-                        colors = textFieldColors()
-                    )
-                    DropdownMenu(expanded = showUnitPicker, onDismissRequest = { showUnitPicker = false }) {
-                        listOf("L", "mL", "kg", "g", "units", "bottles").forEach { unit ->
-                            DropdownMenuItem(text = { Text(unit) }, onClick = { viewModel.updateStockUnit(unit); showUnitPicker = false })
                         }
                     }
                 }
