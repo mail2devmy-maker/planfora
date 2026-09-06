@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PlanFora - Logs &amp; Calendar</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-bright": "#393939",
+                        "primary-fixed-dim": "#91d78a",
+                        "surface-container-low": "#1c1b1b",
+                        "outline-variant": "#41493e",
+                        "on-tertiary-fixed-variant": "#24502c",
+                        "inverse-on-surface": "#313030",
+                        "tertiary": "#a2d3a4",
+                        "on-secondary-fixed-variant": "#0c5216",
+                        "tertiary-fixed-dim": "#a2d3a4",
+                        "on-tertiary-fixed": "#002109",
+                        "on-primary-fixed-variant": "#0c5216",
+                        "on-primary-container": "#90d689",
+                        "secondary-container": "#0f5518",
+                        "background": "#131313",
+                        "on-surface-variant": "#c0c9bb",
+                        "on-tertiary": "#0a3817",
+                        "error": "#ffb4ab",
+                        "surface-container-highest": "#353534",
+                        "outline": "#8a9386",
+                        "surface-container-high": "#2a2a2a",
+                        "on-primary-fixed": "#002203",
+                        "on-surface": "#e5e2e1",
+                        "secondary-fixed-dim": "#91d78a",
+                        "on-secondary-fixed": "#002203",
+                        "inverse-primary": "#2a6b2c",
+                        "surface-container": "#201f1f",
+                        "tertiary-fixed": "#bdefbe",
+                        "secondary": "#91d78a",
+                        "surface-variant": "#353534",
+                        "inverse-surface": "#e5e2e1",
+                        "on-error": "#690005",
+                        "on-secondary-container": "#84c97d",
+                        "on-background": "#e5e2e1",
+                        "on-primary": "#003909",
+                        "secondary-fixed": "#acf4a4",
+                        "primary-container": "#1b5e20",
+                        "surface": "#131313",
+                        "surface-dim": "#131313",
+                        "surface-tint": "#91d78a",
+                        "primary-fixed": "#acf4a4",
+                        "tertiary-container": "#2f5b36",
+                        "on-tertiary-container": "#a0d1a2",
+                        "primary": "#91d78a",
+                        "on-error-container": "#ffdad6",
+                        "surface-container-lowest": "#0e0e0e",
+                        "on-secondary": "#003909",
+                        "error-container": "#93000a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "sm": "8px",
+                        "gutter": "16px",
+                        "xl": "32px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "margin-mobile": "16px",
+                        "base": "4px",
+                        "margin-desktop": "48px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "label-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "0.01em", "fontWeight": "400" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-sm": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "title-lg": ["22px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "headline-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "label-lg": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #131313;
+            color: #e5e2e1;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .fab-enter {
+            transform: scale(0);
+            opacity: 0;
+        }
+        .fab-enter-active {
+            transform: scale(1);
+            opacity: 1;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .sheet-enter {
+            transform: translateY(100%);
+        }
+        .sheet-enter-active {
+            transform: translateY(0);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .scrim-enter {
+            opacity: 0;
+        }
+        .scrim-enter-active {
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-background min-h-screen font-body-md text-on-background pb-[88px] pt-[72px]">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-background dark:bg-background flex items-center justify-between px-margin-mobile py-sm max-w-7xl mx-auto shadow-none">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary dark:text-primary" data-icon="potted_plant" style="font-variation-settings: 'FILL' 1;">potted_plant</span>
+<h1 class="font-headline-sm text-headline-sm text-primary dark:text-primary tracking-tight font-bold">PlanFora</h1>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high transition-colors active:scale-95 duration-100">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+</header>
+<!-- Main Content Canvas -->
+<main class="w-full max-w-7xl mx-auto px-margin-mobile md:px-margin-desktop space-y-xl mt-md">
+<!-- Calendar Widget -->
+<section class="w-full">
+<div class="flex items-center justify-between mb-sm">
+<h2 class="font-title-lg text-title-lg text-on-surface">October 2023</h2>
+<button class="text-primary hover:text-primary-fixed-dim transition-colors">
+<span class="material-symbols-outlined">calendar_month</span>
+</button>
+</div>
+<div class="flex gap-sm overflow-x-auto hide-scrollbar pb-sm -mx-margin-mobile px-margin-mobile md:mx-0 md:px-0 scroll-smooth">
+<!-- Date Items -->
+<div class="flex flex-col items-center justify-center min-w-[56px] h-20 rounded-[14px] bg-surface-container-high border border-outline-variant/30 shrink-0">
+<span class="font-label-lg text-label-lg text-on-surface-variant">MON</span>
+<span class="font-title-lg text-title-lg text-on-surface mt-xs">16</span>
+</div>
+<div class="flex flex-col items-center justify-center min-w-[56px] h-20 rounded-[14px] bg-surface-container-high border border-outline-variant/30 shrink-0">
+<span class="font-label-lg text-label-lg text-on-surface-variant">TUE</span>
+<span class="font-title-lg text-title-lg text-on-surface mt-xs">17</span>
+</div>
+<!-- Active Date -->
+<div class="flex flex-col items-center justify-center min-w-[56px] h-20 rounded-[14px] bg-primary-container border border-primary shrink-0 relative overflow-hidden">
+<div class="absolute inset-0 bg-primary opacity-10"></div>
+<span class="font-label-lg text-label-lg text-on-primary-container z-10">WED</span>
+<span class="font-title-lg text-title-lg text-on-primary-container z-10 mt-xs">18</span>
+<div class="w-1 h-1 rounded-full bg-primary absolute bottom-2"></div>
+</div>
+<div class="flex flex-col items-center justify-center min-w-[56px] h-20 rounded-[14px] bg-surface-container-high border border-outline-variant/30 shrink-0">
+<span class="font-label-lg text-label-lg text-on-surface-variant">THU</span>
+<span class="font-title-lg text-title-lg text-on-surface mt-xs">19</span>
+</div>
+<div class="flex flex-col items-center justify-center min-w-[56px] h-20 rounded-[14px] bg-surface-container-high border border-outline-variant/30 shrink-0">
+<span class="font-label-lg text-label-lg text-on-surface-variant">FRI</span>
+<span class="font-title-lg text-title-lg text-on-surface mt-xs">20</span>
+</div>
+<div class="flex flex-col items-center justify-center min-w-[56px] h-20 rounded-[14px] bg-surface-container-high border border-outline-variant/30 shrink-0">
+<span class="font-label-lg text-label-lg text-on-surface-variant">SAT</span>
+<span class="font-title-lg text-title-lg text-on-surface mt-xs">21</span>
+</div>
+<div class="flex flex-col items-center justify-center min-w-[56px] h-20 rounded-[14px] bg-surface-container-high border border-outline-variant/30 shrink-0">
+<span class="font-label-lg text-label-lg text-on-surface-variant">SUN</span>
+<span class="font-title-lg text-title-lg text-on-surface mt-xs">22</span>
+</div>
+</div>
+</section>
+<!-- Timeline Feed -->
+<section class="space-y-lg relative">
+<div class="absolute left-[20px] top-4 bottom-0 w-[2px] bg-surface-container-high -z-10 rounded-full"></div>
+<!-- Log Entry 1 -->
+<div class="relative pl-12">
+<div class="absolute left-[12px] top-6 w-4 h-4 rounded-full bg-primary border-4 border-background z-10 shadow-[0_0_12px_rgba(145,215,138,0.3)]"></div>
+<div class="bg-[#1C1C1C] border border-[#2A2A2A] rounded-[28px] p-lg shadow-sm relative overflow-hidden group hover:bg-[#202020] transition-colors">
+<div class="flex justify-between items-start mb-sm">
+<div>
+<div class="flex items-center gap-xs mb-1">
+<span class="px-2 py-0.5 rounded-full border border-tertiary text-tertiary font-label-lg text-label-lg uppercase tracking-wider">Hydroponic</span>
+<span class="font-body-md text-body-md text-on-surface-variant">08:30 AM</span>
+</div>
+<h3 class="font-title-lg text-title-lg text-on-surface font-semibold">Sowing Watermelon</h3>
+</div>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-md leading-relaxed">
+                        Transferred germinated Crimson Sweet seedlings to the deep water culture system. Nutrient solution pH stabilized at 6.0, EC at 1.2. Root development looks vigorous.
+                    </p>
+<div class="flex gap-sm overflow-x-auto hide-scrollbar pb-xs">
+<img class="w-24 h-24 object-cover rounded-lg border border-surface-container-high shrink-0" data-alt="A close-up macro photograph of delicate watermelon seedlings emerging from a dark, rich hydroponic growth medium in a high-tech greenhouse setting. The scene is illuminated by striking, artificial purple-pink LED grow lights that cast deep shadows, emphasizing the vibrant green vitality of the young leaves against the stark, utilitarian black background. The mood is scientific and meticulously controlled." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5uVYQ9VUHEoCScbngIvwVkIhBW1rSrsd3CtPeDP767GUO4SmvWv2MDBVSclAL5cAzgPGWALOXINQqKRcr1xDyQywZbDyx0u2zncmDGpR9DIAbDxKLzs1yQlDFIfM2WmzVDFw_nQb6DZNTm47ZfqeqJmfQSeYVfW6-EsPGvSsgSwz4zmiVkAvKTe3oXQO6JKRtglGzi_8nBgTaDZUBlFChVUDA5xKOCkcuYo7VQB9E1EpvrvrklWo5fQ"/>
+<img class="w-24 h-24 object-cover rounded-lg border border-surface-container-high shrink-0" data-alt="A high-tech digital pH and EC meter submerged in a dark reservoir of hydroponic nutrient solution. The LCD screen vividly glows with bright green numbers displaying a pH of 6.0. The surrounding environment is dimly lit, focusing entirely on the precision equipment and the calm, reflective surface of the water. The aesthetic is industrial agriculture meets modern laboratory, with deep blacks and sharp green accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAsx-0ax3tVef9KI7d8GUVuB50MAbKDdqRaLqomnEIwXs1aUm7k9ELCu3RPpjWHl0AVoMkjQ3vNy0d5y2Ta0S5cfI-7U3wal0Gndr_mojQk6sLEaZ8O8nhjta62eVKQTNXKkmLQnOBpGD-23mSydHAaStsOI7u-njcxFKqjcjU9MR-kFSRmDadEI5zfs_tTDQsuUOrGJ-SQK6CbFxhk_9iq5s2fFcrY2RszyZp5fqlXMrV-Pk7Q2N5CjQ"/>
+</div>
+<div class="mt-md flex items-center justify-between border-t border-surface-container-high pt-sm">
+<div class="flex items-center gap-2 bg-surface-container-highest px-3 py-1.5 rounded-full">
+<span class="material-symbols-outlined text-[16px] text-tertiary">mic</span>
+<span class="font-label-lg text-label-lg text-on-surface">Voice Note (0:45)</span>
+</div>
+<div class="flex gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">opacity</span>
+<span class="material-symbols-outlined text-[18px]">thermostat</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Log Entry 2 -->
+<div class="relative pl-12">
+<div class="absolute left-[12px] top-6 w-4 h-4 rounded-full bg-surface-container-highest border-4 border-background z-10"></div>
+<div class="bg-[#1C1C1C] border border-[#2A2A2A] rounded-[28px] p-lg shadow-sm relative overflow-hidden group hover:bg-[#202020] transition-colors">
+<div class="flex justify-between items-start mb-sm">
+<div>
+<div class="flex items-center gap-xs mb-1">
+<span class="px-2 py-0.5 rounded-full border border-tertiary text-tertiary font-label-lg text-label-lg uppercase tracking-wider">Perennial</span>
+<span class="font-body-md text-body-md text-on-surface-variant">Yesterday</span>
+</div>
+<h3 class="font-title-lg text-title-lg text-on-surface font-semibold">Pruning Mango Tree</h3>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-md leading-relaxed">
+                        Conducted structural pruning on the Alphonso sapling. Removed inward-facing branches to improve canopy airflow. Applied neem oil paste to larger cuts to prevent fungal infection.
+                    </p>
+<div class="mt-md flex items-center justify-between border-t border-surface-container-high pt-sm">
+<span class="font-label-lg text-label-lg text-on-surface-variant">Location: Sector B4</span>
+</div>
+</div>
+</div>
+<!-- Log Entry 3 -->
+<div class="relative pl-12 pb-xl">
+<div class="absolute left-[12px] top-6 w-4 h-4 rounded-full bg-surface-container-highest border-4 border-background z-10"></div>
+<div class="bg-[#1C1C1C] border border-[#2A2A2A] rounded-[28px] p-lg shadow-sm relative overflow-hidden opacity-75">
+<div class="flex justify-between items-start mb-sm">
+<div>
+<div class="flex items-center gap-xs mb-1">
+<span class="px-2 py-0.5 rounded-full border border-tertiary text-tertiary font-label-lg text-label-lg uppercase tracking-wider">Maintenance</span>
+<span class="font-body-md text-body-md text-on-surface-variant">Oct 15</span>
+</div>
+<h3 class="font-title-lg text-title-lg text-on-surface font-semibold">System Calibration</h3>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">
+                        Recalibrated moisture sensors across all nursery beds.
+                    </p>
+</div>
+</div>
+</section>
+</main>
+<!-- Floating Action Button -->
+<button class="fixed right-margin-mobile md:right-margin-desktop bottom-[104px] md:bottom-[40px] w-14 h-14 bg-primary text-on-primary rounded-full shadow-[0_8px_24px_rgba(15,85,24,0.4)] flex items-center justify-center hover:scale-105 active:scale-95 transition-transform z-40 fab-enter-active" id="fab-add">
+<span class="material-symbols-outlined text-[28px]">add</span>
+</button>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-gutter py-sm bg-surface-container dark:bg-surface-container rounded-t-lg shadow-none z-50 md:hidden">
+<button class="flex flex-col items-center justify-center bg-secondary-container dark:bg-secondary-container text-on-secondary-container dark:text-on-secondary-container rounded-full px-lg py-xs active:scale-90 transition-transform">
+<span class="material-symbols-outlined" data-icon="calendar_today" style="font-variation-settings: 'FILL' 1;">calendar_today</span>
+<span class="font-label-lg text-label-lg mt-1">Logs</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-lg py-xs hover:bg-surface-variant dark:hover:bg-surface-variant rounded-full active:scale-90 transition-transform">
+<span class="material-symbols-outlined" data-icon="potted_plant">potted_plant</span>
+<span class="font-label-lg text-label-lg mt-1">Assets</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-lg py-xs hover:bg-surface-variant dark:hover:bg-surface-variant rounded-full active:scale-90 transition-transform">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span class="font-label-lg text-label-lg mt-1">Supplies</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-lg py-xs hover:bg-surface-variant dark:hover:bg-surface-variant rounded-full active:scale-90 transition-transform">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-label-lg text-label-lg mt-1">Profile</span>
+</button>
+</nav>
+<!-- Desktop SideNav (Hidden on Mobile) -->
+<nav class="hidden md:flex flex-col fixed left-0 top-0 h-full w-[88px] bg-surface-container items-center py-[88px] gap-8 z-40 border-r border-surface-container-high">
+<button class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-full p-3 w-16 h-16 active:scale-90 transition-transform">
+<span class="material-symbols-outlined" data-icon="calendar_today" style="font-variation-settings: 'FILL' 1;">calendar_today</span>
+<span class="font-label-lg text-label-lg mt-1 text-[10px]">Logs</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-variant rounded-full p-3 w-16 h-16 active:scale-90 transition-transform">
+<span class="material-symbols-outlined" data-icon="potted_plant">potted_plant</span>
+<span class="font-label-lg text-label-lg mt-1 text-[10px]">Assets</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-variant rounded-full p-3 w-16 h-16 active:scale-90 transition-transform">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span class="font-label-lg text-label-lg mt-1 text-[10px]">Supplies</span>
+</button>
+<div class="flex-grow"></div>
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-variant rounded-full p-3 w-16 h-16 active:scale-90 transition-transform mb-4">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-label-lg text-label-lg mt-1 text-[10px]">Profile</span>
+</button>
+</nav>
+<!-- Modal Bottom Sheet (Hidden by default) -->
+<div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] hidden scrim-enter" id="bottom-sheet-scrim"></div>
+<div class="fixed bottom-0 left-0 w-full bg-[#252525] rounded-t-xl z-[70] p-lg hidden flex-col shadow-[0_-8px_24px_rgba(15,85,24,0.15)] sheet-enter md:max-w-md md:left-1/2 md:-translate-x-1/2 md:rounded-xl md:bottom-auto md:top-1/2 md:-translate-y-1/2 md:h-auto" id="bottom-sheet">
+<div class="w-12 h-1.5 bg-surface-container-high rounded-full mx-auto mb-md md:hidden"></div>
+<div class="flex justify-between items-center mb-lg">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">New Log Entry</h2>
+<button class="text-on-surface-variant hover:text-on-surface" id="close-sheet">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<div class="space-y-md">
+<div>
+<label class="block font-label-lg text-label-lg text-on-surface-variant mb-xs">Title</label>
+<input class="w-full bg-[#1C1C1C] border-b-2 border-surface-container-high focus:border-primary text-on-surface px-4 py-3 rounded-t-lg focus:ring-0 transition-colors font-body-lg" placeholder="e.g. Sowing Seeds" type="text"/>
+</div>
+<div class="grid grid-cols-2 gap-md">
+<button class="flex flex-col items-center justify-center p-md bg-[#1C1C1C] border border-[#2A2A2A] rounded-lg hover:border-tertiary hover:bg-[#202020] transition-colors text-on-surface">
+<span class="material-symbols-outlined text-[32px] text-primary mb-2">add_a_photo</span>
+<span class="font-label-lg text-label-lg">Add Photo</span>
+</button>
+<button class="flex flex-col items-center justify-center p-md bg-[#1C1C1C] border border-[#2A2A2A] rounded-lg hover:border-tertiary hover:bg-[#202020] transition-colors text-on-surface">
+<span class="material-symbols-outlined text-[32px] text-tertiary mb-2">mic</span>
+<span class="font-label-lg text-label-lg">Record Voice</span>
+</button>
+</div>
+<div>
+<label class="block font-label-lg text-label-lg text-on-surface-variant mb-xs">Notes</label>
+<textarea class="w-full bg-[#1C1C1C] border-b-2 border-surface-container-high focus:border-primary text-on-surface px-4 py-3 rounded-t-lg focus:ring-0 transition-colors font-body-md resize-none" placeholder="Observation details..." rows="3"></textarea>
+</div>
+<button class="w-full bg-primary text-on-primary font-title-lg text-title-lg py-3 rounded-full hover:bg-primary-fixed-dim transition-colors mt-lg active:scale-[0.98]">
+                Save Entry
+            </button>
+</div>
+</div>
+<script>
+        const fab = document.getElementById('fab-add');
+        const scrim = document.getElementById('bottom-sheet-scrim');
+        const sheet = document.getElementById('bottom-sheet');
+        const closeBtn = document.getElementById('close-sheet');
+
+        function openSheet() {
+            scrim.classList.remove('hidden');
+            sheet.classList.remove('hidden');
+            
+            // Trigger reflow
+            void scrim.offsetWidth;
+            void sheet.offsetWidth;
+            
+            scrim.classList.add('scrim-enter-active');
+            sheet.classList.add('sheet-enter-active');
+            scrim.classList.remove('scrim-enter');
+            sheet.classList.remove('sheet-enter');
+        }
+
+        function closeSheetAction() {
+            scrim.classList.remove('scrim-enter-active');
+            sheet.classList.remove('sheet-enter-active');
+            scrim.classList.add('scrim-enter');
+            sheet.classList.add('sheet-enter');
+            
+            setTimeout(() => {
+                scrim.classList.add('hidden');
+                sheet.classList.add('hidden');
+            }, 300);
+        }
+
+        fab.addEventListener('click', openSheet);
+        closeBtn.addEventListener('click', closeSheetAction);
+        scrim.addEventListener('click', closeSheetAction);
+    </script>
+</body></html>

@@ -1,0 +1,374 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 8,
+    "identityHash": "9a60f588c05d406b88b4e07d18fdedf5",
+    "entities": [
+      {
+        "tableName": "diy_supplies",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `category` TEXT NOT NULL, `batchNumber` INTEGER NOT NULL, `batchCode` TEXT NOT NULL, `startDate` INTEGER NOT NULL, `targetMaturityDate` INTEGER NOT NULL, `currentVolume` REAL NOT NULL, `originalVolume` REAL NOT NULL, `unit` TEXT NOT NULL, `notifyOnMaturity` INTEGER NOT NULL, `isArchived` INTEGER NOT NULL, `activeIngredient` TEXT, `activePercentage` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "category",
+            "columnName": "category",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "batchNumber",
+            "columnName": "batchNumber",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "batchCode",
+            "columnName": "batchCode",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startDate",
+            "columnName": "startDate",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "targetMaturityDate",
+            "columnName": "targetMaturityDate",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "currentVolume",
+            "columnName": "currentVolume",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "originalVolume",
+            "columnName": "originalVolume",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "unit",
+            "columnName": "unit",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "notifyOnMaturity",
+            "columnName": "notifyOnMaturity",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isArchived",
+            "columnName": "isArchived",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "activeIngredient",
+            "columnName": "activeIngredient",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "activePercentage",
+            "columnName": "activePercentage",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "plant_assets",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `category` TEXT NOT NULL, `plantedDate` INTEGER NOT NULL, `totalLogsCount` INTEGER NOT NULL, `lastActionDate` INTEGER NOT NULL, `tags` TEXT NOT NULL, `locationNote` TEXT NOT NULL, `acquisitionDate` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "category",
+            "columnName": "category",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "plantedDate",
+            "columnName": "plantedDate",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "totalLogsCount",
+            "columnName": "totalLogsCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastActionDate",
+            "columnName": "lastActionDate",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tags",
+            "columnName": "tags",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "locationNote",
+            "columnName": "locationNote",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "acquisitionDate",
+            "columnName": "acquisitionDate",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "journal_logs",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `assetId` INTEGER NOT NULL, `title` TEXT NOT NULL, `note` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `photoPath` TEXT, `audioFilePath` TEXT, `ecValue` REAL, `phValue` REAL, `tags` TEXT NOT NULL, `parameters` TEXT NOT NULL, `imageUris` TEXT NOT NULL, `activityType` TEXT NOT NULL, `parentLogId` INTEGER, `supplyId` INTEGER, `customInputName` TEXT, FOREIGN KEY(`assetId`) REFERENCES `plant_assets`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`parentLogId`) REFERENCES `journal_logs`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL , FOREIGN KEY(`supplyId`) REFERENCES `diy_supplies`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "assetId",
+            "columnName": "assetId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "note",
+            "columnName": "note",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "photoPath",
+            "columnName": "photoPath",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "audioFilePath",
+            "columnName": "audioFilePath",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "ecValue",
+            "columnName": "ecValue",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "phValue",
+            "columnName": "phValue",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "tags",
+            "columnName": "tags",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parameters",
+            "columnName": "parameters",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "imageUris",
+            "columnName": "imageUris",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "activityType",
+            "columnName": "activityType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parentLogId",
+            "columnName": "parentLogId",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "supplyId",
+            "columnName": "supplyId",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "customInputName",
+            "columnName": "customInputName",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_journal_logs_assetId",
+            "unique": false,
+            "columnNames": [
+              "assetId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_journal_logs_assetId` ON `${TABLE_NAME}` (`assetId`)"
+          },
+          {
+            "name": "index_journal_logs_parentLogId",
+            "unique": false,
+            "columnNames": [
+              "parentLogId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_journal_logs_parentLogId` ON `${TABLE_NAME}` (`parentLogId`)"
+          },
+          {
+            "name": "index_journal_logs_supplyId",
+            "unique": false,
+            "columnNames": [
+              "supplyId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_journal_logs_supplyId` ON `${TABLE_NAME}` (`supplyId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "plant_assets",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "assetId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "journal_logs",
+            "onDelete": "SET NULL",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "parentLogId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "diy_supplies",
+            "onDelete": "SET NULL",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "supplyId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "master_locations",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`name` TEXT NOT NULL, PRIMARY KEY(`name`))",
+        "fields": [
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "name"
+          ]
+        }
+      },
+      {
+        "tableName": "master_tags",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`name` TEXT NOT NULL, PRIMARY KEY(`name`))",
+        "fields": [
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "name"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '9a60f588c05d406b88b4e07d18fdedf5')"
+    ]
+  }
+}

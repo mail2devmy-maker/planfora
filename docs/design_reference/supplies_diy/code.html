@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Supplies &amp; DIY Inventory - PlanFora</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-bright": "#393939",
+                        "primary-fixed-dim": "#91d78a",
+                        "surface-container-low": "#1c1b1b",
+                        "outline-variant": "#41493e",
+                        "on-tertiary-fixed-variant": "#24502c",
+                        "inverse-on-surface": "#313030",
+                        "tertiary": "#a2d3a4",
+                        "on-secondary-fixed-variant": "#0c5216",
+                        "tertiary-fixed-dim": "#a2d3a4",
+                        "on-tertiary-fixed": "#002109",
+                        "on-primary-fixed-variant": "#0c5216",
+                        "on-primary-container": "#90d689",
+                        "secondary-container": "#0f5518",
+                        "background": "#131313",
+                        "on-surface-variant": "#c0c9bb",
+                        "on-tertiary": "#0a3817",
+                        "error": "#ffb4ab",
+                        "surface-container-highest": "#353534",
+                        "outline": "#8a9386",
+                        "surface-container-high": "#2a2a2a",
+                        "on-primary-fixed": "#002203",
+                        "on-surface": "#e5e2e1",
+                        "secondary-fixed-dim": "#91d78a",
+                        "on-secondary-fixed": "#002203",
+                        "inverse-primary": "#2a6b2c",
+                        "surface-container": "#201f1f",
+                        "tertiary-fixed": "#bdefbe",
+                        "secondary": "#91d78a",
+                        "surface-variant": "#353534",
+                        "inverse-surface": "#e5e2e1",
+                        "on-error": "#690005",
+                        "on-secondary-container": "#84c97d",
+                        "on-background": "#e5e2e1",
+                        "on-primary": "#003909",
+                        "secondary-fixed": "#acf4a4",
+                        "primary-container": "#1b5e20",
+                        "surface": "#131313",
+                        "surface-dim": "#131313",
+                        "surface-tint": "#91d78a",
+                        "primary-fixed": "#acf4a4",
+                        "tertiary-container": "#2f5b36",
+                        "on-tertiary-container": "#a0d1a2",
+                        "primary": "#91d78a",
+                        "on-error-container": "#ffdad6",
+                        "surface-container-lowest": "#0e0e0e",
+                        "on-secondary": "#003909",
+                        "error-container": "#93000a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "sm": "8px",
+                        "gutter": "16px",
+                        "xl": "32px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "margin-mobile": "16px",
+                        "base": "4px",
+                        "margin-desktop": "48px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "label-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "0.01em", "fontWeight": "400" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-sm": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "title-lg": ["22px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "headline-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "label-lg": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.filled {
+            font-variation-settings: 'FILL' 1;
+        }
+        
+        /* Custom Scrollbar for dark theme */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #131313;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #353534;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #41493e;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body-lg min-h-screen pb-24">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-background dark:bg-background">
+<div class="flex items-center justify-between px-margin-mobile py-sm w-full max-w-7xl mx-auto">
+<button class="text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high transition-colors p-2 rounded-full active:scale-95 duration-100 flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="potted_plant">potted_plant</span>
+</button>
+<h1 class="font-headline-sm text-headline-sm text-primary dark:text-primary tracking-tight">PlanFora</h1>
+<button class="text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high transition-colors p-2 rounded-full active:scale-95 duration-100 flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+</div>
+</header>
+<!-- Main Content -->
+<main class="max-w-7xl mx-auto px-margin-mobile md:px-margin-desktop pt-24 space-y-xl">
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-md">
+<div>
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-xs">Inventory</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Track store-bought supplies and monitor active DIY formulations.</p>
+</div>
+<button class="bg-primary text-on-primary font-label-lg text-label-lg px-lg py-md rounded-full flex items-center gap-sm hover:bg-primary-fixed-dim transition-colors active:scale-95 duration-100" onclick="document.getElementById('new-formulation-modal').classList.remove('hidden')">
+<span class="material-symbols-outlined filled text-[18px]">add</span>
+                New Formulation
+            </button>
+</div>
+<!-- Section 1: Store Inventory (Bento Grid) -->
+<section>
+<h3 class="font-title-lg text-title-lg text-on-surface mb-lg">Store Supplies</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-md">
+<!-- Inventory Card 1 -->
+<div class="bg-surface-container-high border border-surface-variant rounded-[28px] p-lg flex flex-col gap-md relative overflow-hidden group">
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl -mr-10 -mt-10 transition-transform group-hover:scale-110 duration-500"></div>
+<div class="flex justify-between items-start z-10">
+<div class="w-16 h-16 rounded-xl overflow-hidden bg-surface-container border border-outline-variant flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A macro photograph of white granular Urea fertilizer sitting in a small, matte black ceramic dish. The lighting is dramatic and precise, highlighting the texture of the spherical granules. The background is a dark, moody greenhouse setting with subtle hints of green foliage out of focus. A Verdant Tech aesthetic with high contrast between the bright white granules and deep shadows." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBPkH49wbwk8PGZtX7U3ecBVsVDEhYAZ82ypcIlphq8Da2_-t4v7I9VXsb_i4HHI5kLbQO89eyp0ArYAxfz95H47YwmEU4gF89UgKzHQFnnN0XKanuVWuO2p703d28ppMqJIgQ8NghgKFVTvPyCIPaQBSDxOyrHPx99w3Q1C-03CWteTawiJQr_nqgFkz-GOu9iPQ0yMqtKf7DXzqekq3Ce-feemVS0ruV-_F1Op27WA48kjhINF0o0xw"/>
+</div>
+<div class="bg-surface-container-highest px-sm py-xs rounded-full border border-outline-variant flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px] text-tertiary">attach_money</span>
+<span class="font-label-lg text-label-lg text-on-surface-variant">24.50</span>
+</div>
+</div>
+<div class="z-10 mt-sm">
+<h4 class="font-headline-sm text-headline-sm text-on-surface mb-xs">Urea 46-0-0</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Nitrogen source for vegetative growth phase.</p>
+</div>
+<div class="mt-auto z-10 pt-md">
+<div class="flex justify-between font-label-lg text-label-lg mb-sm">
+<span class="text-on-surface">Quantity</span>
+<span class="text-primary">850g / 1kg</span>
+</div>
+<div class="w-full h-2 bg-surface-container-lowest rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-primary-container to-primary rounded-full" style="width: 85%;"></div>
+</div>
+</div>
+</div>
+<!-- Inventory Card 2 -->
+<div class="bg-surface-container-high border border-surface-variant rounded-[28px] p-lg flex flex-col gap-md relative overflow-hidden group">
+<div class="absolute top-0 right-0 w-32 h-32 bg-tertiary/5 rounded-full blur-2xl -mr-10 -mt-10 transition-transform group-hover:scale-110 duration-500"></div>
+<div class="flex justify-between items-start z-10">
+<div class="w-16 h-16 rounded-xl overflow-hidden bg-surface-container border border-outline-variant flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A close-up shot of NPK 15-15-15 balanced fertilizer pellets resting on a dark slate surface. The pellets have a subtle earthy tone, illuminated by a cool, technical top-light that emphasizes their porous structure. The surrounding environment is pitch black, echoing a dark mode laboratory interface. Green neon edge lighting accents the right side." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAM62GzyKFmlZWV4_kXTevH5HhggL-t3IdxdgaV03z0-84p4ijaTh0In75pN64WT4yDgxe5zunKovuvTySBTtX3E3xO9XdtNr2Ed9mbLraYBtShSP1d7rAwx49Xwz80C6cmcXwHwK0QhCQcwdQI5PUh86Q68qgWe2h54-cWT9PxEQZ7JrfQesKEDcC901VKPw4-wlIdUqW0HhxF3ExLQmOyln_IPD_33vpBSjcHiVhJ1csG9Zv7J_BlCg"/>
+</div>
+<div class="bg-surface-container-highest px-sm py-xs rounded-full border border-outline-variant flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px] text-tertiary">attach_money</span>
+<span class="font-label-lg text-label-lg text-on-surface-variant">32.00</span>
+</div>
+</div>
+<div class="z-10 mt-sm">
+<h4 class="font-headline-sm text-headline-sm text-on-surface mb-xs">NPK 15-15-15</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Balanced granular fertilizer for general maintenance.</p>
+</div>
+<div class="mt-auto z-10 pt-md">
+<div class="flex justify-between font-label-lg text-label-lg mb-sm">
+<span class="text-on-surface">Quantity</span>
+<span class="text-error">200g / 5kg</span>
+</div>
+<div class="w-full h-2 bg-surface-container-lowest rounded-full overflow-hidden">
+<div class="h-full bg-error rounded-full" style="width: 4%;"></div>
+</div>
+<p class="font-label-lg text-[10px] text-error mt-xs">Low stock warning</p>
+</div>
+</div>
+<!-- Inventory Card 3 -->
+<div class="bg-surface-container-high border border-surface-variant rounded-[28px] p-lg flex flex-col gap-md relative overflow-hidden group">
+<div class="absolute top-0 right-0 w-32 h-32 bg-secondary/5 rounded-full blur-2xl -mr-10 -mt-10 transition-transform group-hover:scale-110 duration-500"></div>
+<div class="flex justify-between items-start z-10">
+<div class="w-16 h-16 rounded-xl overflow-hidden bg-surface-container border border-outline-variant flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A stylized macro photo of a dark brown liquid, Kelp Extract, in a clear glass dropper bottle. The bottle sits on a brushed steel laboratory table. The lighting is moody and cinematic, casting a long shadow, with a faint green light passing through the amber liquid. The aesthetic represents precision agriculture in a dark, high-tech setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC9LORr9ATlYIogmfQbL4spdX7k7Lw-svFsAvqlTORlSIxMj3UxRhrXBWPuAlvDv9kSA9dfit3FtNO4OVE_E24PJm_y02pYY9ZzpGFjZIUtx9HNQXJdBsclwhGbu1UoXoQ0XJC3xpNKIKVOPKyEXdsK4XSqmBz2gI0sDTmnKM6zCrqUSpB6-lMD0hPqciUUzIj4pQHu5kh1QzSPVxA4qoObFTGiwckFgK2ot97OCC-4mb0hiV2SYVAa3Q"/>
+</div>
+<div class="bg-surface-container-highest px-sm py-xs rounded-full border border-outline-variant flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px] text-tertiary">attach_money</span>
+<span class="font-label-lg text-label-lg text-on-surface-variant">18.75</span>
+</div>
+</div>
+<div class="z-10 mt-sm">
+<h4 class="font-headline-sm text-headline-sm text-on-surface mb-xs">Liquid Kelp</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Micronutrient supplement for foliar spraying.</p>
+</div>
+<div class="mt-auto z-10 pt-md">
+<div class="flex justify-between font-label-lg text-label-lg mb-sm">
+<span class="text-on-surface">Quantity</span>
+<span class="text-primary">450ml / 500ml</span>
+</div>
+<div class="w-full h-2 bg-surface-container-lowest rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-secondary-container to-secondary rounded-full" style="width: 90%;"></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 2: DIY Formulations (Glassmorphism/List) -->
+<section>
+<div class="flex items-center gap-sm mb-lg">
+<span class="material-symbols-outlined text-tertiary">science</span>
+<h3 class="font-title-lg text-title-lg text-on-surface">Active Formulations</h3>
+</div>
+<div class="flex flex-col gap-sm">
+<!-- Formulation Item 1 -->
+<div class="bg-surface-container/80 backdrop-blur-md border border-surface-variant rounded-2xl p-md flex flex-col md:flex-row gap-md items-start md:items-center hover:bg-surface-container-high transition-colors">
+<div class="w-12 h-12 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-primary">water_drop</span>
+</div>
+<div class="flex-grow">
+<div class="flex items-center gap-sm mb-xs">
+<h4 class="font-title-lg text-title-lg text-on-surface text-[18px]">Aerated Compost Tea</h4>
+<span class="border border-tertiary text-tertiary font-label-lg text-[10px] px-2 py-0.5 rounded-full">Brewing</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm">Worm castings, molasses, humic acid.</p>
+</div>
+<div class="flex flex-row md:flex-col gap-md md:gap-xs w-full md:w-auto mt-sm md:mt-0 pt-sm md:pt-0 border-t md:border-t-0 border-surface-variant">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px] text-outline">calendar_today</span>
+<span class="font-label-lg text-label-lg text-on-surface-variant">Started: Oct 12</span>
+</div>
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px] text-outline">scale</span>
+<span class="font-label-lg text-label-lg text-on-surface-variant">Volume: 5 Gal</span>
+</div>
+</div>
+</div>
+<!-- Formulation Item 2 -->
+<div class="bg-surface-container/80 backdrop-blur-md border border-surface-variant rounded-2xl p-md flex flex-col md:flex-row gap-md items-start md:items-center hover:bg-surface-container-high transition-colors">
+<div class="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-secondary">eco</span>
+</div>
+<div class="flex-grow">
+<div class="flex items-center gap-sm mb-xs">
+<h4 class="font-title-lg text-title-lg text-on-surface text-[18px]">Fermented Plant Juice (FPJ)</h4>
+<span class="border border-outline text-outline font-label-lg text-[10px] px-2 py-0.5 rounded-full">Maturing</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm">Mugwort, brown sugar (1:1 ratio).</p>
+</div>
+<div class="flex flex-row md:flex-col gap-md md:gap-xs w-full md:w-auto mt-sm md:mt-0 pt-sm md:pt-0 border-t md:border-t-0 border-surface-variant">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px] text-outline">calendar_today</span>
+<span class="font-label-lg text-label-lg text-on-surface-variant">Started: Sep 28</span>
+</div>
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px] text-outline">scale</span>
+<span class="font-label-lg text-label-lg text-on-surface-variant">Weight: 2 kg</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-lg bg-surface-container dark:bg-surface-container md:hidden">
+<div class="fixed bottom-0 left-0 w-full flex justify-around items-center px-gutter py-sm bg-surface-container dark:bg-surface-container">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-lg py-xs hover:bg-surface-variant dark:hover:bg-surface-variant rounded-full active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="calendar_today">calendar_today</span>
+<span class="font-label-lg text-label-lg mt-1">Logs</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-lg py-xs hover:bg-surface-variant dark:hover:bg-surface-variant rounded-full active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="potted_plant">potted_plant</span>
+<span class="font-label-lg text-label-lg mt-1">Assets</span>
+</a>
+<!-- Active State -->
+<a class="flex flex-col items-center justify-center bg-secondary-container dark:bg-secondary-container text-on-secondary-container dark:text-on-secondary-container rounded-full px-lg py-xs active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined filled" data-icon="inventory_2">inventory_2</span>
+<span class="font-label-lg text-label-lg mt-1">Supplies</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-lg py-xs hover:bg-surface-variant dark:hover:bg-surface-variant rounded-full active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-label-lg text-label-lg mt-1">Profile</span>
+</a>
+</div>
+</nav>
+<!-- Modal: New Formulation (Hidden by default) -->
+<div class="fixed inset-0 z-[100] hidden" id="new-formulation-modal">
+<!-- Backdrop -->
+<div class="absolute inset-0 bg-background/80 backdrop-blur-sm" onclick="this.parentElement.classList.add('hidden')"></div>
+<!-- Modal Content (Level 2 Elevation) -->
+<div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-[#252525] rounded-[28px] border border-surface-variant p-xl shadow-[0px_8px_24px_rgba(145,215,138,0.15)] flex flex-col gap-md">
+<div class="flex justify-between items-center mb-sm">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">New DIY Formulation</h3>
+<button class="text-on-surface-variant hover:text-on-surface" onclick="document.getElementById('new-formulation-modal').classList.add('hidden')">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<div class="space-y-md">
+<div>
+<label class="block font-label-lg text-label-lg text-on-surface-variant mb-xs">Formulation Name</label>
+<input class="w-full bg-surface-container border-b-2 border-surface-variant focus:border-primary text-on-surface font-body-lg px-sm py-sm rounded-t-lg outline-none transition-colors" placeholder="e.g., Water Soluble Calcium" type="text"/>
+</div>
+<div class="grid grid-cols-2 gap-md">
+<div>
+<label class="block font-label-lg text-label-lg text-on-surface-variant mb-xs">Start Date</label>
+<input class="w-full bg-surface-container border-b-2 border-surface-variant focus:border-primary text-on-surface font-body-lg px-sm py-sm rounded-t-lg outline-none transition-colors [color-scheme:dark]" type="date"/>
+</div>
+<div>
+<label class="block font-label-lg text-label-lg text-on-surface-variant mb-xs">Volume/Weight</label>
+<input class="w-full bg-surface-container border-b-2 border-surface-variant focus:border-primary text-on-surface font-body-lg px-sm py-sm rounded-t-lg outline-none transition-colors" placeholder="e.g., 2 L" type="text"/>
+</div>
+</div>
+<div>
+<label class="block font-label-lg text-label-lg text-on-surface-variant mb-xs">Ingredients (Comma separated)</label>
+<textarea class="w-full bg-surface-container border-b-2 border-surface-variant focus:border-primary text-on-surface font-body-lg px-sm py-sm rounded-t-lg outline-none transition-colors resize-none" placeholder="Eggshells, Vinegar" rows="2"></textarea>
+</div>
+</div>
+<div class="flex justify-end gap-sm mt-lg">
+<button class="px-lg py-sm font-label-lg text-label-lg text-primary hover:bg-surface-variant rounded-full transition-colors" onclick="document.getElementById('new-formulation-modal').classList.add('hidden')">Cancel</button>
+<button class="px-lg py-sm font-label-lg text-label-lg bg-primary text-on-primary rounded-full hover:bg-primary-fixed-dim transition-colors" onclick="document.getElementById('new-formulation-modal').classList.add('hidden')">Save Formulation</button>
+</div>
+</div>
+</div>
+</body></html>

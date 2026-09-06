@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Asset Manager - PlanFora</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-bright": "#393939",
+                    "primary-fixed-dim": "#91d78a",
+                    "surface-container-low": "#1c1b1b",
+                    "outline-variant": "#41493e",
+                    "on-tertiary-fixed-variant": "#24502c",
+                    "inverse-on-surface": "#313030",
+                    "tertiary": "#a2d3a4",
+                    "on-secondary-fixed-variant": "#0c5216",
+                    "tertiary-fixed-dim": "#a2d3a4",
+                    "on-tertiary-fixed": "#002109",
+                    "on-primary-fixed-variant": "#0c5216",
+                    "on-primary-container": "#90d689",
+                    "secondary-container": "#0f5518",
+                    "background": "#131313",
+                    "on-surface-variant": "#c0c9bb",
+                    "on-tertiary": "#0a3817",
+                    "error": "#ffb4ab",
+                    "surface-container-highest": "#353534",
+                    "outline": "#8a9386",
+                    "surface-container-high": "#2a2a2a",
+                    "on-primary-fixed": "#002203",
+                    "on-surface": "#e5e2e1",
+                    "secondary-fixed-dim": "#91d78a",
+                    "on-secondary-fixed": "#002203",
+                    "inverse-primary": "#2a6b2c",
+                    "surface-container": "#201f1f",
+                    "tertiary-fixed": "#bdefbe",
+                    "secondary": "#91d78a",
+                    "surface-variant": "#353534",
+                    "inverse-surface": "#e5e2e1",
+                    "on-error": "#690005",
+                    "on-secondary-container": "#84c97d",
+                    "on-background": "#e5e2e1",
+                    "on-primary": "#003909",
+                    "secondary-fixed": "#acf4a4",
+                    "primary-container": "#1b5e20",
+                    "surface": "#131313",
+                    "surface-dim": "#131313",
+                    "surface-tint": "#91d78a",
+                    "primary-fixed": "#acf4a4",
+                    "tertiary-container": "#2f5b36",
+                    "on-tertiary-container": "#a0d1a2",
+                    "primary": "#91d78a",
+                    "on-error-container": "#ffdad6",
+                    "surface-container-lowest": "#0e0e0e",
+                    "on-secondary": "#003909",
+                    "error-container": "#93000a"
+            },
+            "borderRadius": {
+                    "DEFAULT": "1rem",
+                    "lg": "2rem",
+                    "xl": "3rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xs": "4px",
+                    "sm": "8px",
+                    "gutter": "16px",
+                    "xl": "32px",
+                    "md": "16px",
+                    "lg": "24px",
+                    "margin-mobile": "16px",
+                    "base": "4px",
+                    "margin-desktop": "48px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "headline-sm": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "label-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-md": ["28px", {"lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "letterSpacing": "0.01em", "fontWeight": "400"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "headline-sm": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "title-lg": ["22px", {"lineHeight": "28px", "fontWeight": "500"}],
+                    "headline-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        body {
+            background-color: #131313;
+            color: #e5e2e1;
+            /* 4px soft grid */
+            background-image: linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 4px 4px;
+        }
+        
+        /* Custom Scrollbar for dark theme */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #131313;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #353534;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #41493e;
+        }
+
+        .chip-active {
+            background-color: theme('colors.secondary-container');
+            color: theme('colors.on-secondary-container');
+            border-color: transparent;
+        }
+        
+        .chip-inactive {
+            background-color: transparent;
+            color: theme('colors.secondary');
+            border-color: theme('colors.secondary');
+        }
+
+        .asset-card {
+            background-color: theme('colors.surface-container-low');
+            border: 1px solid theme('colors.surface-container-high');
+            border-radius: theme('borderRadius.lg'); /* 28px approx with 2rem */
+        }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col pb-24 md:pb-0 pt-16">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-background dark:bg-background">
+<div class="flex items-center justify-between px-margin-mobile md:px-margin-desktop py-sm w-full max-w-7xl mx-auto h-16">
+<button class="text-primary dark:text-primary hover:bg-surface-container-high transition-colors active:scale-95 duration-100 p-2 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="potted_plant">potted_plant</span>
+</button>
+<h1 class="font-headline-sm text-headline-sm text-primary dark:text-primary tracking-tight font-bold">PlanFora</h1>
+<button class="text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high transition-colors active:scale-95 duration-100 p-2 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="flex-grow w-full max-w-[1200px] mx-auto px-margin-mobile md:px-lg mt-sm md:mt-md">
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row md:items-end justify-between mb-lg gap-4">
+<div>
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-xs">Asset Manager</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Track, monitor, and manage your botanical assets.</p>
+</div>
+<button class="bg-primary-container text-on-primary-container font-label-lg text-label-lg px-6 py-3 rounded-full flex items-center justify-center gap-2 hover:bg-tertiary-container transition-colors active:scale-95">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                New Asset
+            </button>
+</div>
+<!-- Filter Chips (Horizontal Scroll) -->
+<div class="flex overflow-x-auto gap-3 pb-4 mb-md hide-scrollbar border-b border-surface-container-highest">
+<button class="chip-active border px-4 py-2 rounded-full font-label-lg text-label-lg whitespace-nowrap transition-colors">
+                All Assets
+            </button>
+<button class="chip-inactive border px-4 py-2 rounded-full font-label-lg text-label-lg whitespace-nowrap transition-colors hover:bg-surface-container-high">
+                Plants
+            </button>
+<button class="chip-inactive border px-4 py-2 rounded-full font-label-lg text-label-lg whitespace-nowrap transition-colors hover:bg-surface-container-high">
+                Trees
+            </button>
+<button class="chip-inactive border px-4 py-2 rounded-full font-label-lg text-label-lg whitespace-nowrap transition-colors hover:bg-surface-container-high">
+                Seed Trays
+            </button>
+</div>
+<!-- Bento Grid / Assets List -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-md">
+<!-- Asset Card 1 -->
+<div class="asset-card p-6 flex flex-col gap-4 relative overflow-hidden group hover:bg-surface-container transition-colors cursor-pointer">
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary opacity-5 rounded-bl-full transform translate-x-8 -translate-y-8 group-hover:scale-110 transition-transform duration-500"></div>
+<div class="flex justify-between items-start z-10">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center border border-surface-container-highest">
+<span class="material-symbols-outlined text-primary">park</span>
+</div>
+<div>
+<h3 class="font-title-lg text-title-lg text-on-surface">Mango Tree #1</h3>
+<span class="font-label-lg text-label-lg text-primary border border-primary px-2 py-0.5 rounded-full inline-block mt-1">Trees</span>
+</div>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<div class="grid grid-cols-2 gap-4 mt-2 z-10">
+<div class="bg-surface p-3 rounded-xl border border-surface-container">
+<span class="font-body-md text-body-md text-on-surface-variant block mb-1">Total Logs</span>
+<div class="flex items-end gap-2">
+<span class="font-headline-sm text-headline-sm text-on-surface">24</span>
+<span class="material-symbols-outlined text-primary text-[16px] mb-1">trending_up</span>
+</div>
+</div>
+<div class="bg-surface p-3 rounded-xl border border-surface-container">
+<span class="font-body-md text-body-md text-on-surface-variant block mb-1">Last Action</span>
+<span class="font-body-lg text-body-lg text-on-surface">2d ago</span>
+</div>
+</div>
+<div class="mt-2 z-10 flex items-center justify-between bg-surface-container p-3 rounded-xl">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-secondary"></div>
+<span class="font-body-md text-body-md text-on-surface">Optimal Health</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">water_drop</span>
+</div>
+</div>
+<!-- Asset Card 2 -->
+<div class="asset-card p-6 flex flex-col gap-4 relative overflow-hidden group hover:bg-surface-container transition-colors cursor-pointer">
+<div class="absolute top-0 right-0 w-32 h-32 bg-secondary opacity-5 rounded-bl-full transform translate-x-8 -translate-y-8 group-hover:scale-110 transition-transform duration-500"></div>
+<div class="flex justify-between items-start z-10">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center border border-surface-container-highest">
+<span class="material-symbols-outlined text-secondary">local_florist</span>
+</div>
+<div>
+<h3 class="font-title-lg text-title-lg text-on-surface">Watermelon Batch A</h3>
+<span class="font-label-lg text-label-lg text-secondary border border-secondary px-2 py-0.5 rounded-full inline-block mt-1">Plants</span>
+</div>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<div class="grid grid-cols-2 gap-4 mt-2 z-10">
+<div class="bg-surface p-3 rounded-xl border border-surface-container">
+<span class="font-body-md text-body-md text-on-surface-variant block mb-1">Total Logs</span>
+<div class="flex items-end gap-2">
+<span class="font-headline-sm text-headline-sm text-on-surface">12</span>
+</div>
+</div>
+<div class="bg-surface p-3 rounded-xl border border-surface-container">
+<span class="font-body-md text-body-md text-on-surface-variant block mb-1">Last Action</span>
+<span class="font-body-lg text-body-lg text-on-surface">Today</span>
+</div>
+</div>
+<div class="mt-2 z-10 flex flex-col gap-2 bg-surface-container p-3 rounded-xl">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-tertiary"></div>
+<span class="font-body-md text-body-md text-on-surface">Growth Phase</span>
+</div>
+<span class="font-label-lg text-label-lg text-tertiary">60%</span>
+</div>
+<!-- Growth Progress Bar -->
+<div class="w-full h-2 bg-background rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-primary to-secondary rounded-full" style="width: 60%;"></div>
+</div>
+</div>
+</div>
+<!-- Asset Card 3 (Needs Attention) -->
+<div class="asset-card p-6 flex flex-col gap-4 relative overflow-hidden group hover:bg-surface-container transition-colors cursor-pointer border-error/30">
+<div class="absolute top-0 right-0 w-32 h-32 bg-error opacity-5 rounded-bl-full transform translate-x-8 -translate-y-8 group-hover:scale-110 transition-transform duration-500"></div>
+<div class="flex justify-between items-start z-10">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center border border-error/20">
+<span class="material-symbols-outlined text-error">grass</span>
+</div>
+<div>
+<h3 class="font-title-lg text-title-lg text-on-surface">Seed Tray #04</h3>
+<span class="font-label-lg text-label-lg text-error border border-error/50 px-2 py-0.5 rounded-full inline-block mt-1">Seed Trays</span>
+</div>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<div class="grid grid-cols-2 gap-4 mt-2 z-10">
+<div class="bg-surface p-3 rounded-xl border border-surface-container">
+<span class="font-body-md text-body-md text-on-surface-variant block mb-1">Total Logs</span>
+<div class="flex items-end gap-2">
+<span class="font-headline-sm text-headline-sm text-on-surface">3</span>
+</div>
+</div>
+<div class="bg-surface p-3 rounded-xl border border-surface-container">
+<span class="font-body-md text-body-md text-on-surface-variant block mb-1">Last Action</span>
+<span class="font-body-lg text-body-lg text-error">5d ago</span>
+</div>
+</div>
+<div class="mt-2 z-10 flex items-center justify-between bg-error-container/10 p-3 rounded-xl border border-error/20">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-error text-[18px]">warning</span>
+<span class="font-body-md text-body-md text-error">Water needed</span>
+</div>
+<button class="text-error hover:bg-error/10 p-1 rounded-full">
+<span class="material-symbols-outlined text-[20px]">add_task</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 rounded-t-lg bg-surface-container dark:bg-surface-container border-none shadow-none">
+<div class="fixed bottom-0 left-0 w-full flex justify-around items-center px-gutter py-sm">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-lg py-xs hover:bg-surface-variant dark:hover:bg-surface-variant rounded-full active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="calendar_today">calendar_today</span>
+<span class="font-label-lg text-label-lg">Logs</span>
+</a>
+<!-- Active State: Assets -->
+<a class="flex flex-col items-center justify-center bg-secondary-container dark:bg-secondary-container text-on-secondary-container dark:text-on-secondary-container rounded-full px-lg py-xs active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="potted_plant" style="font-variation-settings: 'FILL' 1;">potted_plant</span>
+<span class="font-label-lg text-label-lg">Assets</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-lg py-xs hover:bg-surface-variant dark:hover:bg-surface-variant rounded-full active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="inventory_2">inventory_2</span>
+<span class="font-label-lg text-label-lg">Supplies</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-lg py-xs hover:bg-surface-variant dark:hover:bg-surface-variant rounded-full active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="settings">settings</span>
+<span class="font-label-lg text-label-lg">Profile</span>
+</a>
+</div>
+</nav>
+<!-- SideNav (Desktop Alternative to BottomNav - simplified for layout context) -->
+<div class="hidden md:flex fixed left-0 top-16 bottom-0 w-24 bg-surface-container flex-col items-center py-lg gap-6 border-r border-surface-container-highest z-40">
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-3 hover:bg-surface-variant rounded-xl transition-colors w-16 h-16" href="#">
+<span class="material-symbols-outlined mb-1">calendar_today</span>
+<span class="font-label-lg text-label-lg text-[10px]">Logs</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-xl p-3 w-16 h-16 shadow-lg shadow-black/20" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">potted_plant</span>
+<span class="font-label-lg text-label-lg text-[10px]">Assets</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-3 hover:bg-surface-variant rounded-xl transition-colors w-16 h-16" href="#">
+<span class="material-symbols-outlined mb-1">inventory_2</span>
+<span class="font-label-lg text-label-lg text-[10px]">Supplies</span>
+</a>
+<div class="mt-auto">
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-3 hover:bg-surface-variant rounded-xl transition-colors w-16 h-16" href="#">
+<span class="material-symbols-outlined mb-1">settings</span>
+<span class="font-label-lg text-label-lg text-[10px]">Profile</span>
+</a>
+</div>
+</div>
+<!-- Desktop padding adjustment for sidenav -->
+<style>
+        @media (min-width: 768px) {
+            main {
+                padding-left: calc(6rem + 24px); /* 24px side nav + margin */
+            }
+        }
+    </style>
+</body></html>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <files-path name="internal_pictures" path="Pictures/" />
+    <external-path name="my_images" path="Android/data/com.mail2dev.planfora/files/Pictures" />
+    <cache-path name="my_cache" path="." />
+</paths>
