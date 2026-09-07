@@ -217,6 +217,12 @@ Global list of custom tags for assets and logs.
     - Replaced raw key-value parameter inputs in `NewLogEntryScreen.kt` with a quick-add chip bar and ledger rows.
     - Refactored `AddAssetScreen.kt` and `AddSupplyScreen.kt` to use the same chip-based palette and compact ledger cards for custom metadata.
     - Unified the UI/UX for all dynamic parameter entry project-wide.
+- **[2026-09-04] Slate & Forest Emerald Design System**:
+    - Overhauled the global palette to a professional high-density "Slate & Forest Green" look.
+    - Implemented a deep obsidian background (`#0B121C`) with cool slate-charcoal cards (`#131E2B`) and subtle structural borders (`#1E2D3D`).
+    - Standardized crisp off-white (`#F1F5F9`) for primary text and headers with cool gray (`#94A3B8`) for secondary metadata.
+    - Refined vertical spacing to 6dp-8dp and card padding to 10dp for a high-density "laboratory notebook" feel.
+    - Restricted primary forest emerald (`#10B981`) accent strictly to interactive states and primary CTAs.
 - **[2026-09-04] Fix Default Asset Date Initialization and Tag Parsing**:
     - Resolved issue where propagation and harvest dates were auto-generated on new assets.
     - Updated `AddAssetViewModel` to default date state variables to `null`.
