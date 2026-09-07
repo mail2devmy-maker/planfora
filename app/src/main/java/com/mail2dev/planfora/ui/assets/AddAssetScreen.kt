@@ -39,8 +39,7 @@ import com.mail2dev.planfora.ui.components.MediaAttachmentStrip
 import com.mail2dev.planfora.ui.components.PlanForaFieldGroup
 import com.mail2dev.planfora.ui.components.PlanForaSurfaceCard
 import com.mail2dev.planfora.ui.components.TagPickerSheet
-import com.mail2dev.planfora.ui.theme.DarkBackground
-import com.mail2dev.planfora.ui.theme.ForestGreen
+import com.mail2dev.planfora.ui.theme.ForestEmerald
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -71,16 +70,16 @@ fun AddAssetScreen(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = DarkBackground,
-        tonalElevation = 8.dp
+        containerColor = MaterialTheme.colorScheme.background,
+        tonalElevation = 0.dp
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(12.dp)
                 .verticalScroll(rememberScrollState())
                 .imePadding(),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -178,8 +177,8 @@ fun AddAssetScreen(
                     viewModel.saveAsset()
                     onDismiss()
                 },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = ForestGreen),
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 enabled = name.isNotBlank(),
                 shape = MaterialTheme.shapes.medium
             ) {
@@ -329,8 +328,8 @@ fun CategorySelector(selected: AssetCategory, onSelect: (AssetCategory) -> Unit)
                     onClick = { onSelect(cat) },
                     label = { Text("${cat.icon} ${cat.displayName}") },
                     colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = ForestGreen,
-                        selectedLabelColor = Color.White,
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
                         containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
                         labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     ),
@@ -392,8 +391,8 @@ fun OptionalFieldPalette(
                     onClick = { onToggleField(field) },
                     label = { Text("+ ${field.displayName}", fontSize = 11.sp) },
                     colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = ForestGreen,
-                        selectedLabelColor = Color.White,
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
                         containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
                         labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     ),
@@ -565,12 +564,12 @@ fun RowScope.SimpleTextFieldCompact(value: String, onValueChange: (String) -> Un
         keyboardOptions = if (isNumber) androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) else androidx.compose.foundation.text.KeyboardOptions.Default,
         textStyle = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
         colors = OutlinedTextFieldDefaults.colors(
-            focusedTextColor = Color.White,
-            unfocusedTextColor = Color.White,
-            focusedBorderColor = ForestGreen,
-            unfocusedBorderColor = Color.Transparent,
-            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f),
-            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f)
+            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+            focusedBorderColor = MaterialTheme.colorScheme.primary,
+            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+            focusedContainerColor = MaterialTheme.colorScheme.surface,
+            unfocusedContainerColor = MaterialTheme.colorScheme.surface
         )
     )
 }
@@ -639,8 +638,8 @@ fun CustomFieldCreatorDialog(onDismiss: () -> Unit, onFieldCreated: (String, Str
                             onClick = { type = t },
                             label = { Text(t) },
                             colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = ForestGreen,
-                            selectedLabelColor = Color.White,
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
                             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
                             labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         ),
@@ -662,7 +661,7 @@ fun CustomFieldCreatorDialog(onDismiss: () -> Unit, onFieldCreated: (String, Str
             Button(
                 onClick = { onFieldCreated(name, type, options.ifBlank { null }, isGlobal) },
                 enabled = name.isNotBlank(),
-                colors = ButtonDefaults.buttonColors(containerColor = ForestGreen),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 shape = MaterialTheme.shapes.medium
             ) {
                 Text("Create", color = Color.White)
@@ -726,12 +725,12 @@ fun DatePickerField(label: String, value: Long?, onDateSelected: (Long?) -> Unit
 
 @Composable
 fun textFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedTextColor = Color.White,
-    unfocusedTextColor = Color.White,
-    focusedBorderColor = ForestGreen,
-    unfocusedBorderColor = Color.Gray.copy(alpha = 0.2f),
-    focusedLabelColor = ForestGreen,
-    unfocusedLabelColor = Color.Gray,
-    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f),
-    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f)
+    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+    focusedBorderColor = MaterialTheme.colorScheme.primary,
+    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+    focusedLabelColor = MaterialTheme.colorScheme.primary,
+    unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+    focusedContainerColor = MaterialTheme.colorScheme.surface,
+    unfocusedContainerColor = MaterialTheme.colorScheme.surface
 )

@@ -22,8 +22,8 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.mail2dev.planfora.ui.theme.ForestGreen
 import com.mail2dev.planfora.ui.theme.DarkBackground
+import com.mail2dev.planfora.ui.theme.ForestEmerald
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
@@ -46,7 +46,7 @@ fun ParameterInputSection(
     var renameValue by remember { mutableStateOf("") }
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text("Quick-Add Metrics", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.SemiBold)
+        Text("Quick-Add Metrics".uppercase(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
         
         Row(
             modifier = Modifier
@@ -64,15 +64,15 @@ fun ParameterInputSection(
                     },
                     label = { Text("+ $preset", fontSize = 11.sp) },
                     colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = ForestGreen,
-                        selectedLabelColor = Color.White,
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
                         containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
-                        labelColor = Color.Gray
+                        labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     ),
                     border = FilterChipDefaults.filterChipBorder(
                         enabled = true,
                         selected = isAdded,
-                        borderColor = Color.Gray.copy(alpha = 0.2f),
+                        borderColor = MaterialTheme.colorScheme.outline,
                         selectedBorderColor = Color.Transparent
                     ),
                     modifier = Modifier.combinedClickable(
@@ -97,16 +97,16 @@ fun ParameterInputSection(
                     labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
                 ),
-                border = BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.3f))
+                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline)
             )
         }
 
         if (showCustomInput) {
             Surface(
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                color = MaterialTheme.colorScheme.surface,
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier.fillMaxWidth(),
-                border = BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.2f))
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
             ) {
                 Row(
                     modifier = Modifier.padding(8.dp),
@@ -119,13 +119,14 @@ fun ParameterInputSection(
                         placeholder = { Text("e.g. LUX, Humidity", fontSize = 12.sp) },
                         modifier = Modifier.weight(1f),
                         singleLine = true,
-                        textStyle = MaterialTheme.typography.bodySmall.copy(color = Color.White),
+                        textStyle = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurface),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
-                            focusedBorderColor = ForestGreen,
-                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f),
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f)
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                            focusedContainerColor = MaterialTheme.colorScheme.surface,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surface
                         )
                     )
                     IconButton(
@@ -138,7 +139,7 @@ fun ParameterInputSection(
                         },
                         modifier = Modifier.size(36.dp)
                     ) {
-                        Icon(Icons.Default.Check, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Icon(Icons.Default.Check, null, tint = MaterialTheme.colorScheme.primary)
                     }
                 }
             }
@@ -199,9 +200,9 @@ fun ParameterInputSection(
                         showRenameDialog = false
                         parameterToManage = null
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = ForestGreen),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                     shape = MaterialTheme.shapes.medium
-                ) { Text("Update", color = Color.White) }
+                ) { Text("Update", color = MaterialTheme.colorScheme.onPrimary) }
             },
             dismissButton = {
                 TextButton(onClick = { showRenameDialog = false; parameterToManage = null }) {
@@ -269,12 +270,12 @@ fun ParameterLedgerRow(
                 singleLine = true,
                 textStyle = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    focusedBorderColor = ForestGreen,
-                    unfocusedBorderColor = Color.Transparent,
-                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f),
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f)
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
                 )
             )
             IconButton(onClick = onRemove, modifier = Modifier.size(24.dp)) {

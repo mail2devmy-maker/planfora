@@ -20,8 +20,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.mail2dev.planfora.ui.theme.DarkBackground
-import com.mail2dev.planfora.ui.theme.ForestGreen
+import com.mail2dev.planfora.ui.theme.ForestEmerald
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
@@ -46,12 +45,12 @@ fun LocationSelectionBottomSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = Color(0xFF1A1C1B),
-        dragHandle = { BottomSheetDefaults.DragHandle(color = Color.Gray) }
+        containerColor = MaterialTheme.colorScheme.background,
+        dragHandle = { BottomSheetDefaults.DragHandle(color = MaterialTheme.colorScheme.onSurfaceVariant) }
     ) {
-        Column(modifier = Modifier.padding(16.dp).fillMaxWidth().imePadding()) {
-            Text(title, style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(16.dp))
+        Column(modifier = Modifier.padding(12.dp).fillMaxWidth().imePadding()) {
+            Text(title, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(12.dp))
 
             if (!isAddingNew) {
                 Button(
@@ -59,10 +58,10 @@ fun LocationSelectionBottomSheet(
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
-                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        contentColor = MaterialTheme.colorScheme.onSurface
                     ),
                     shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.3f))
+                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline)
                 ) {
                     Icon(Icons.Default.Add, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
@@ -72,7 +71,7 @@ fun LocationSelectionBottomSheet(
                 OutlinedTextField(
                     value = newLocName,
                     onValueChange = { newLocName = it },
-                    placeholder = { Text("Enter location name...", color = Color.Gray) },
+                    placeholder = { Text("Enter location name...", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     trailingIcon = {
@@ -82,21 +81,21 @@ fun LocationSelectionBottomSheet(
                                 newLocName = ""
                                 isAddingNew = false
                             }
-                        }) { Icon(Icons.Default.Check, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+                        }) { Icon(Icons.Default.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
                     },
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        focusedBorderColor = ForestGreen,
-                        unfocusedBorderColor = Color.Gray.copy(alpha = 0.2f),
-                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f),
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f)
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
                     ),
                     shape = RoundedCornerShape(12.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
@@ -118,9 +117,9 @@ fun LocationSelectionBottomSheet(
                             }
                         ),
                         shape = RoundedCornerShape(8.dp),
-                        color = if (isSelected) ForestGreen else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
-                        contentColor = if (isSelected) Color.White else Color.White,
-                        border = if (isSelected) null else BorderStroke(1.dp, Color.Gray.copy(alpha = 0.2f))
+                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                        contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                        border = if (isSelected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
@@ -182,9 +181,9 @@ fun LocationSelectionBottomSheet(
                                 showRenameDialog = false
                                 locationToManage = null
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = ForestGreen),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                             shape = MaterialTheme.shapes.medium
-                        ) { Text("Update", color = Color.White) }
+                        ) { Text("Update", color = MaterialTheme.colorScheme.onPrimary) }
                     },
                     dismissButton = {
                         TextButton(onClick = { showRenameDialog = false; locationToManage = null }) {

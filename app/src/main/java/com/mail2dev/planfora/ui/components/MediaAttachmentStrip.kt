@@ -38,7 +38,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
-import com.mail2dev.planfora.ui.theme.ForestGreen
+import com.mail2dev.planfora.ui.theme.ForestEmerald
 import kotlinx.coroutines.delay
 import java.io.File
 import java.util.Locale
@@ -370,10 +370,10 @@ fun AudioRecordingHUD(
 fun MediaActionButton(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+        color = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(8.dp),
         modifier = modifier.height(44.dp),
-        border = androidx.compose.foundation.BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.2f))
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 8.dp),
@@ -408,12 +408,12 @@ fun MediaPreviewItem(uri: Uri, onRemove: () -> Unit) {
 @Composable
 fun AudioPreviewCard(filePath: String, onRemove: () -> Unit) {
     Surface(
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+        color = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(12.dp),
-        border = androidx.compose.foundation.BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.2f)),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
     ) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             // Top Row (Header & Delete)
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -423,10 +423,10 @@ fun AudioPreviewCard(filePath: String, onRemove: () -> Unit) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Mic, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Voice Note", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    Text("Voice Note", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                 }
                 IconButton(onClick = onRemove, modifier = Modifier.size(24.dp)) {
-                    Icon(Icons.Default.Delete, null, tint = Color.Gray, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
                 }
             }
             

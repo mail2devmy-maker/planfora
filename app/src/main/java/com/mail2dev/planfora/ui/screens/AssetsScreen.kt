@@ -31,8 +31,6 @@ import com.mail2dev.planfora.ui.assets.AddAssetViewModel
 import com.mail2dev.planfora.ui.assets.AssetCategory
 import com.mail2dev.planfora.ui.assets.AssetsViewModel
 import com.mail2dev.planfora.ui.navigation.Screen
-import com.mail2dev.planfora.ui.theme.DarkBackground
-import com.mail2dev.planfora.ui.theme.ForestGreen
 import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -51,7 +49,7 @@ fun AssetsScreen(
     val selectedAssetIds by viewModel.selectedAssetIds.collectAsState()
 
     Scaffold(
-        containerColor = DarkBackground,
+        containerColor = MaterialTheme.colorScheme.background,
         floatingActionButton = {
             if (!isMultiSelectMode) {
                 FloatingActionButton(
@@ -59,8 +57,8 @@ fun AssetsScreen(
                         addAssetViewModel.startNewAsset()
                         viewModel.setShowAddBottomSheet(true) 
                     },
-                    containerColor = ForestGreen,
-                    contentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 ) {
                     Icon(Icons.Default.Add, contentDescription = "New Asset")
                 }
@@ -112,12 +110,12 @@ fun AssetsScreen(
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    focusedBorderColor = ForestGreen,
-                    unfocusedBorderColor = Color.Gray.copy(alpha = 0.2f),
-                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f),
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f)
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
                 )
             )
 
@@ -249,15 +247,15 @@ fun CategoryFilters(
                     }
                 },
                 colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = ForestGreen,
-                    selectedLabelColor = Color.White,
+                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
                     labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                     containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
                 ),
                 border = FilterChipDefaults.filterChipBorder(
                     enabled = true,
                     selected = selectedCategory == category,
-                    borderColor = Color.Gray.copy(alpha = 0.2f),
+                    borderColor = MaterialTheme.colorScheme.outline,
                     selectedBorderColor = Color.Transparent
                 )
             )
@@ -284,7 +282,7 @@ fun AssetCard(
 
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) ForestGreen.copy(alpha = 0.1f) else Color(0xFF1E2120)
+            containerColor = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surface
         ),
         shape = RoundedCornerShape(12.dp),
         modifier = Modifier
@@ -296,11 +294,11 @@ fun AssetCard(
                 )
             },
         border = androidx.compose.foundation.BorderStroke(
-            width = if (isSelected) 1.5.dp else 0.5.dp,
-            color = if (isSelected) ForestGreen else Color.Gray.copy(alpha = 0.2f)
+            width = if (isSelected) 1.5.dp else 1.dp,
+            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
         )
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(12.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -310,7 +308,7 @@ fun AssetCard(
                         checked = isSelected,
                         onCheckedChange = { onClick() },
                         colors = CheckboxDefaults.colors(
-                            checkedColor = ForestGreen,
+                            checkedColor = MaterialTheme.colorScheme.primary,
                             uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant
                         ),
                         modifier = Modifier.padding(end = 8.dp)
@@ -327,7 +325,7 @@ fun AssetCard(
                 Spacer(modifier = Modifier.width(12.dp))
                 
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(asset.name, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(asset.name, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     val physId = asset.tags.split(",").find { it.startsWith("PhysID:") }?.substringAfter(":") ?: ""
                     if (physId.isNotBlank()) {
                         Text("ID: $physId", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
@@ -363,12 +361,12 @@ fun AssetCard(
                 ) {
                     asset.tags.split(",").filter { !it.startsWith("PhysID:") && !it.startsWith("Batch:") }.take(4).forEach { tag ->
                         Surface(
-                            color = ForestGreen.copy(alpha = 0.2f),
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
                             shape = RoundedCornerShape(4.dp)
                         ) {
                             Text(
                                 text = "#$tag",
-                                color = Color.White,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
                                 fontSize = 10.sp
                             )
@@ -418,7 +416,7 @@ fun BatchSelectionBar(
                 }
                 Button(
                     onClick = onLogBatch,
-                    colors = ButtonDefaults.buttonColors(containerColor = ForestGreen),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                 ) {
                     Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))

@@ -13,8 +13,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.mail2dev.planfora.ui.theme.ForestGreen
 import com.mail2dev.planfora.ui.theme.DarkBackground
+import com.mail2dev.planfora.ui.theme.ForestEmerald
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -30,18 +30,18 @@ fun HarvestActivityCard(
     onGradeChange: (String) -> Unit
 ) {
     Surface(
-        color = Color(0xFF1E2120).copy(alpha = 0.5f),
+        color = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Granular Harvest Yield", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.SemiBold)
+                Text("Granular Harvest Yield".uppercase(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
                 
                 var showUnitPicker by remember { mutableStateOf(false) }
                 Box {
@@ -53,7 +53,7 @@ fun HarvestActivityCard(
                             labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
                         ),
-                        border = BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.3f))
+                        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline)
                     )
                     DropdownMenu(expanded = showUnitPicker, onDismissRequest = { showUnitPicker = false }) {
                         listOf("kg", "g", "units", "baskets", "crates").forEach { u ->
@@ -75,16 +75,17 @@ fun HarvestActivityCard(
                             onClick = { onToggleHarvestZone(zone) },
                             label = { Text(zone, fontSize = 10.sp) },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = ForestGreen,
-                                selectedLabelColor = Color.White,
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
-                            ),
-                            border = FilterChipDefaults.filterChipBorder(
-                                enabled = true,
-                                selected = isSelected,
-                                borderColor = Color.Gray.copy(alpha = 0.2f),
-                                selectedBorderColor = Color.Transparent
-                            )
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                            labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = isSelected,
+                            borderColor = MaterialTheme.colorScheme.outline,
+                            selectedBorderColor = Color.Transparent
+                        )
                         )
                     }
                 }
@@ -100,12 +101,12 @@ fun HarvestActivityCard(
                     modifier = Modifier.fillMaxWidth(),
                     suffix = { Text(yieldUnit) },
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        focusedBorderColor = ForestGreen,
-                        unfocusedBorderColor = Color.Gray.copy(alpha = 0.2f),
-                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f),
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f)
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
                     )
                 )
             } else {
@@ -125,12 +126,12 @@ fun HarvestActivityCard(
                             suffix = { Text(yieldUnit) },
                             singleLine = true,
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
-                                focusedBorderColor = ForestGreen,
-                                unfocusedBorderColor = Color.Gray.copy(alpha = 0.2f),
-                                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f),
-                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f)
+                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surface
                             )
                         )
                     }
@@ -147,14 +148,15 @@ fun HarvestActivityCard(
                         onClick = { onGradeChange(grade) },
                         label = { Text(grade) },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = ForestGreen,
-                            selectedLabelColor = Color.White,
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                            labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         ),
                         border = FilterChipDefaults.filterChipBorder(
                             enabled = true,
                             selected = qualityGrade == grade,
-                            borderColor = Color.Gray.copy(alpha = 0.2f),
+                            borderColor = MaterialTheme.colorScheme.outline,
                             selectedBorderColor = Color.Transparent
                         )
                     )
@@ -169,15 +171,15 @@ fun HarvestActivityCard(
 
             if (total > 0) {
                 Surface(
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.fillMaxWidth(),
-                    border = BorderStroke(1.dp, ForestGreen.copy(alpha = 0.3f))
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
                 ) {
                     Text(
                         "Total Aggregated Yield: $total $yieldUnit",
                         modifier = Modifier.padding(8.dp),
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )

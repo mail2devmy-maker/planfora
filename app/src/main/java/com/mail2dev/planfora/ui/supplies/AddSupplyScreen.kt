@@ -41,8 +41,7 @@ import com.mail2dev.planfora.ui.components.PlanForaFieldGroup
 import com.mail2dev.planfora.ui.components.PlanForaSurfaceCard
 import com.mail2dev.planfora.ui.components.StringPickerSheet
 import com.mail2dev.planfora.ui.components.TagPickerSheet
-import com.mail2dev.planfora.ui.theme.DarkBackground
-import com.mail2dev.planfora.ui.theme.ForestGreen
+import com.mail2dev.planfora.ui.theme.ForestEmerald
 import com.mail2dev.planfora.ui.assets.CustomFieldInputCompact
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -74,16 +73,16 @@ fun AddSupplyScreen(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = DarkBackground,
-        tonalElevation = 8.dp
+        containerColor = MaterialTheme.colorScheme.background,
+        tonalElevation = 0.dp
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(12.dp)
                 .verticalScroll(rememberScrollState())
                 .imePadding(),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -124,8 +123,8 @@ fun AddSupplyScreen(
                                 onClick = { viewModel.updateCategory(cat) },
                                 label = { Text(cat.displayName) },
                                 colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = ForestGreen,
-                                    selectedLabelColor = Color.White,
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
                                     containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
                                     labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                                 ),
@@ -326,8 +325,8 @@ fun AddSupplyScreen(
                     viewModel.saveSupply()
                     onDismiss()
                 },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = ForestGreen),
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 enabled = name.isNotBlank(),
                 shape = MaterialTheme.shapes.medium
             ) {
@@ -389,12 +388,7 @@ fun ReadonlyTriggerField(label: String, value: String, icon: ImageVector, onClic
         modifier = modifier.clickable { onClick() },
         leadingIcon = { Icon(icon, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp)) },
         enabled = false,
-        colors = OutlinedTextFieldDefaults.colors(
-            disabledTextColor = Color.White,
-            disabledBorderColor = Color.Gray.copy(alpha = 0.2f),
-            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f)
-        ),
+        colors = textFieldColors(),
         shape = RoundedCornerShape(8.dp)
     )
 }
@@ -429,8 +423,8 @@ fun OptionalSupplyPalette(
                     onClick = { onToggleField(field) },
                     label = { Text("+ ${field.displayName}", fontSize = 11.sp) },
                     colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = ForestGreen,
-                        selectedLabelColor = Color.White,
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
                         containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
                         labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     ),
@@ -531,12 +525,12 @@ fun RowScope.SimpleTextFieldCompact(value: String, onValueChange: (String) -> Un
         singleLine = true,
         textStyle = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
         colors = OutlinedTextFieldDefaults.colors(
-            focusedTextColor = Color.White,
-            unfocusedTextColor = Color.White,
-            focusedBorderColor = ForestGreen,
+            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+            focusedBorderColor = MaterialTheme.colorScheme.primary,
             unfocusedBorderColor = Color.Transparent,
-            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f),
-            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f)
+            focusedContainerColor = MaterialTheme.colorScheme.surface,
+            unfocusedContainerColor = MaterialTheme.colorScheme.surface
         )
     )
 }
@@ -567,11 +561,11 @@ fun CustomFieldCreatorDialog(onDismiss: () -> Unit, onFieldCreated: (String, Str
                             onClick = { type = t },
                             label = { Text(t) },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = ForestGreen,
-                                selectedLabelColor = Color.White,
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
-                                labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                            ),
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                            labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        ),
                             border = FilterChipDefaults.filterChipBorder(
                                 enabled = true,
                                 selected = type == t,
@@ -590,7 +584,7 @@ fun CustomFieldCreatorDialog(onDismiss: () -> Unit, onFieldCreated: (String, Str
             Button(
                 onClick = { onFieldCreated(name, type, options.ifBlank { null }, isGlobal) },
                 enabled = name.isNotBlank(),
-                colors = ButtonDefaults.buttonColors(containerColor = ForestGreen),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 shape = MaterialTheme.shapes.medium
             ) {
                 Text("Create", color = Color.White)
@@ -615,12 +609,12 @@ fun SimpleTextField(label: String, value: String, onValueChange: (String) -> Uni
 
 @Composable
 fun textFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedTextColor = Color.White,
-    unfocusedTextColor = Color.White,
-    focusedBorderColor = ForestGreen,
-    unfocusedBorderColor = Color.Gray.copy(alpha = 0.2f),
-    focusedLabelColor = ForestGreen,
-    unfocusedLabelColor = Color.Gray,
-    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f),
-    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f)
+    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+    focusedBorderColor = MaterialTheme.colorScheme.primary,
+    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+    focusedLabelColor = MaterialTheme.colorScheme.primary,
+    unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+    focusedContainerColor = MaterialTheme.colorScheme.surface,
+    unfocusedContainerColor = MaterialTheme.colorScheme.surface
 )

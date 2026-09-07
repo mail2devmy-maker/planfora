@@ -13,14 +13,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = ForestGreen,
-    secondary = Color(0xFF94A3B8), // Slate gray
-    tertiary = Color(0xFF64748B),
-    background = DarkBackground,
-    surface = DeepCharcoal,
+    primary = ForestEmerald,
     onPrimary = Color.White,
-    onSurface = Color.White,
-    onSurfaceVariant = Color(0xFF94A3B8)
+    primaryContainer = ForestEmeraldDark,
+    onPrimaryContainer = Color.White,
+    secondary = SlateTextSecondary,
+    onSecondary = Color.White,
+    background = SlateDarkBackground,
+    onBackground = SlateTextPrimary,
+    surface = SlateSurface,
+    onSurface = SlateTextPrimary,
+    surfaceVariant = SlateSurface,
+    onSurfaceVariant = SlateTextSecondary,
+    outline = SlateBorder,
+    outlineVariant = SlateBorder.copy(alpha = 0.5f)
 )
 
 private val LightColorScheme = lightColorScheme(

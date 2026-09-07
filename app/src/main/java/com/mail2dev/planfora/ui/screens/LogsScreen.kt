@@ -23,8 +23,6 @@ import com.mail2dev.planfora.ui.logs.CalendarMode
 import com.mail2dev.planfora.ui.logs.LayoutMode
 import com.mail2dev.planfora.ui.logs.LogsViewModel
 import com.mail2dev.planfora.ui.navigation.Screen
-import com.mail2dev.planfora.ui.theme.DarkBackground
-import com.mail2dev.planfora.ui.theme.ForestGreen
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -71,12 +69,12 @@ fun LogsScreen(
     }
 
     Scaffold(
-        containerColor = DarkBackground,
+        containerColor = MaterialTheme.colorScheme.background,
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { navController.navigate(Screen.NewLog.createRoute(timestamp = System.currentTimeMillis())) },
-                containerColor = ForestGreen,
-                contentColor = Color.White
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
                 Icon(Icons.Default.Add, contentDescription = "New Log")
             }
@@ -245,13 +243,13 @@ fun LogsHeader(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(6.dp))
-                        .background(if (isSelected) ForestGreen else Color.Transparent)
+                        .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
                         .clickable { onCalendarModeChange(mode) }
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
                     Text(
                         text = mode.name.lowercase().replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
-                        color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -264,7 +262,7 @@ fun LogsHeader(
                 Icon(
                     imageVector = Icons.Default.FilterList,
                     contentDescription = "Filters",
-                    tint = if (filtersActive) ForestGreen else Color.White
+                    tint = if (filtersActive) MaterialTheme.colorScheme.primary else Color.White
                 )
             }
             IconButton(onClick = onLayoutModeChange) {
@@ -316,15 +314,15 @@ fun FilterStrip(
                 onClick = { onLocationSelected(null) },
                 label = { Text("All Zones") },
                 colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = ForestGreen,
-                    selectedLabelColor = Color.White,
+                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
                     containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
                     labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 ),
                 border = FilterChipDefaults.filterChipBorder(
                     enabled = true,
                     selected = selectedLocation == null,
-                    borderColor = Color.Gray.copy(alpha = 0.2f),
+                    borderColor = MaterialTheme.colorScheme.outline,
                     selectedBorderColor = Color.Transparent
                 )
             )
@@ -336,15 +334,15 @@ fun FilterStrip(
                 onClick = { onLocationSelected(loc) },
                 label = { Text(loc) },
                 colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = ForestGreen,
-                    selectedLabelColor = Color.White,
+                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
                     containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
                     labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 ),
                 border = FilterChipDefaults.filterChipBorder(
                     enabled = true,
                     selected = selectedLocation == loc,
-                    borderColor = Color.Gray.copy(alpha = 0.2f),
+                    borderColor = MaterialTheme.colorScheme.outline,
                     selectedBorderColor = Color.Transparent
                 )
             )

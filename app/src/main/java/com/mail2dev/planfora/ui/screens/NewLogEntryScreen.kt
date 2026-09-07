@@ -50,8 +50,7 @@ import com.mail2dev.planfora.ui.components.PlanForaFieldGroup
 import com.mail2dev.planfora.ui.components.PlanForaSurfaceCard
 import com.mail2dev.planfora.ui.components.TagPickerSheet
 import com.mail2dev.planfora.ui.logs.LogsViewModel
-import com.mail2dev.planfora.ui.theme.DarkBackground
-import com.mail2dev.planfora.ui.theme.ForestGreen
+import com.mail2dev.planfora.ui.theme.ForestEmerald
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
@@ -274,8 +273,8 @@ fun NewLogEntryScreen(
                             unfocusedContainerColor = Color.Transparent,
                             focusedTextColor = Color.White,
                             unfocusedTextColor = Color.White,
-                            cursorColor = ForestGreen,
-                            focusedIndicatorColor = ForestGreen.copy(alpha = 0.5f),
+                            cursorColor = MaterialTheme.colorScheme.primary,
+                            focusedIndicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
                             unfocusedIndicatorColor = Color.Transparent
                         ),
                         textStyle = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -287,19 +286,19 @@ fun NewLogEntryScreen(
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = DarkBackground)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         },
-        containerColor = DarkBackground
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = 12.dp)
                 .verticalScroll(rememberScrollState())
                 .imePadding(),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Spacer(modifier = Modifier.height(8.dp))
             
@@ -392,8 +391,8 @@ fun NewLogEntryScreen(
                             },
                             label = { Text(type, style = MaterialTheme.typography.bodySmall) },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = ForestGreen,
-                                selectedLabelColor = Color.White,
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
                                 labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                                 containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
                             ),
@@ -418,12 +417,12 @@ fun NewLogEntryScreen(
                         maxLines = 1,
                         shape = RoundedCornerShape(8.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = ForestGreen,
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
                             focusedTextColor = Color.White,
                             unfocusedTextColor = Color.White,
-                            unfocusedBorderColor = Color.Gray.copy(alpha = 0.2f),
-                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f),
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f)
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                            focusedContainerColor = MaterialTheme.colorScheme.surface,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surface
                         )
                     )
                 }
@@ -489,10 +488,10 @@ fun NewLogEntryScreen(
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedTextColor = Color.White,
                     unfocusedTextColor = Color.White,
-                    focusedBorderColor = ForestGreen,
-                    unfocusedBorderColor = Color.Gray.copy(alpha = 0.2f),
-                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f),
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f)
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
                 )
             )
 
@@ -530,7 +529,7 @@ fun NewLogEntryScreen(
                                 onClick = { tags = tags - tag },
                                 label = { Text(tag, fontSize = 10.sp) },
                                 trailingIcon = { Icon(Icons.Default.Close, null, modifier = Modifier.size(12.dp)) },
-                                colors = AssistChipDefaults.assistChipColors(labelColor = Color.White, containerColor = ForestGreen.copy(alpha = 0.3f))
+                                colors = AssistChipDefaults.assistChipColors(labelColor = Color.White, containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
                             )
                         }
                     }
@@ -666,9 +665,9 @@ fun NewLogEntryScreen(
                     }
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp).padding(bottom = 24.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = ForestGreen),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 enabled = title.isNotBlank() && selectedAssetIds.isNotEmpty(),
-                shape = RoundedCornerShape(12.dp)
+                shape = MaterialTheme.shapes.medium
             ) {
                 Text(if (editingLogId == null) "Save Activity Log" else "Update Activity Log", fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
@@ -763,8 +762,8 @@ fun TreatmentDetailsCard(
                         onClick = { onToggleZone(zone) },
                         label = { Text(zone, fontSize = 10.sp) },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = ForestGreen,
-                            selectedLabelColor = Color.White,
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
                             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
                             labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         ),
@@ -829,8 +828,8 @@ fun TreatmentDetailsCard(
                         onClick = { onCustomInputCategoryChange(cat) },
                         label = { Text(cat, fontSize = 10.sp) },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = ForestGreen,
-                            selectedLabelColor = Color.White,
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
                             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
                             labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         ),
@@ -850,12 +849,12 @@ fun TreatmentDetailsCard(
                 val isSelected = appMethod == method
                 Surface(
                     onClick = { onMethodChange(method) },
-                    color = if (isSelected) ForestGreen else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.weight(1f),
-                    border = if (!isSelected) BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.2f)) else null
+                    border = if (!isSelected) BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline) else null
                 ) {
-                    Text(method, color = if (isSelected) Color.White else Color.Gray, fontSize = 9.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 8.dp))
+                    Text(method, color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 9.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 8.dp))
                 }
             }
         }
@@ -886,8 +885,8 @@ fun PruningCard(pruningType: String, onTypeChange: (String) -> Unit) {
                     label = { Text(type) },
                     modifier = Modifier.weight(1f),
                     colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = ForestGreen,
-                        selectedLabelColor = Color.White,
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
                         containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
                         labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     ),
@@ -1000,8 +999,8 @@ fun AssetPickerBottomSheet(
                         onClick = { selectedCategory = cat },
                         label = { Text("${cat.icon} ${cat.displayName}", fontSize = 11.sp) },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = ForestGreen,
-                            selectedLabelColor = Color.White,
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
                             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
                             labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         ),
@@ -1022,8 +1021,8 @@ fun AssetPickerBottomSheet(
                         onClick = { selectedLocation = "All" },
                         label = { Text("All Locations") },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = ForestGreen,
-                            selectedLabelColor = Color.White,
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
                             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
                             labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         ),
@@ -1041,8 +1040,8 @@ fun AssetPickerBottomSheet(
                         onClick = { selectedLocation = loc },
                         label = { Text(loc) },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = ForestGreen,
-                            selectedLabelColor = Color.White,
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
                             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
                             labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         ),
@@ -1105,7 +1104,7 @@ fun SupplyItemRow(supply: DiySupplyEntity, onClick: () -> Unit) {
                 Text(supply.batchCode, color = Color.White, fontWeight = FontWeight.Bold)
                 if (!supply.activeIngredient.isNullOrBlank()) Text("A.I.: ${supply.activeIngredient}", color = Color.Gray, fontSize = 12.sp)
             }
-            Surface(color = ForestGreen.copy(alpha = 0.2f), shape = RoundedCornerShape(4.dp)) { Text(supply.category, color = ForestGreen, fontSize = 10.sp, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)) }
+            Surface(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f), shape = RoundedCornerShape(4.dp)) { Text(supply.category, color = MaterialTheme.colorScheme.primary, fontSize = 10.sp, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)) }
         }
     }
 }
