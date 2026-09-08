@@ -11,19 +11,24 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.mail2dev.planfora.data.local.entity.DiySupplyEntity
+import com.mail2dev.planfora.ui.components.InlineAudioPlayer
 import com.mail2dev.planfora.ui.logs.LogsViewModel
 import com.mail2dev.planfora.ui.navigation.Screen
 import com.mail2dev.planfora.ui.supplies.SuppliesViewModel
 import com.mail2dev.planfora.ui.theme.DarkBackground
 import com.mail2dev.planfora.ui.theme.ForestGreen
 import com.mail2dev.planfora.ui.theme.SageGreen
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -235,6 +240,35 @@ fun ProductHeaderCard(supply: DiySupplyEntity) {
                 Text("INSTRUCTIONS / NOTES", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                 Text(supply.notes, color = Color.LightGray, fontSize = 14.sp, modifier = Modifier.padding(top = 4.dp))
             }
+
+            if (supply.imageUris.isNotBlank()) {
+                Spacer(modifier = Modifier.height(20.dp))
+                Text("ATTACHED IMAGES", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                Spacer(modifier = Modifier.height(8.dp))
+                androidx.compose.foundation.lazy.LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(supply.imageUris.split(",")) { path ->
+                        AsyncImage(
+                            model = File(path),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(140.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color.White.copy(alpha = 0.05f)),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                }
+            }
+
+            if (supply.audioPath != null) {
+                Spacer(modifier = Modifier.height(20.dp))
+                Text("VOICE NOTE / INSTRUCTIONS", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                Spacer(modifier = Modifier.height(8.dp))
+                InlineAudioPlayer(supply.audioPath)
+            }
         }
     }
 }
@@ -248,7 +282,9 @@ fun ProductMetadataGrid(supply: DiySupplyEntity) {
         }
         Row(modifier = Modifier.fillMaxWidth()) {
             ProductMetadataItem(Icons.Default.Inventory, "Current Stock", "${supply.stockQuantity ?: 0.0} ${supply.stockUnit ?: ""}", Modifier.weight(1f))
-            
+            ProductMetadataItem(Icons.Default.LocationOn, "Storage Location", supply.locationNote.ifBlank { "Unassigned" }, Modifier.weight(1f))
+        }
+        Row(modifier = Modifier.fillMaxWidth()) {
             val formulationDisplay = if (supply.formulationCode != null) {
                 "${supply.formulationCode} (${supply.formType})"
             } else {

@@ -49,6 +49,7 @@ import com.mail2dev.planfora.ui.components.ParameterInputSection
 import com.mail2dev.planfora.ui.components.PlanForaFieldGroup
 import com.mail2dev.planfora.ui.components.PlanForaSurfaceCard
 import com.mail2dev.planfora.ui.components.TagPickerSheet
+import com.mail2dev.planfora.ui.components.planForaTextFieldColors
 import com.mail2dev.planfora.ui.logs.LogsViewModel
 import com.mail2dev.planfora.ui.theme.ForestEmerald
 import kotlinx.coroutines.launch
@@ -313,7 +314,7 @@ fun NewLogEntryScreen(
             }
 
             // 1. Target Asset Section
-            PlanForaSurfaceCard(title = "Associated Plant(s)") {
+            PlanForaSurfaceCard(title = "Associated Plant(s)", isImportant = true) {
                 if (selectedAssetIds.isEmpty()) {
                     Box(modifier = Modifier.fillMaxWidth().clickable(enabled = parentLogId == null) { showAssetPicker = true }) {
                         OutlinedTextField(
@@ -330,12 +331,7 @@ fun NewLogEntryScreen(
                             singleLine = true,
                             maxLines = 1,
                             shape = RoundedCornerShape(8.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                disabledTextColor = Color.Gray,
-                                disabledBorderColor = Color.Gray.copy(alpha = 0.2f),
-                                disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f)
-                            )
+                            colors = planForaTextFieldColors(isImportant = true)
                         )
                     }
                 } else {
@@ -377,7 +373,7 @@ fun NewLogEntryScreen(
             }
 
             // 2. Activity Type Section
-            PlanForaSurfaceCard(title = "Activity Type") {
+            PlanForaSurfaceCard(title = "Activity Type", isImportant = true) {
                 androidx.compose.foundation.layout.FlowRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -416,14 +412,7 @@ fun NewLogEntryScreen(
                         singleLine = true,
                         maxLines = 1,
                         shape = RoundedCornerShape(8.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                            focusedContainerColor = MaterialTheme.colorScheme.surface,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                        )
+                        colors = planForaTextFieldColors(isImportant = true)
                     )
                 }
             }
@@ -485,18 +474,11 @@ fun NewLogEntryScreen(
                 label = { Text("Observation Notes") },
                 modifier = Modifier.fillMaxWidth().heightIn(min = 120.dp),
                 shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                )
+                colors = planForaTextFieldColors(isImportant = false)
             )
 
             // 5. Streamlined Attachments & Tags
-            PlanForaSurfaceCard(title = "Attachments & Metadata") {
+            PlanForaSurfaceCard(title = "Attachments & Metadata", isImportant = false) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     AssistChip(
                         onClick = { showTagSheet = true },
@@ -747,7 +729,7 @@ fun TreatmentDetailsCard(
     onCustomInputCategoryChange: (String) -> Unit,
     onToggleZone: (String) -> Unit
 ) {
-    PlanForaSurfaceCard(title = "Treatment Details") {
+    PlanForaSurfaceCard(title = "Treatment Details", isImportant = true) {
         val selectedSupply = supplies.find { it.id == selectedSupplyId }
         
         if (availableZones.isNotEmpty()) {
@@ -787,11 +769,7 @@ fun TreatmentDetailsCard(
             enabled = false,
             leadingIcon = { Icon(Icons.Default.Science, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp)) },
             trailingIcon = { Icon(Icons.Default.ArrowDropDown, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
-            colors = OutlinedTextFieldDefaults.colors(
-                disabledTextColor = Color.White,
-                disabledBorderColor = Color.Gray.copy(alpha = 0.2f),
-                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f)
-            )
+            colors = planForaTextFieldColors(isImportant = true)
         )
 
         AnimatedVisibility(
@@ -844,7 +822,7 @@ fun TreatmentDetailsCard(
             }
         }
 
-        PlanForaFieldGroup {
+        PlanForaFieldGroup(isImportant = true) {
             listOf("FOLIAR SPRAY", "SOIL DRENCH", "SPOT").forEach { method ->
                 val isSelected = appMethod == method
                 Surface(
@@ -859,25 +837,25 @@ fun TreatmentDetailsCard(
             }
         }
 
-        PlanForaFieldGroup {
-            OutlinedTextField(value = dosageAmount, onValueChange = onDosageAmountChange, label = { Text("Amount") }, modifier = Modifier.weight(1f), singleLine = true)
-            OutlinedTextField(value = dosageRatio, onValueChange = onDosageRatioChange, label = { Text("Unit/Ratio") }, modifier = Modifier.weight(1.5f), singleLine = true)
+        PlanForaFieldGroup(isImportant = true) {
+            OutlinedTextField(value = dosageAmount, onValueChange = onDosageAmountChange, label = { Text("Amount") }, modifier = Modifier.weight(1f), singleLine = true, colors = planForaTextFieldColors(isImportant = true))
+            OutlinedTextField(value = dosageRatio, onValueChange = onDosageRatioChange, label = { Text("Unit/Ratio") }, modifier = Modifier.weight(1.5f), singleLine = true, colors = planForaTextFieldColors(isImportant = true))
         }
     }
 }
 
 @Composable
 fun RepottingCard(substrateMix: String, potSize: String, onSubstrateChange: (String) -> Unit, onPotSizeChange: (String) -> Unit) {
-    PlanForaSurfaceCard(title = "Substrate & Container") {
-        OutlinedTextField(value = substrateMix, onValueChange = onSubstrateChange, label = { Text("Substrate Mix") }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("e.g. Coco/Perlite 70/30") })
-        OutlinedTextField(value = potSize, onValueChange = onPotSizeChange, label = { Text("Pot Size / Bed ID") }, modifier = Modifier.fillMaxWidth())
+    PlanForaSurfaceCard(title = "Substrate & Container", isImportant = false) {
+        OutlinedTextField(value = substrateMix, onValueChange = onSubstrateChange, label = { Text("Substrate Mix") }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("e.g. Coco/Perlite 70/30") }, colors = planForaTextFieldColors(isImportant = false))
+        OutlinedTextField(value = potSize, onValueChange = onPotSizeChange, label = { Text("Pot Size / Bed ID") }, modifier = Modifier.fillMaxWidth(), colors = planForaTextFieldColors(isImportant = false))
     }
 }
 
 @Composable
 fun PruningCard(pruningType: String, onTypeChange: (String) -> Unit) {
-    PlanForaSurfaceCard(title = "Pruning Type") {
-        PlanForaFieldGroup {
+    PlanForaSurfaceCard(title = "Pruning Type", isImportant = false) {
+        PlanForaFieldGroup(isImportant = false) {
             listOf("Sanitary", "Structural", "Thinning").forEach { type ->
                 FilterChip(
                     selected = pruningType == type,

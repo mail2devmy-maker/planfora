@@ -12,4 +12,9 @@ object TimeFormatter {
     fun formatDate(timestamp: Long, pattern: String = "MMM dd, yyyy"): String {
         return SimpleDateFormat(pattern, Locale.getDefault()).format(Date(timestamp))
     }
+
+    fun formatDateTime(timestamp: Long, use24Hour: Boolean): String {
+        val timePattern = if (use24Hour) "HH:mm" else "h:mm a"
+        return SimpleDateFormat("MMM dd, yyyy • $timePattern", Locale.getDefault()).format(Date(timestamp))
+    }
 }

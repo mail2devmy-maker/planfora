@@ -6,7 +6,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -15,17 +17,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import com.mail2dev.planfora.data.local.entity.JournalLogEntity
+import com.mail2dev.planfora.ui.components.InlineAudioPlayer
 import com.mail2dev.planfora.ui.logs.CalendarMode
 import com.mail2dev.planfora.ui.logs.LayoutMode
 import com.mail2dev.planfora.ui.logs.LogsViewModel
 import com.mail2dev.planfora.ui.navigation.Screen
+import com.mail2dev.planfora.ui.theme.SageGreen
+import java.io.File
 import java.util.*
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun LogsScreen(
     navController: NavController, 
@@ -45,7 +53,8 @@ fun LogsScreen(
     val use24HourFormat by profileViewModel.use24HourFormat.collectAsState()
 
     var showFilters by remember { mutableStateOf(false) }
-    var logToDelete by remember { mutableStateOf<com.mail2dev.planfora.data.local.entity.JournalLogEntity?>(null) }
+    var logToDelete by remember { mutableStateOf<JournalLogEntity?>(null) }
+    var selectedLogForDetail by remember { mutableStateOf<JournalLogEntity?>(null) }
 
     if (logToDelete != null) {
         AlertDialog(
@@ -123,7 +132,7 @@ fun LogsScreen(
                 com.mail2dev.planfora.ui.logs.DayTimelineView(
                     logs = logs,
                     use24Hour = use24HourFormat,
-                    onLogClick = { /* Maybe navigate to detail or edit */ },
+                    onLogClick = { selectedLogForDetail = it },
                     onHourLongClick = { hour ->
                         val cal = Calendar.getInstance().apply {
                             timeInMillis = selectedDate
@@ -186,7 +195,7 @@ fun LogsScreen(
                                     navController.navigate(Screen.NewLog.createRoute(editingLogId = log.id))
                                 },
                                 onLogClick = { id ->
-                                    navController.navigate(Screen.NewLog.createRoute(editingLogId = id))
+                                    selectedLogForDetail = logs.find { it.id == id }
                                 }
                             )
                         } else {
@@ -196,7 +205,7 @@ fun LogsScreen(
                                 use24Hour = use24HourFormat,
                                 onDeleteClick = { logToDelete = rootLog },
                                 onEditClick = { navController.navigate(Screen.NewLog.createRoute(editingLogId = rootLog.id)) },
-                                onClick = { navController.navigate(Screen.NewLog.createRoute(editingLogId = rootLog.id)) }
+                                onClick = { selectedLogForDetail = rootLog }
                             )
                             followUps.forEach { childLog ->
                                 com.mail2dev.planfora.ui.logs.CompactLogItem(
@@ -205,7 +214,7 @@ fun LogsScreen(
                                     use24Hour = use24HourFormat,
                                     onDeleteClick = { logToDelete = childLog },
                                     onEditClick = { navController.navigate(Screen.NewLog.createRoute(editingLogId = childLog.id)) },
-                                    onClick = { navController.navigate(Screen.NewLog.createRoute(editingLogId = childLog.id)) }
+                                    onClick = { selectedLogForDetail = childLog }
                                 )
                             }
                         }
@@ -213,6 +222,194 @@ fun LogsScreen(
                     item { Spacer(modifier = Modifier.height(80.dp)) }
                 }
             }
+        }
+    }
+
+    if (selectedLogForDetail != null) {
+        val assetName = assets.find { it.id == selectedLogForDetail!!.assetId }?.name ?: "General Log"
+        LogDetailSheet(
+            log = selectedLogForDetail!!,
+            assetName = assetName,
+            supplies = supplies,
+            use24Hour = use24HourFormat,
+            onDismiss = { selectedLogForDetail = null },
+            onEdit = {
+                val id = selectedLogForDetail!!.id
+                selectedLogForDetail = null
+                navController.navigate(Screen.NewLog.createRoute(editingLogId = id))
+            },
+            onDelete = {
+                val log = selectedLogForDetail!!
+                selectedLogForDetail = null
+                logToDelete = log
+            }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+fun LogDetailSheet(
+    log: JournalLogEntity,
+    assetName: String,
+    supplies: List<com.mail2dev.planfora.data.local.entity.DiySupplyEntity>,
+    use24Hour: Boolean,
+    onDismiss: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = Color(0xFF0B121C),
+        tonalElevation = 0.dp
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = log.activityType.uppercase(),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = SageGreen,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = log.title,
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                
+                var showMenu by remember { mutableStateOf(false) }
+                Box {
+                    IconButton(onClick = { showMenu = true }) {
+                        Icon(Icons.Default.MoreVert, null, tint = Color.White)
+                    }
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false },
+                        modifier = Modifier.background(Color(0xFF1E2120))
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("✏️ Edit Log", color = Color.White) },
+                            onClick = { showMenu = false; onEdit() }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("🗑️ Delete Log", color = Color.Red) },
+                            onClick = { showMenu = false; onDelete() }
+                        )
+                    }
+                }
+            }
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Schedule, null, tint = Color.Gray, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = com.mail2dev.planfora.util.TimeFormatter.formatDateTime(log.timestamp, use24Hour),
+                    color = Color.Gray,
+                    fontSize = 13.sp
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+                Icon(Icons.Default.LocationOn, null, tint = Color.Gray, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = assetName, color = Color.Gray, fontSize = 13.sp)
+            }
+
+            com.mail2dev.planfora.ui.logs.PhiBadge(log)
+
+            if (log.note.isNotBlank()) {
+                Surface(
+                    color = Color.White.copy(alpha = 0.05f),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = log.note,
+                        color = Color.LightGray,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+            }
+
+            if (log.imageUris.isNotBlank()) {
+                Text("PHOTOS", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                androidx.compose.foundation.lazy.LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(log.imageUris.split(",")) { path ->
+                        AsyncImage(
+                            model = File(path),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(180.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color.White.copy(alpha = 0.05f)),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                }
+            }
+
+            if (log.audioFilePath != null) {
+                Text("VOICE NOTE", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                InlineAudioPlayer(log.audioFilePath)
+            }
+
+            if (log.parameters.isNotBlank() || log.tags.isNotBlank()) {
+                HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
+                
+                if (log.tags.isNotBlank()) {
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        log.tags.split(",").forEach { tag ->
+                            Surface(
+                                color = SageGreen.copy(alpha = 0.1f),
+                                shape = RoundedCornerShape(4.dp),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, SageGreen.copy(alpha = 0.2f))
+                            ) {
+                                Text(
+                                    text = "#$tag",
+                                    color = SageGreen,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                }
+
+                if (log.parameters.isNotBlank()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        log.parameters.split("|").forEach { param ->
+                            val parts = param.split(":")
+                            if (parts.size == 2 && parts[0] != "phi_expiry") {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(text = "${parts[0]}: ", color = Color.Gray, fontSize = 14.sp)
+                                    Text(text = parts[1], color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
@@ -238,7 +435,7 @@ fun LogsHeader(
                 .background(Color.DarkGray.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
                 .padding(4.dp)
         ) {
-            CalendarMode.values().forEach { mode ->
+            CalendarMode.entries.forEach { mode ->
                 val isSelected = calendarMode == mode
                 Box(
                     modifier = Modifier

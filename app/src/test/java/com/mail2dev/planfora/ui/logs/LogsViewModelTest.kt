@@ -1,11 +1,7 @@
 package com.mail2dev.planfora.ui.logs
 
-import com.mail2dev.planfora.data.local.dao.JournalLogDao
-import com.mail2dev.planfora.data.local.dao.PlantAssetDao
-import com.mail2dev.planfora.data.local.dao.DiySupplyDao
-import com.mail2dev.planfora.data.local.entity.DiySupplyEntity
-import com.mail2dev.planfora.data.local.entity.JournalLogEntity
-import com.mail2dev.planfora.data.local.entity.PlantAssetEntity
+import com.mail2dev.planfora.data.local.dao.*
+import com.mail2dev.planfora.data.local.entity.*
 import com.mail2dev.planfora.data.repository.JournalRepository
 import com.mail2dev.planfora.data.repository.SupplyRepository
 import kotlinx.coroutines.Dispatchers
@@ -47,6 +43,9 @@ class LogsViewModelTest {
         override suspend fun insertLogs(logs: List<JournalLogEntity>) = TODO()
         override suspend fun updateLog(log: JournalLogEntity): Int = 0
         override suspend fun deleteLog(log: JournalLogEntity): Int = 0
+        override suspend fun getLogsBySupply(supplyId: Long): List<JournalLogEntity> = TODO()
+        override suspend fun deleteBatchLogs(batchGroupId: String) = TODO()
+        override suspend fun getLogsByBatchGroup(batchGroupId: String): List<JournalLogEntity> = TODO()
     }
 
     private val fakeAssetDao = object : PlantAssetDao {
@@ -68,12 +67,58 @@ class LogsViewModelTest {
         override suspend fun updateSupply(supply: DiySupplyEntity): Int = TODO()
         override suspend fun deleteSupply(supply: DiySupplyEntity): Int = TODO()
         override suspend fun getMaxBatchNumber(supplyTypeName: String): Int? = TODO()
+        override fun getDistinctActiveIngredients(): Flow<List<String>> = TODO()
+    }
+
+    private val fakeMasterDao = object : MasterDao {
+        override fun getAllLocations(): Flow<List<MasterLocationEntity>> = TODO()
+        override fun getLocationsByScope(scope: String): Flow<List<MasterLocationEntity>> = TODO()
+        override suspend fun insertLocation(location: MasterLocationEntity) = TODO()
+        override suspend fun deleteLocation(location: MasterLocationEntity) = TODO()
+        override suspend fun updateLocationNameScoped(oldName: String, newName: String, scope: String) = TODO()
+        override suspend fun deleteLocationByNameScoped(name: String, scope: String) = TODO()
+        override suspend fun updateAssetsLocation(oldName: String, newName: String) = TODO()
+        override suspend fun updateSuppliesLocation(oldName: String, newName: String) = TODO()
+        override suspend fun clearAssetsLocation(name: String) = TODO()
+        override suspend fun clearSuppliesLocation(name: String) = TODO()
+        override fun getAllTags(): Flow<List<MasterTagEntity>> = TODO()
+        override fun getTagsByScope(scope: String): Flow<List<MasterTagEntity>> = TODO()
+        override suspend fun insertTag(tag: MasterTagEntity) = TODO()
+        override suspend fun deleteTag(tag: MasterTagEntity) = TODO()
+        override suspend fun updateTagNameScoped(oldTag: String, newTag: String, scope: String) = TODO()
+        override suspend fun deleteTagByNameScoped(name: String, scope: String) = TODO()
+        override suspend fun updateAssetsTags(oldTag: String, newTag: String) = TODO()
+        override suspend fun updateLogsTags(oldTag: String, newTag: String) = TODO()
+        override suspend fun updateSuppliesTags(oldTag: String, newTag: String) = TODO()
+        override suspend fun removeAssetsTag(name: String) = TODO()
+        override suspend fun removeLogsTag(name: String) = TODO()
+        override suspend fun removeSuppliesTag(name: String) = TODO()
+        override fun getAllIngredients(): Flow<List<MasterIngredientEntity>> = TODO()
+        override suspend fun insertIngredient(ingredient: MasterIngredientEntity) = TODO()
+        override suspend fun updateIngredientName(oldName: String, newName: String) = TODO()
+        override suspend fun deleteIngredientByName(name: String) = TODO()
+        override suspend fun updateSuppliesActiveIngredient(oldName: String, newName: String) = TODO()
+        override suspend fun clearSuppliesActiveIngredient(name: String) = TODO()
+        override fun getAllParameters(): Flow<List<MasterParameterEntity>> = TODO()
+        override suspend fun insertParameter(parameter: MasterParameterEntity) = TODO()
+        override suspend fun updateParameterName(oldName: String, newName: String) = TODO()
+        override suspend fun deleteParameterByName(name: String) = TODO()
+        override suspend fun updateLogsParameters(oldName: String, newName: String) = TODO()
+        override suspend fun removeLogsParameter(name: String) = TODO()
+    }
+
+    private val fakeCustomFieldDao = object : CustomFieldDao {
+        override fun getDefinitionsByCategory(category: String): Flow<List<CustomFieldDefinitionEntity>> = TODO()
+        override suspend fun insertDefinition(definition: CustomFieldDefinitionEntity): Long = TODO()
+        override fun getValuesByAsset(assetId: Long): Flow<List<CustomFieldValueEntity>> = TODO()
+        override suspend fun insertValue(value: CustomFieldValueEntity): Long = TODO()
+        override suspend fun insertValues(values: List<CustomFieldValueEntity>) = TODO()
     }
 
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
-        repository = JournalRepository(fakeLogDao, fakeAssetDao)
+        repository = JournalRepository(fakeLogDao, fakeAssetDao, fakeMasterDao, fakeCustomFieldDao)
         supplyRepository = SupplyRepository(fakeSupplyDao)
         viewModel = LogsViewModel(repository, supplyRepository)
     }

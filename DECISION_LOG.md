@@ -252,6 +252,13 @@ Global list of custom tags for assets and logs.
     - Unified long-press management across Tags, Locations, Active Ingredients, and Metrics.
     - Implemented cascading database transactions for all manageable metadata strings.
     - Migrated Active Ingredient input to the high-speed managed sheet pattern.
+- **[2026-09-04] Importance-Based Field Hierarchy**:
+    - Implemented a visual hierarchy for form fields to differentiate between mandatory and optional inputs.
+    - Updated `PlanForaSurfaceCard` and `PlanForaFieldGroup` to support `isImportant` parameter.
+    - Mandatory fields use `#131E2B` (Fill), `#2A3B50` (Border), and `#F1F5F9` (Labels).
+    - Optional fields use `#0E1622` (Fill), `#182332` (Border), and `#94A3B8` (Muted Labels).
+    - Consolidated text field styling into a shared `planForaTextFieldColors` helper with `#10B981` (Forest Emerald) focused state.
+    - Propagated the hierarchy across `NewLogEntryScreen`, `AddAssetScreen`, and `AddSupplyScreen`.
 - **[2026-09-04] Tag Rename & Delete Management**:
     - Upgraded `TagPickerSheet` in `MemorySheets.kt` with long-press management actions.
     - Implemented `updateTagName` and `deleteTagByName` in `MasterDao` and `JournalRepository`.

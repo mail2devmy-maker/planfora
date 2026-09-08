@@ -21,6 +21,7 @@ class SupplyRepositoryTest {
         override suspend fun getMaxBatchNumber(supplyTypeName: String): Int? {
             return if (supplyTypeName == "FPJ") 12 else null
         }
+        override fun getDistinctActiveIngredients(): Flow<List<String>> = TODO()
     }
 
     private val repository = SupplyRepository(fakeDao)

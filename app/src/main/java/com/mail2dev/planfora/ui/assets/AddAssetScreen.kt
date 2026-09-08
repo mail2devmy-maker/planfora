@@ -39,6 +39,7 @@ import com.mail2dev.planfora.ui.components.MediaAttachmentStrip
 import com.mail2dev.planfora.ui.components.PlanForaFieldGroup
 import com.mail2dev.planfora.ui.components.PlanForaSurfaceCard
 import com.mail2dev.planfora.ui.components.TagPickerSheet
+import com.mail2dev.planfora.ui.components.planForaTextFieldColors
 import com.mail2dev.planfora.ui.theme.ForestEmerald
 import java.text.SimpleDateFormat
 import java.util.*
@@ -101,46 +102,48 @@ fun AddAssetScreen(
             LivePreviewCard(name, selectedCategory, location, selectedTags)
 
             // Asset Identity
-            PlanForaSurfaceCard(title = "Asset Identity") {
+            PlanForaSurfaceCard(title = "Asset Identity", isImportant = true) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = viewModel::updateName,
                     label = { Text("Asset Name / Variety") },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = textFieldColors()
+                    colors = textFieldColors(isImportant = true)
                 )
                 CategorySelector(selectedCategory, viewModel::updateCategory)
             }
 
             // Location & Taxonomy
-            PlanForaSurfaceCard(title = "Location & Taxonomy") {
-                PlanForaFieldGroup {
+            PlanForaSurfaceCard(title = "Location & Taxonomy", isImportant = false) {
+                PlanForaFieldGroup(isImportant = false) {
                     ReadonlyTriggerField(
                         label = "Location",
                         value = location.ifBlank { "Select" },
                         icon = Icons.Default.LocationOn,
                         onClick = { showLocationSheet = true },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        isImportant = false
                     )
                     ReadonlyTriggerField(
                         label = "Tags",
                         value = if (selectedTags.isEmpty()) "Select" else "${selectedTags.size} tags",
                         icon = Icons.Default.Tag,
                         onClick = { showTagSheet = true },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        isImportant = false
                     )
                 }
             }
 
             // Lifecycle Details
             if (selectedCategory != AssetCategory.ALL) {
-                PlanForaSurfaceCard(title = "${selectedCategory.displayName} Details") {
+                PlanForaSurfaceCard(title = "${selectedCategory.displayName} Details", isImportant = true) {
                     CategoryCoreFields(selectedCategory, viewModel)
                 }
             }
 
             // Attachments & Notes
-            PlanForaSurfaceCard(title = "Attachments & Notes") {
+            PlanForaSurfaceCard(title = "Attachments & Notes", isImportant = false) {
                 MediaAttachmentStrip(
                     imageUris = imageUris,
                     audioPath = audioPath,
@@ -156,7 +159,7 @@ fun AddAssetScreen(
                     label = { Text("Asset Notes") },
                     placeholder = { Text("Quick observation or asset details...") },
                     modifier = Modifier.fillMaxWidth().height(80.dp),
-                    colors = textFieldColors(),
+                    colors = textFieldColors(isImportant = false),
                     maxLines = 3
                 )
             }
@@ -346,7 +349,7 @@ fun CategorySelector(selected: AssetCategory, onSelect: (AssetCategory) -> Unit)
 }
 
 @Composable
-fun ReadonlyTriggerField(label: String, value: String, icon: ImageVector, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun ReadonlyTriggerField(label: String, value: String, icon: ImageVector, onClick: () -> Unit, modifier: Modifier = Modifier, isImportant: Boolean = false) {
     OutlinedTextField(
         value = value,
         onValueChange = {},
@@ -356,13 +359,7 @@ fun ReadonlyTriggerField(label: String, value: String, icon: ImageVector, onClic
         leadingIcon = { Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp)) },
         trailingIcon = { Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(18.dp)) },
         enabled = false,
-        colors = OutlinedTextFieldDefaults.colors(
-            disabledTextColor = Color.White,
-            disabledBorderColor = Color.Gray.copy(alpha = 0.2f),
-            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f)
-        )
+        colors = textFieldColors(isImportant = isImportant)
     )
 }
 
@@ -577,7 +574,11 @@ fun RowScope.SimpleTextFieldCompact(value: String, onValueChange: (String) -> Un
 @Composable
 fun RowScope.DatePickerFieldCompact(value: Long?, onDateSelected: (Long?) -> Unit) {
     var showPicker by remember { mutableStateOf(false) }
-    val dateDisplay = if (value != null) SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(value)) else "Select Date"
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val locale = configuration.locales[0]
+    val dateDisplay = remember(value, locale) {
+        if (value != null) SimpleDateFormat("MMM dd, yyyy", locale).format(Date(value)) else "Select Date"
+    }
     
     OutlinedTextField(
         value = dateDisplay,
@@ -674,21 +675,25 @@ fun CustomFieldCreatorDialog(onDismiss: () -> Unit, onFieldCreated: (String, Str
 }
 
 @Composable
-fun SimpleTextField(label: String, value: String, onValueChange: (String) -> Unit) {
+fun SimpleTextField(label: String, value: String, onValueChange: (String) -> Unit, isImportant: Boolean = true) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         label = { Text(label) },
         modifier = Modifier.fillMaxWidth(),
-        colors = textFieldColors()
+        colors = textFieldColors(isImportant = isImportant)
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DatePickerField(label: String, value: Long?, onDateSelected: (Long?) -> Unit) {
+fun DatePickerField(label: String, value: Long?, onDateSelected: (Long?) -> Unit, isImportant: Boolean = true) {
     var showPicker by remember { mutableStateOf(false) }
-    val dateDisplay = if (value != null) SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(value)) else ""
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val locale = configuration.locales[0]
+    val dateDisplay = remember(value, locale) {
+        if (value != null) SimpleDateFormat("MMM dd, yyyy", locale).format(Date(value)) else ""
+    }
     
     OutlinedTextField(
         value = dateDisplay,
@@ -701,7 +706,7 @@ fun DatePickerField(label: String, value: Long?, onDateSelected: (Long?) -> Unit
                 Icon(Icons.Default.CalendarToday, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         },
-        colors = textFieldColors()
+        colors = textFieldColors(isImportant = isImportant)
     )
     if (showPicker) {
         val datePickerState = rememberDatePickerState(initialSelectedDateMillis = value ?: System.currentTimeMillis())
@@ -724,13 +729,4 @@ fun DatePickerField(label: String, value: Long?, onDateSelected: (Long?) -> Unit
 }
 
 @Composable
-fun textFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedTextColor = MaterialTheme.colorScheme.onSurface,
-    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-    focusedBorderColor = MaterialTheme.colorScheme.primary,
-    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-    focusedLabelColor = MaterialTheme.colorScheme.primary,
-    unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-    focusedContainerColor = MaterialTheme.colorScheme.surface,
-    unfocusedContainerColor = MaterialTheme.colorScheme.surface
-)
+fun textFieldColors(isImportant: Boolean = false) = planForaTextFieldColors(isImportant)

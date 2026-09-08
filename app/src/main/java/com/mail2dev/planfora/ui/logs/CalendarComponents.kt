@@ -232,10 +232,16 @@ fun WeekStripView(
     onDateLongClick: (Long) -> Unit,
     eventDates: Set<Long>
 ) {
-    val dates = remember(selectedDate) {
-        (-7..7).map { offset ->
+    val dates = remember {
+        val today = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        (0..28).map { offset ->
             Calendar.getInstance().apply {
-                timeInMillis = selectedDate
+                timeInMillis = today.timeInMillis
                 add(Calendar.DAY_OF_YEAR, offset)
             }.timeInMillis
         }
@@ -334,11 +340,18 @@ fun DayTimelineView(
     onHourLongClick: (Int) -> Unit
 ) {
     val hours = (0..23).toList()
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+
+    LaunchedEffect(Unit) {
+        listState.scrollToItem(currentHour)
+    }
     
     LazyColumn(
+        state = listState,
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
         items(hours) { hour ->
             val logsInHour = logs.filter { 
@@ -346,51 +359,64 @@ fun DayTimelineView(
                 cal.get(Calendar.HOUR_OF_DAY) == hour
             }
             
-            Row(modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 60.dp)
-                .pointerInput(Unit) {
-                    detectTapGestures(
-                        onLongPress = { onHourLongClick(hour) }
+            Column {
+                if (hour == currentHour) {
+                    // Current Time Indicator line
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 68.dp)
+                            .height(2.dp)
+                            .background(ForestGreen)
                     )
                 }
-            ) {
-                val timeLabel = Calendar.getInstance().apply {
-                    set(Calendar.HOUR_OF_DAY, hour)
-                    set(Calendar.MINUTE, 0)
-                }.timeInMillis
-                
-                Text(
-                    text = com.mail2dev.planfora.util.TimeFormatter.formatTime(timeLabel, use24Hour),
-                    color = Color.Gray,
-                    fontSize = 12.sp,
-                    modifier = Modifier.width(60.dp).padding(top = 8.dp)
-                )
-                
-                Column(
-                    modifier = Modifier.weight(1f).padding(start = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    if (logsInHour.isEmpty()) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(1.dp)
-                                .background(Color.DarkGray.copy(alpha = 0.3f))
-                                .padding(top = 12.dp)
-                                .align(Alignment.CenterHorizontally)
+
+                Row(modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 80.dp)
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onLongPress = { onHourLongClick(hour) }
                         )
-                    } else {
-                        logsInHour.forEach { log ->
-                            Card(
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E2120)),
-                                shape = RoundedCornerShape(8.dp),
-                                modifier = Modifier.fillMaxWidth().clickable { onLogClick(log) }
-                            ) {
-                                Row(modifier = Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    Box(modifier = Modifier.size(4.dp, 24.dp).background(SageGreen, RoundedCornerShape(2.dp)))
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(log.title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    }
+                ) {
+                    val timeLabel = Calendar.getInstance().apply {
+                        set(Calendar.HOUR_OF_DAY, hour)
+                        set(Calendar.MINUTE, 0)
+                    }.timeInMillis
+                    
+                    Text(
+                        text = com.mail2dev.planfora.util.TimeFormatter.formatTime(timeLabel, use24Hour),
+                        color = if (hour == currentHour) ForestGreen else Color.Gray,
+                        fontSize = 12.sp,
+                        fontWeight = if (hour == currentHour) FontWeight.Bold else FontWeight.Normal,
+                        modifier = Modifier.width(60.dp).padding(top = 8.dp)
+                    )
+                    
+                    Column(
+                        modifier = Modifier.weight(1f).padding(start = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        if (logsInHour.isEmpty()) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(1.dp)
+                                    .background(Color.DarkGray.copy(alpha = 0.2f))
+                                    .padding(top = 40.dp)
+                            )
+                        } else {
+                            logsInHour.forEach { log ->
+                                Card(
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1E2120)),
+                                    shape = RoundedCornerShape(8.dp),
+                                    modifier = Modifier.fillMaxWidth().clickable { onLogClick(log) }
+                                ) {
+                                    Row(modifier = Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        Box(modifier = Modifier.size(4.dp, 24.dp).background(SageGreen, RoundedCornerShape(2.dp)))
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(log.title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                    }
                                 }
                             }
                         }

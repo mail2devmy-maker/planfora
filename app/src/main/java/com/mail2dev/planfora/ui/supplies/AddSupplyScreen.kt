@@ -41,6 +41,7 @@ import com.mail2dev.planfora.ui.components.PlanForaFieldGroup
 import com.mail2dev.planfora.ui.components.PlanForaSurfaceCard
 import com.mail2dev.planfora.ui.components.StringPickerSheet
 import com.mail2dev.planfora.ui.components.TagPickerSheet
+import com.mail2dev.planfora.ui.components.planForaTextFieldColors
 import com.mail2dev.planfora.ui.theme.ForestEmerald
 import com.mail2dev.planfora.ui.assets.CustomFieldInputCompact
 
@@ -106,11 +107,11 @@ fun AddSupplyScreen(
                 onValueChange = viewModel::updateName,
                 label = { Text("Product Name") },
                 modifier = Modifier.fillMaxWidth(),
-                colors = textFieldColors()
+                colors = textFieldColors(isImportant = true)
             )
 
             // Primary Identification & Storage
-            PlanForaSurfaceCard(title = "Identification & Storage") {
+            PlanForaSurfaceCard(title = "Identification & Storage", isImportant = true) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text("Category", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     FlowRow(
@@ -138,38 +139,47 @@ fun AddSupplyScreen(
                         }
                     }
 
-                    PlanForaFieldGroup {
+                    PlanForaFieldGroup(isImportant = true) {
                         ReadonlyTriggerField(
                             label = "📍 Storage Location",
                             value = location.ifBlank { "Select Location" },
                             icon = Icons.Default.LocationOn,
                             onClick = { showLocationSheet = true },
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            isImportant = true
                         )
                         ReadonlyTriggerField(
                             label = "Tags",
                             value = if (selectedTags.isEmpty()) "Select" else "${selectedTags.size} tags",
                             icon = Icons.Default.Tag,
                             onClick = { showTagSheet = true },
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            isImportant = true
                         )
                     }
                 }
             }
 
             // High-Speed Safety/Stock Fields
-            PlanForaSurfaceCard(title = "Stock & Safety") {
+            PlanForaSurfaceCard(title = "Stock & Safety", isImportant = true) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    PlanForaFieldGroup {
+                    PlanForaFieldGroup(isImportant = true) {
                         var showIngredientSheet by remember { mutableStateOf(false) }
                         val activeIngredientValue = viewModel.activeIngredient.collectAsState().value
                         
-                        ReadonlyTriggerField(
-                            label = "Active Ingredient",
-                            value = activeIngredientValue.ifBlank { "Select A.I." },
-                            icon = Icons.Default.Tag,
-                            onClick = { showIngredientSheet = true },
-                            modifier = Modifier.weight(1.5f)
+                        OutlinedTextField(
+                            value = activeIngredientValue,
+                            onValueChange = viewModel::updateActiveIngredient,
+                            label = { Text("Active Ingredient") },
+                            modifier = Modifier.weight(1.5f),
+                            leadingIcon = { Icon(Icons.Default.Tag, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp)) },
+                            trailingIcon = {
+                                IconButton(onClick = { showIngredientSheet = true }) {
+                                    Icon(Icons.Default.List, contentDescription = "Select A.I.")
+                                }
+                            },
+                            colors = textFieldColors(isImportant = true),
+                            placeholder = { Text("e.g. Neem Oil") }
                         )
 
                         if (showIngredientSheet) {
@@ -194,18 +204,18 @@ fun AddSupplyScreen(
                             label = { Text("PHI (Days)") },
                             modifier = Modifier.weight(1f),
                             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
-                            colors = textFieldColors()
+                            colors = textFieldColors(isImportant = true)
                         )
                     }
 
-                    PlanForaFieldGroup {
+                    PlanForaFieldGroup(isImportant = true) {
                         OutlinedTextField(
                             value = viewModel.stockQuantity.collectAsState().value,
                             onValueChange = viewModel::updateStockQuantity,
                             label = { Text("Stock Amount") },
                             modifier = Modifier.weight(1f),
                             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
-                            colors = textFieldColors()
+                            colors = textFieldColors(isImportant = true)
                         )
                         var showUnitPicker by remember { mutableStateOf(false) }
                         Box(modifier = Modifier.weight(1f)) {
@@ -220,7 +230,7 @@ fun AddSupplyScreen(
                                         Icon(Icons.Default.ArrowDropDown, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                 },
-                                colors = textFieldColors()
+                                colors = textFieldColors(isImportant = true)
                             )
                             DropdownMenu(expanded = showUnitPicker, onDismissRequest = { showUnitPicker = false }) {
                                 listOf("L", "mL", "kg", "g", "units", "bottles").forEach { unit ->
@@ -233,8 +243,8 @@ fun AddSupplyScreen(
             }
 
             // Product Formulation Row
-            PlanForaSurfaceCard(title = "Product Formulation") {
-                PlanForaFieldGroup {
+            PlanForaSurfaceCard(title = "Product Formulation", isImportant = false) {
+                PlanForaFieldGroup(isImportant = false) {
                     var showFormTypePicker by remember { mutableStateOf(false) }
                     Box(modifier = Modifier.weight(1f)) {
                         OutlinedTextField(
@@ -248,7 +258,7 @@ fun AddSupplyScreen(
                                     Icon(Icons.Default.ArrowDropDown, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             },
-                            colors = textFieldColors()
+                            colors = textFieldColors(isImportant = false)
                         )
                         DropdownMenu(expanded = showFormTypePicker, onDismissRequest = { showFormTypePicker = false }) {
                             SupplyFormType.entries.forEach { type ->
@@ -271,7 +281,7 @@ fun AddSupplyScreen(
                                         Icon(Icons.Default.ArrowDropDown, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                 },
-                                colors = textFieldColors()
+                                colors = textFieldColors(isImportant = false)
                             )
                             DropdownMenu(expanded = showFormulationPicker, onDismissRequest = { showFormulationPicker = false }) {
                                 val availableCodes = when (formType) {
@@ -296,7 +306,7 @@ fun AddSupplyScreen(
                 label = { Text("Instructions / Notes") },
                 placeholder = { Text("e.g. 1 capful = 10mL, Store in cool dark place") },
                 modifier = Modifier.fillMaxWidth().height(80.dp),
-                colors = textFieldColors(),
+                colors = textFieldColors(isImportant = false),
                 maxLines = 3
             )
 
@@ -379,7 +389,7 @@ fun AddSupplyScreen(
 }
 
 @Composable
-fun ReadonlyTriggerField(label: String, value: String, icon: ImageVector, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun ReadonlyTriggerField(label: String, value: String, icon: ImageVector, onClick: () -> Unit, modifier: Modifier = Modifier, isImportant: Boolean = false) {
     OutlinedTextField(
         value = value,
         onValueChange = {},
@@ -387,8 +397,8 @@ fun ReadonlyTriggerField(label: String, value: String, icon: ImageVector, onClic
         label = { Text(label) },
         modifier = modifier.clickable { onClick() },
         leadingIcon = { Icon(icon, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp)) },
-        enabled = false,
-        colors = textFieldColors(),
+        enabled = true,
+        colors = textFieldColors(isImportant = isImportant),
         shape = RoundedCornerShape(8.dp)
     )
 }
@@ -524,14 +534,7 @@ fun RowScope.SimpleTextFieldCompact(value: String, onValueChange: (String) -> Un
         placeholder = { Text("Enter...", fontSize = 12.sp) },
         singleLine = true,
         textStyle = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedTextColor = MaterialTheme.colorScheme.onSurface,
-            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-            focusedBorderColor = MaterialTheme.colorScheme.primary,
-            unfocusedBorderColor = Color.Transparent,
-            focusedContainerColor = MaterialTheme.colorScheme.surface,
-            unfocusedContainerColor = MaterialTheme.colorScheme.surface
-        )
+        colors = planForaTextFieldColors(isImportant = false)
     )
 }
 
@@ -597,24 +600,15 @@ fun CustomFieldCreatorDialog(onDismiss: () -> Unit, onFieldCreated: (String, Str
 }
 
 @Composable
-fun SimpleTextField(label: String, value: String, onValueChange: (String) -> Unit) {
+fun SimpleTextField(label: String, value: String, onValueChange: (String) -> Unit, isImportant: Boolean = true) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         label = { Text(label) },
         modifier = Modifier.fillMaxWidth(),
-        colors = textFieldColors()
+        colors = textFieldColors(isImportant = isImportant)
     )
 }
 
 @Composable
-fun textFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedTextColor = MaterialTheme.colorScheme.onSurface,
-    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-    focusedBorderColor = MaterialTheme.colorScheme.primary,
-    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-    focusedLabelColor = MaterialTheme.colorScheme.primary,
-    unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-    focusedContainerColor = MaterialTheme.colorScheme.surface,
-    unfocusedContainerColor = MaterialTheme.colorScheme.surface
-)
+fun textFieldColors(isImportant: Boolean = false) = planForaTextFieldColors(isImportant)

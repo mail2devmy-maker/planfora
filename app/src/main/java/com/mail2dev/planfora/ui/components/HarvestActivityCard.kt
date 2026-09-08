@@ -13,8 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.mail2dev.planfora.ui.theme.DarkBackground
-import com.mail2dev.planfora.ui.theme.ForestEmerald
+import com.mail2dev.planfora.ui.theme.*
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -27,126 +26,46 @@ fun HarvestActivityCard(
     onToggleHarvestZone: (String) -> Unit,
     onRowYieldChange: (String, String) -> Unit,
     onUnitChange: (String) -> Unit,
-    onGradeChange: (String) -> Unit
+    onGradeChange: (String) -> Unit,
+    isImportant: Boolean = true
 ) {
-    Surface(
-        color = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Granular Harvest Yield".uppercase(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
-                
-                var showUnitPicker by remember { mutableStateOf(false) }
-                Box {
-                    AssistChip(
-                        onClick = { showUnitPicker = true },
-                        label = { Text(yieldUnit) },
-                        trailingIcon = { Icon(Icons.Default.ArrowDropDown, null, modifier = Modifier.size(16.dp)) },
-                        colors = AssistChipDefaults.assistChipColors(
-                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
-                        ),
-                        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline)
-                    )
-                    DropdownMenu(expanded = showUnitPicker, onDismissRequest = { showUnitPicker = false }) {
-                        listOf("kg", "g", "units", "baskets", "crates").forEach { u ->
-                            DropdownMenuItem(text = { Text(u) }, onClick = { onUnitChange(u); showUnitPicker = false })
-                        }
-                    }
-                }
-            }
-
-            if (availableZones.isNotEmpty()) {
-                Text("Select Harvested Zones / Rows", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    availableZones.forEach { zone ->
-                        val isSelected = selectedHarvestZones.contains(zone)
-                        FilterChip(
-                            selected = isSelected,
-                            onClick = { onToggleHarvestZone(zone) },
-                            label = { Text(zone, fontSize = 10.sp) },
-                            colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primary,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
-                            labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                        ),
-                        border = FilterChipDefaults.filterChipBorder(
-                            enabled = true,
-                            selected = isSelected,
-                            borderColor = MaterialTheme.colorScheme.outline,
-                            selectedBorderColor = Color.Transparent
-                        )
-                        )
-                    }
-                }
-                HorizontalDivider(color = Color.Gray.copy(alpha = 0.1f))
-            }
-
-            if (availableZones.isEmpty()) {
-                // Default fallback if no zones defined
-                OutlinedTextField(
-                    value = rowYields["Total"] ?: "",
-                    onValueChange = { onRowYieldChange("Total", it) },
-                    label = { Text("Total Yield") },
-                    modifier = Modifier.fillMaxWidth(),
-                    suffix = { Text(yieldUnit) },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                        focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                    )
+    PlanForaSurfaceCard(title = "Granular Harvest Yield", isImportant = isImportant) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            var showUnitPicker by remember { mutableStateOf(false) }
+            Box {
+                AssistChip(
+                    onClick = { showUnitPicker = true },
+                    label = { Text(yieldUnit) },
+                    trailingIcon = { Icon(Icons.Default.ArrowDropDown, null, modifier = Modifier.size(16.dp)) },
+                    colors = AssistChipDefaults.assistChipColors(
+                        labelColor = if (isImportant) SlateTextPrimary else SlateTextSecondary,
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+                    ),
+                    border = BorderStroke(0.5.dp, if (isImportant) MandatoryBorder else OptionalBorder)
                 )
-            } else {
-                val zonesToRender = if (selectedHarvestZones.isEmpty()) emptyList() else selectedHarvestZones.toList().sorted()
-                zonesToRender.forEach { zone ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(zone, modifier = Modifier.weight(1f), color = Color.White, fontSize = 14.sp)
-                        OutlinedTextField(
-                            value = rowYields[zone] ?: "",
-                            onValueChange = { onRowYieldChange(zone, it) },
-                            modifier = Modifier.weight(1.5f),
-                            placeholder = { Text("0.0") },
-                            suffix = { Text(yieldUnit) },
-                            singleLine = true,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                                focusedContainerColor = MaterialTheme.colorScheme.surface,
-                                unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                            )
-                        )
+                DropdownMenu(expanded = showUnitPicker, onDismissRequest = { showUnitPicker = false }) {
+                    listOf("kg", "g", "units", "baskets", "crates").forEach { u ->
+                        DropdownMenuItem(text = { Text(u) }, onClick = { onUnitChange(u); showUnitPicker = false })
                     }
                 }
             }
+        }
 
-            HorizontalDivider(color = Color.Gray.copy(alpha = 0.2f))
-
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("Grade:", color = Color.Gray, fontSize = 12.sp)
-                listOf("A", "B", "Culls").forEach { grade ->
+        if (availableZones.isNotEmpty()) {
+            Text("Select Harvested Zones / Rows", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                availableZones.forEach { zone ->
+                    val isSelected = selectedHarvestZones.contains(zone)
                     FilterChip(
-                        selected = qualityGrade == grade,
-                        onClick = { onGradeChange(grade) },
-                        label = { Text(grade) },
+                        selected = isSelected,
+                        onClick = { onToggleHarvestZone(zone) },
+                        label = { Text(zone, fontSize = 10.sp) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.primary,
                             selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
@@ -155,35 +74,93 @@ fun HarvestActivityCard(
                         ),
                         border = FilterChipDefaults.filterChipBorder(
                             enabled = true,
-                            selected = qualityGrade == grade,
-                            borderColor = MaterialTheme.colorScheme.outline,
+                            selected = isSelected,
+                            borderColor = if (isImportant) MandatoryBorder else OptionalBorder,
                             selectedBorderColor = Color.Transparent
                         )
                     )
                 }
             }
-            
-            // Auto-aggregation summary
-            val total = rowYields.entries
-                .filter { (zone, _) -> availableZones.isEmpty() || selectedHarvestZones.contains(zone) }
-                .mapNotNull { it.value.toDoubleOrNull() }
-                .sum()
+            HorizontalDivider(color = Color.Gray.copy(alpha = 0.1f))
+        }
 
-            if (total > 0) {
-                Surface(
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                    shape = RoundedCornerShape(8.dp),
+        if (availableZones.isEmpty()) {
+            // Default fallback if no zones defined
+            OutlinedTextField(
+                value = rowYields["Total"] ?: "",
+                onValueChange = { onRowYieldChange("Total", it) },
+                label = { Text("Total Yield") },
+                modifier = Modifier.fillMaxWidth(),
+                suffix = { Text(yieldUnit) },
+                colors = planForaTextFieldColors(isImportant = isImportant)
+            )
+        } else {
+            val zonesToRender = if (selectedHarvestZones.isEmpty()) emptyList() else selectedHarvestZones.toList().sorted()
+            zonesToRender.forEach { zone ->
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(
-                        "Total Aggregated Yield: $total $yieldUnit",
-                        modifier = Modifier.padding(8.dp),
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    Text(zone, modifier = Modifier.weight(1f), color = Color.White, fontSize = 14.sp)
+                    OutlinedTextField(
+                        value = rowYields[zone] ?: "",
+                        onValueChange = { onRowYieldChange(zone, it) },
+                        modifier = Modifier.weight(1.5f),
+                        placeholder = { Text("0.0") },
+                        suffix = { Text(yieldUnit) },
+                        singleLine = true,
+                        colors = planForaTextFieldColors(isImportant = isImportant)
                     )
                 }
+            }
+        }
+
+        HorizontalDivider(color = Color.Gray.copy(alpha = 0.2f))
+
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text("Grade:", color = Color.Gray, fontSize = 12.sp)
+            listOf("A", "B", "Culls").forEach { grade ->
+                FilterChip(
+                    selected = qualityGrade == grade,
+                    onClick = { onGradeChange(grade) },
+                    label = { Text(grade) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                        labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = qualityGrade == grade,
+                        borderColor = if (isImportant) MandatoryBorder else OptionalBorder,
+                        selectedBorderColor = Color.Transparent
+                    )
+                )
+            }
+        }
+        
+        // Auto-aggregation summary
+        val total = rowYields.entries
+            .filter { (zone, _) -> availableZones.isEmpty() || selectedHarvestZones.contains(zone) }
+            .mapNotNull { it.value.toDoubleOrNull() }
+            .sum()
+
+        if (total > 0) {
+            Surface(
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.fillMaxWidth(),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+            ) {
+                Text(
+                    "Total Aggregated Yield: $total $yieldUnit",
+                    modifier = Modifier.padding(8.dp),
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
             }
         }
     }
