@@ -492,7 +492,7 @@ fun DynamicSupplyFieldRenderer(
         customFields.forEach { def ->
             MementoLedgerRow(
                 label = def.fieldName,
-                onRemove = { /* Logic to hide */ },
+                onRemove = { viewModel.archiveCustomFieldDefinition(def.id) },
                 modifier = Modifier.combinedClickable(
                     onClick = {},
                     onLongClick = {
@@ -501,7 +501,7 @@ fun DynamicSupplyFieldRenderer(
                     }
                 )
             ) {
-                Box(modifier = Modifier.weight(1.5f)) {
+                Box(modifier = Modifier.weight(2f)) {
                     DynamicCustomFieldInput(
                         definition = def,
                         value = customValues[def.id] ?: "",
@@ -535,24 +535,24 @@ fun MementoLedgerRow(
 ) {
     Surface(
         color = Color(0xFF1E2120),
-        shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.3f)),
-        modifier = modifier.fillMaxWidth()
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.dp, Color.Gray.copy(alpha = 0.1f)),
+        modifier = Modifier.fillMaxWidth().then(modifier)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
                 text = label,
                 modifier = Modifier.weight(1f),
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
-                fontSize = 13.sp
+                fontSize = 14.sp
             )
             content()
-            IconButton(onClick = onRemove, modifier = Modifier.size(24.dp)) {
+            IconButton(onClick = onRemove, modifier = Modifier.size(32.dp)) {
                 Icon(Icons.Default.Close, null, tint = Color.Gray, modifier = Modifier.size(16.dp))
             }
         }

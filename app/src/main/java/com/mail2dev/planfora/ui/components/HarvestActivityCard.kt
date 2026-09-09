@@ -56,29 +56,32 @@ fun HarvestActivityCard(
         }
 
         if (availableZones.isNotEmpty()) {
-            Text("Select Harvested Zones / Rows", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                availableZones.forEach { zone ->
-                    val isSelected = selectedHarvestZones.contains(zone)
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = { onToggleHarvestZone(zone) },
-                        label = { Text(zone, fontSize = 10.sp) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primary,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
-                            labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                        ),
-                        border = FilterChipDefaults.filterChipBorder(
-                            enabled = true,
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("Select Harvested Zones / Rows", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    availableZones.forEach { zone ->
+                        val isSelected = selectedHarvestZones.contains(zone)
+                        FilterChip(
                             selected = isSelected,
-                            borderColor = if (isImportant) MandatoryBorder else OptionalBorder,
-                            selectedBorderColor = Color.Transparent
+                            onClick = { onToggleHarvestZone(zone) },
+                            label = { Text(zone, fontSize = 10.sp) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                                labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            ),
+                            border = FilterChipDefaults.filterChipBorder(
+                                enabled = true,
+                                selected = isSelected,
+                                borderColor = if (isImportant) MandatoryBorder else OptionalBorder,
+                                selectedBorderColor = Color.Transparent
+                            )
                         )
-                    )
+                    }
                 }
             }
             HorizontalDivider(color = Color.Gray.copy(alpha = 0.1f))
@@ -96,48 +99,52 @@ fun HarvestActivityCard(
             )
         } else {
             val zonesToRender = if (selectedHarvestZones.isEmpty()) emptyList() else selectedHarvestZones.toList().sorted()
-            zonesToRender.forEach { zone ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(zone, modifier = Modifier.weight(1f), color = Color.White, fontSize = 14.sp)
-                    OutlinedTextField(
-                        value = rowYields[zone] ?: "",
-                        onValueChange = { onRowYieldChange(zone, it) },
-                        modifier = Modifier.weight(1.5f),
-                        placeholder = { Text("0.0") },
-                        suffix = { Text(yieldUnit) },
-                        singleLine = true,
-                        colors = planForaTextFieldColors(isImportant = isImportant)
-                    )
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                zonesToRender.forEach { zone ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(zone, modifier = Modifier.weight(1f), color = Color.White, fontSize = 14.sp)
+                        OutlinedTextField(
+                            value = rowYields[zone] ?: "",
+                            onValueChange = { onRowYieldChange(zone, it) },
+                            modifier = Modifier.weight(1.5f),
+                            placeholder = { Text("0.0") },
+                            suffix = { Text(yieldUnit) },
+                            singleLine = true,
+                            colors = planForaTextFieldColors(isImportant = isImportant)
+                        )
+                    }
                 }
             }
         }
 
         HorizontalDivider(color = Color.Gray.copy(alpha = 0.2f))
 
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("Grade:", color = Color.Gray, fontSize = 12.sp)
-            listOf("A", "B", "Culls").forEach { grade ->
-                FilterChip(
-                    selected = qualityGrade == grade,
-                    onClick = { onGradeChange(grade) },
-                    label = { Text(grade) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primary,
-                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
-                        labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                    ),
-                    border = FilterChipDefaults.filterChipBorder(
-                        enabled = true,
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text("Harvest Grade / Quality:", color = Color.Gray, fontSize = 12.sp)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                listOf("A", "B", "Culls").forEach { grade ->
+                    FilterChip(
                         selected = qualityGrade == grade,
-                        borderColor = if (isImportant) MandatoryBorder else OptionalBorder,
-                        selectedBorderColor = Color.Transparent
+                        onClick = { onGradeChange(grade) },
+                        label = { Text(grade) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                            labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = qualityGrade == grade,
+                            borderColor = if (isImportant) MandatoryBorder else OptionalBorder,
+                            selectedBorderColor = Color.Transparent
+                        )
                     )
-                )
+                }
             }
         }
         

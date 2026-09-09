@@ -1,6 +1,8 @@
 package com.mail2dev.planfora.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -11,6 +13,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -191,9 +194,16 @@ fun DynamicCustomFieldInput(
             OutlinedTextField(
                 value = value,
                 onValueChange = onValueChange,
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Enter text...") },
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                placeholder = { Text("Enter text...", fontSize = 14.sp) },
+                textStyle = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
+                shape = RoundedCornerShape(8.dp),
                 colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color.Gray.copy(alpha = 0.5f),
+                    unfocusedBorderColor = Color.Gray.copy(alpha = 0.3f),
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    cursorColor = MaterialTheme.colorScheme.primary,
                     focusedTextColor = Color.White,
                     unfocusedTextColor = Color.White
                 )
@@ -203,23 +213,51 @@ fun DynamicCustomFieldInput(
             OutlinedTextField(
                 value = value,
                 onValueChange = onValueChange,
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("0.0") },
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                placeholder = { Text("0.0", fontSize = 14.sp) },
+                textStyle = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                shape = RoundedCornerShape(8.dp),
                 colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color.Gray.copy(alpha = 0.5f),
+                    unfocusedBorderColor = Color.Gray.copy(alpha = 0.3f),
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    cursorColor = MaterialTheme.colorScheme.primary,
                     focusedTextColor = Color.White,
                     unfocusedTextColor = Color.White
                 )
             )
         }
         CustomFieldType.BOOLEAN -> {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Switch(
-                    checked = value.toBoolean(),
-                    onCheckedChange = { onValueChange(it.toString()) }
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(if (value.toBoolean()) "Yes" else "No", color = Color.White)
+            Surface(
+                color = Color.White.copy(alpha = 0.05f),
+                shape = RoundedCornerShape(24.dp),
+                border = BorderStroke(1.dp, Color.Gray.copy(alpha = 0.2f))
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Switch(
+                        checked = value.toBoolean(),
+                        onCheckedChange = { onValueChange(it.toString()) },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = MaterialTheme.colorScheme.primary,
+                            uncheckedThumbColor = Color.Gray,
+                            uncheckedTrackColor = Color.DarkGray
+                        ),
+                        modifier = Modifier.scale(0.8f)
+                    )
+                    Text(
+                        text = if (value.toBoolean()) "Yes" else "No", 
+                        color = Color.White,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
         }
         CustomFieldType.SINGLE_SELECT -> {

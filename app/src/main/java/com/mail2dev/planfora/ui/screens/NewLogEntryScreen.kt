@@ -301,52 +301,6 @@ fun NewLogEntryScreen(
                             textStyle = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                             modifier = Modifier.fillMaxWidth()
                         )
-                        Row(
-                            modifier = Modifier
-                                .padding(start = 16.dp, bottom = 12.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            // Date Badge
-                            val dateString = remember(selectedTimestamp) {
-                                SimpleDateFormat("EEE, MMM d, yyyy", Locale.getDefault()).format(Date(selectedTimestamp))
-                            }
-                            Surface(
-                                onClick = { showDatePicker = true },
-                                color = Color.White.copy(alpha = 0.05f),
-                                shape = RoundedCornerShape(8.dp),
-                                border = BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.3f))
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    Icon(Icons.Default.CalendarToday, null, tint = Color.Gray, modifier = Modifier.size(12.dp))
-                                    Text(text = dateString, style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                                }
-                            }
-
-                            // Time Badge
-                            val timeString = remember(selectedTimestamp) {
-                                SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date(selectedTimestamp))
-                            }
-                            Surface(
-                                onClick = { showTimePicker = true },
-                                color = Color.White.copy(alpha = 0.05f),
-                                shape = RoundedCornerShape(8.dp),
-                                border = BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.3f))
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    Icon(Icons.Default.Schedule, null, tint = Color.Gray, modifier = Modifier.size(12.dp))
-                                    Text(text = timeString, style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                                }
-                            }
-                        }
                     }
                 },
                 navigationIcon = {
@@ -370,6 +324,7 @@ fun NewLogEntryScreen(
                         cal.set(java.util.Calendar.DAY_OF_MONTH, dayOfMonth)
                         selectedTimestamp = cal.timeInMillis
                         showDatePicker = false
+                        showTimePicker = true // Chain to time picker
                     },
                     cal.get(java.util.Calendar.YEAR),
                     cal.get(java.util.Calendar.MONTH),
@@ -409,10 +364,45 @@ fun NewLogEntryScreen(
                 .padding(horizontal = 12.dp)
                 .verticalScroll(rememberScrollState())
                 .imePadding(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Spacer(modifier = Modifier.height(8.dp))
-            
+            val dateText = remember(selectedTimestamp) {
+                SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(selectedTimestamp))
+            }
+            val timeText = remember(selectedTimestamp) {
+                SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(selectedTimestamp))
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                AssistChip(
+                    onClick = { showDatePicker = true },
+                    label = { Text(dateText, fontSize = 12.sp) },
+                    leadingIcon = { Icon(Icons.Default.DateRange, null, modifier = Modifier.size(16.dp)) },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = AssistChipDefaults.assistChipColors(
+                        labelColor = Color.White,
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+                    ),
+                    border = AssistChipDefaults.assistChipBorder(borderColor = Color.Gray.copy(alpha = 0.3f), enabled = true)
+                )
+                AssistChip(
+                    onClick = { showTimePicker = true },
+                    label = { Text(timeText, fontSize = 12.sp) },
+                    leadingIcon = { Icon(Icons.Default.Schedule, null, modifier = Modifier.size(16.dp)) },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = AssistChipDefaults.assistChipColors(
+                        labelColor = Color.White,
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+                    ),
+                    border = AssistChipDefaults.assistChipBorder(borderColor = Color.Gray.copy(alpha = 0.3f), enabled = true)
+                )
+            }
+
             if (parentLog != null) {
                 PlanForaSurfaceCard {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -489,7 +479,8 @@ fun NewLogEntryScreen(
             PlanForaSurfaceCard(title = "Activity Type", isImportant = true) {
                 androidx.compose.foundation.layout.FlowRow(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     activityTypes.forEach { type ->
                         FilterChip(
@@ -585,9 +576,22 @@ fun NewLogEntryScreen(
                 value = note,
                 onValueChange = { note = it },
                 label = { Text("Observation Notes") },
-                modifier = Modifier.fillMaxWidth().heightIn(min = 120.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 120.dp),
                 shape = RoundedCornerShape(12.dp),
-                colors = planForaTextFieldColors(isImportant = false)
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = ForestEmerald,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f),
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.LightGray,
+                    cursorColor = ForestEmerald,
+                    focusedLabelColor = ForestEmerald,
+                    unfocusedLabelColor = Color.Gray
+                ),
+                placeholder = { Text("Describe your observations...", color = Color.Gray.copy(alpha = 0.6f), fontSize = 14.sp) }
             )
 
             // 5. Streamlined Attachments & Tags
@@ -633,8 +637,8 @@ fun NewLogEntryScreen(
                 HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
 
                 // Unified Dynamic Custom Fields
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Activity Metrics".uppercase(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold)
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Optional Field".uppercase(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold)
                     
                     Row(
                         modifier = Modifier
@@ -649,15 +653,16 @@ fun NewLogEntryScreen(
                             colors = AssistChipDefaults.assistChipColors(
                                 labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
                                 containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
-                            )
+                            ),
+                            border = BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.3f))
                         )
                     }
 
                     customFieldDefinitions.forEach { def ->
                         Surface(
                             color = Color(0xFF1E2120),
-                            shape = RoundedCornerShape(8.dp),
-                            border = BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.3f)),
+                            shape = RoundedCornerShape(12.dp),
+                            border = BorderStroke(1.dp, Color.Gray.copy(alpha = 0.1f)),
                             modifier = Modifier.fillMaxWidth().combinedClickable(
                                 onClick = {},
                                 onLongClick = {
@@ -667,20 +672,29 @@ fun NewLogEntryScreen(
                             )
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
-                                Text(def.fieldName, modifier = Modifier.weight(1f), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                                Box(modifier = Modifier.weight(1.5f)) {
+                                Text(
+                                    text = def.fieldName, 
+                                    modifier = Modifier.weight(1f), 
+                                    color = Color.White, 
+                                    fontWeight = FontWeight.Bold, 
+                                    fontSize = 14.sp
+                                )
+                                Box(modifier = Modifier.weight(2f)) {
                                     DynamicCustomFieldInput(
                                         definition = def,
                                         value = customFieldValues[def.id] ?: "",
                                         onValueChange = { customFieldValues = customFieldValues.toMutableMap().apply { put(def.id, it) } }
                                     )
                                 }
-                                IconButton(onClick = { customFieldValues = customFieldValues.toMutableMap().apply { remove(def.id) } }, modifier = Modifier.size(24.dp)) {
-                                    Icon(Icons.Default.Close, null, tint = Color.Gray, modifier = Modifier.size(16.dp))
+                                IconButton(
+                                    onClick = { viewModel.archiveCustomFieldDefinition(def.id) }, 
+                                    modifier = Modifier.size(32.dp)
+                                ) {
+                                    Icon(Icons.Default.Close, null, tint = Color.Gray, modifier = Modifier.size(20.dp))
                                 }
                             }
                         }
@@ -887,67 +901,74 @@ fun TreatmentDetailsCard(
         val selectedSupply = supplies.find { it.id == selectedSupplyId }
         
         if (availableZones.isNotEmpty()) {
-            Text("Target Zones / Rows", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-            androidx.compose.foundation.layout.FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                availableZones.forEach { zone ->
-                    val isSelected = selectedZones.contains(zone)
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = { onToggleZone(zone) },
-                        label = { Text(zone, fontSize = 10.sp) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primary,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
-                            labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                        ),
-                        border = FilterChipDefaults.filterChipBorder(
-                            enabled = true,
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("Target Zones / Rows", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                androidx.compose.foundation.layout.FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    availableZones.forEach { zone ->
+                        val isSelected = selectedZones.contains(zone)
+                        FilterChip(
                             selected = isSelected,
-                            borderColor = Color.Gray.copy(alpha = 0.2f),
-                            selectedBorderColor = Color.Transparent
+                            onClick = { onToggleZone(zone) },
+                            label = { Text(zone, fontSize = 10.sp) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                                labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            ),
+                            border = FilterChipDefaults.filterChipBorder(
+                                enabled = true,
+                                selected = isSelected,
+                                borderColor = Color.Gray.copy(alpha = 0.2f),
+                                selectedBorderColor = Color.Transparent
+                            )
                         )
-                    )
+                    }
                 }
             }
             HorizontalDivider(color = Color.Gray.copy(alpha = 0.1f))
         }
 
-        OutlinedTextField(
-            value = selectedSupply?.batchCode ?: customInputName.ifBlank { "Select Product" },
-            onValueChange = {},
-            readOnly = true,
-            modifier = Modifier.fillMaxWidth().clickable { onSupplyClick() },
-            enabled = false,
-            leadingIcon = { Icon(Icons.Default.Science, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp)) },
-            trailingIcon = { Icon(Icons.Default.ArrowDropDown, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
-            colors = planForaTextFieldColors(isImportant = true)
-        )
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            OutlinedTextField(
+                value = selectedSupply?.batchCode ?: customInputName.ifBlank { "Select Product" },
+                onValueChange = {},
+                readOnly = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onSupplyClick() },
+                enabled = false,
+                leadingIcon = { Icon(Icons.Default.Science, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp)) },
+                trailingIcon = { Icon(Icons.Default.ArrowDropDown, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
+                colors = planForaTextFieldColors(isImportant = true)
+            )
 
-        AnimatedVisibility(
-            visible = selectedSupply?.notes?.isNotBlank() == true,
-            enter = fadeIn() + expandVertically(),
-            exit = fadeOut() + shrinkVertically()
-        ) {
-            selectedSupply?.notes?.let { notes ->
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(start = 4.dp, top = 4.dp, bottom = 4.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "Dosage/Note: $notes",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
-                    )
+            AnimatedVisibility(
+                visible = selectedSupply?.notes?.isNotBlank() == true,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                selectedSupply?.notes?.let { notes ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(start = 4.dp, top = 2.dp, bottom = 4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "Dosage/Note: $notes",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                        )
+                    }
                 }
             }
         }
@@ -1001,8 +1022,19 @@ fun TreatmentDetailsCard(
 @Composable
 fun RepottingCard(substrateMix: String, potSize: String, onSubstrateChange: (String) -> Unit, onPotSizeChange: (String) -> Unit) {
     PlanForaSurfaceCard(title = "Substrate & Container", isImportant = false) {
-        OutlinedTextField(value = substrateMix, onValueChange = onSubstrateChange, label = { Text("Substrate Mix") }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("e.g. Coco/Perlite 70/30") }, colors = planForaTextFieldColors(isImportant = false))
-        OutlinedTextField(value = potSize, onValueChange = onPotSizeChange, label = { Text("Pot Size / Bed ID") }, modifier = Modifier.fillMaxWidth(), colors = planForaTextFieldColors(isImportant = false))
+        val fieldColors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = ForestEmerald,
+            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f),
+            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+            focusedTextColor = Color.White,
+            unfocusedTextColor = Color.LightGray,
+            cursorColor = ForestEmerald,
+            focusedLabelColor = ForestEmerald,
+            unfocusedLabelColor = Color.Gray
+        )
+        OutlinedTextField(value = substrateMix, onValueChange = onSubstrateChange, label = { Text("Substrate Mix") }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("e.g. Coco/Perlite 70/30") }, colors = fieldColors)
+        OutlinedTextField(value = potSize, onValueChange = onPotSizeChange, label = { Text("Pot Size / Bed ID") }, modifier = Modifier.fillMaxWidth(), colors = fieldColors)
     }
 }
 
@@ -1047,11 +1079,9 @@ fun SupplyPickerBottomSheet(
     val filtered = supplies.filter { it.batchCode.contains(searchQuery, ignoreCase = true) || it.name.contains(searchQuery, ignoreCase = true) }
 
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Color(0xFF1E2120)) {
-        Column(modifier = Modifier.fillMaxWidth().padding(16.dp).imePadding()) {
+        Column(modifier = Modifier.fillMaxWidth().padding(16.dp).imePadding(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("Search Supplies", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-            Spacer(modifier = Modifier.height(16.dp))
             OutlinedTextField(value = searchQuery, onValueChange = { searchQuery = it }, placeholder = { Text("🔍 Search...") }, modifier = Modifier.fillMaxWidth())
-            Spacer(modifier = Modifier.height(20.dp))
             LazyColumn(modifier = Modifier.fillMaxHeight(0.7f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 item {
                     Surface(
@@ -1119,11 +1149,9 @@ fun AssetPickerBottomSheet(
         containerColor = Color(0xFF1E2120),
         dragHandle = { BottomSheetDefaults.DragHandle(color = Color.Gray) }
     ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(16.dp).fillMaxHeight(0.85f)) {
+        Column(modifier = Modifier.fillMaxWidth().padding(16.dp).fillMaxHeight(0.85f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("Select Plant / Asset", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-            Spacer(modifier = Modifier.height(16.dp))
             OutlinedTextField(value = searchQuery, onValueChange = { searchQuery = it }, placeholder = { Text("🔍 Search...") }, modifier = Modifier.fillMaxWidth())
-            Spacer(modifier = Modifier.height(12.dp))
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(AssetCategory.entries) { cat ->
                     FilterChip(
@@ -1145,7 +1173,6 @@ fun AssetPickerBottomSheet(
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(8.dp))
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 item {
                     FilterChip(
@@ -1186,7 +1213,6 @@ fun AssetPickerBottomSheet(
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(16.dp))
             LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 item {
                     Surface(
