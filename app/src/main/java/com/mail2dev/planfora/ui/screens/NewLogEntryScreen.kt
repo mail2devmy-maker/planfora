@@ -61,6 +61,10 @@ import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
@@ -141,6 +145,8 @@ fun NewLogEntryScreen(
     var rowYields by remember { mutableStateOf(mutableMapOf<String, String>()) }
 
     var parentLog by remember { mutableStateOf<JournalLogEntity?>(null) }
+    var selectedTimestamp by remember { mutableStateOf(initialTimestamp ?: System.currentTimeMillis()) }
+    var showDateTimePicker by remember { mutableStateOf(false) }
 
     val activityTypes = listOf("Observation", "Feeding", "Pruning", "Pest Control", "Repotting", "Harvest", "Other")
 
@@ -274,25 +280,38 @@ fun NewLogEntryScreen(
         topBar = {
             TopAppBar(
                 title = { 
-                    TextField(
-                        value = title,
-                        onValueChange = { 
-                            title = it 
-                            userEditedTitle = true
-                        },
-                        placeholder = { Text("Log Title...", color = Color.Gray) },
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent,
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
-                            cursorColor = MaterialTheme.colorScheme.primary,
-                            focusedIndicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                            unfocusedIndicatorColor = Color.Transparent
-                        ),
-                        textStyle = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        TextField(
+                            value = title,
+                            onValueChange = { 
+                                title = it 
+                                userEditedTitle = true
+                            },
+                            placeholder = { Text("Log Title...", color = Color.Gray) },
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                cursorColor = MaterialTheme.colorScheme.primary,
+                                focusedIndicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                                unfocusedIndicatorColor = Color.Transparent
+                            ),
+                            textStyle = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        val formattedDate = remember(selectedTimestamp) {
+                            SimpleDateFormat("EEE, MMM d, yyyy, h:mm a", Locale.getDefault()).format(Date(selectedTimestamp))
+                        }
+                        Text(
+                            text = formattedDate,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.Gray,
+                            modifier = Modifier
+                                .padding(start = 16.dp, bottom = 8.dp)
+                                .clickable { showDateTimePicker = true }
+                        )
+                    }
                 },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
@@ -304,6 +323,39 @@ fun NewLogEntryScreen(
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
+        if (showDateTimePicker) {
+            val cal = java.util.Calendar.getInstance().apply { timeInMillis = selectedTimestamp }
+            DisposableEffect(Unit) {
+                val datePicker = android.app.DatePickerDialog(
+                    context,
+                    { _, year, month, dayOfMonth ->
+                        cal.set(java.util.Calendar.YEAR, year)
+                        cal.set(java.util.Calendar.MONTH, month)
+                        cal.set(java.util.Calendar.DAY_OF_MONTH, dayOfMonth)
+                        
+                        android.app.TimePickerDialog(
+                            context,
+                            { _, hourOfDay, minute ->
+                                cal.set(java.util.Calendar.HOUR_OF_DAY, hourOfDay)
+                                cal.set(java.util.Calendar.MINUTE, minute)
+                                selectedTimestamp = cal.timeInMillis
+                                showDateTimePicker = false
+                            },
+                            cal.get(java.util.Calendar.HOUR_OF_DAY),
+                            cal.get(java.util.Calendar.MINUTE),
+                            false
+                        ).show()
+                    },
+                    cal.get(java.util.Calendar.YEAR),
+                    cal.get(java.util.Calendar.MONTH),
+                    cal.get(java.util.Calendar.DAY_OF_MONTH)
+                )
+                datePicker.setOnCancelListener { showDateTimePicker = false }
+                datePicker.show()
+                onDispose { datePicker.dismiss() }
+            }
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -326,11 +378,11 @@ fun NewLogEntryScreen(
             }
 
             // 1. Target Asset Section
-            PlanForaSurfaceCard(title = "Associated Plant(s)", isImportant = true) {
+            PlanForaSurfaceCard(title = "Primary Link (Mandatory)", isImportant = true) {
                 if (selectedAssetIds.isEmpty()) {
                     Box(modifier = Modifier.fillMaxWidth().clickable(enabled = parentLogId == null) { showAssetPicker = true }) {
                         OutlinedTextField(
-                            value = "Select Plant",
+                            value = "Select Plant (Required)",
                             onValueChange = {},
                             readOnly = true,
                             enabled = false,
@@ -628,7 +680,7 @@ fun NewLogEntryScreen(
                                 parameters["method"] = appMethod
                                 val selectedSupply = supplies.find { it.id == selectedSupplyId }
                                 if (selectedSupply?.phiDays != null && selectedSupply.phiDays!! > 0) {
-                                    val phiExpiry = (initialTimestamp ?: System.currentTimeMillis()) + (selectedSupply.phiDays!! * 24L * 60 * 60 * 1000)
+                                    val phiExpiry = selectedTimestamp + (selectedSupply.phiDays!! * 24L * 60 * 60 * 1000)
                                     parameters["phi_expiry"] = phiExpiry.toString()
                                 }
                                 if (selectedZones.isNotEmpty()) {
@@ -690,7 +742,7 @@ fun NewLogEntryScreen(
                                     imageUris = imagesString,
                                     activityType = if (activityType == "Other") customActivity else activityType,
                                     parentLogId = parentLogId,
-                                    timestamp = initialTimestamp ?: System.currentTimeMillis(),
+                                    timestamp = selectedTimestamp,
                                     supplyId = selectedSupplyId,
                                     customInputName = if (selectedSupplyId == null) customInputName else null,
                                     batchGroupId = batchGroupId,
