@@ -7,7 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -49,7 +49,7 @@ fun SuppliesScreen(
                     containerColor = ForestGreen,
                     contentColor = Color.White
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = "Add Formulation")
+                    Icon(Icons.Rounded.Add, contentDescription = "Add Formulation")
                 }
             }
         }
@@ -87,7 +87,7 @@ fun SuppliesScreen(
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Icon(
-                                    Icons.Default.Add,
+                                    Icons.Rounded.Inventory2,
                                     contentDescription = null,
                                     tint = Color.Gray.copy(alpha = 0.3f),
                                     modifier = Modifier.size(64.dp)

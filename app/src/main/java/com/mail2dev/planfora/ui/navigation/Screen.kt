@@ -1,19 +1,15 @@
 package com.mail2dev.planfora.ui.navigation
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.ui.graphics.vector.ImageVector
 
 sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
-    object Logs : Screen("logs", "Logs", Icons.Default.DateRange)
-    object Assets : Screen("assets", "Assets", Icons.Default.Home)
-    object Supplies : Screen("supplies", "Supplies", Icons.Default.ShoppingCart)
-    object Profile : Screen("profile", "Profile", Icons.Default.Person)
-    object NewLog : Screen("new_log?parentLogId={parentLogId}&timestamp={timestamp}&assetId={assetId}&assetIds={assetIds}&editingLogId={editingLogId}", "New Log", Icons.Default.Add) {
+    object Logs : Screen("logs", "Logs", Icons.Rounded.EventNote)
+    object Assets : Screen("assets", "Assets", Icons.Rounded.Forest)
+    object Supplies : Screen("supplies", "Supplies", Icons.Rounded.Inventory2)
+    object Profile : Screen("profile", "Profile", Icons.Rounded.Person)
+    object NewLog : Screen("new_log?parentLogId={parentLogId}&timestamp={timestamp}&assetId={assetId}&assetIds={assetIds}&editingLogId={editingLogId}", "New Log", Icons.Rounded.Add) {
         fun createRoute(parentLogId: Long? = null, timestamp: Long? = null, assetId: Long? = null, assetIds: String? = null, editingLogId: Long? = null): String {
             val builder = StringBuilder("new_log")
             val params = mutableListOf<String>()
@@ -28,10 +24,10 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector)
             return builder.toString()
         }
     }
-    object PlantDetail : Screen("plant_detail/{plantId}", "Plant Detail", Icons.Default.Home) {
+    object PlantDetail : Screen("plant_detail/{plantId}", "Plant Detail", Icons.Rounded.Grass) {
         fun createRoute(plantId: Long) = "plant_detail/$plantId"
     }
-    object SupplyDetail : Screen("supply_detail/{supplyId}", "Supply Detail", Icons.Default.ShoppingCart) {
+    object SupplyDetail : Screen("supply_detail/{supplyId}", "Supply Detail", Icons.Rounded.Inventory2) {
         fun createRoute(supplyId: Long) = "supply_detail/$supplyId"
     }
 }
