@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 19,
-    "identityHash": "7d41b3272835169c5ff76bf1ad165baa",
+    "identityHash": "182c6e027efa154fc38c0a8a38d500f2",
     "entities": [
       {
         "tableName": "diy_supplies",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `category` TEXT NOT NULL, `batchNumber` INTEGER NOT NULL, `batchCode` TEXT NOT NULL, `startDate` INTEGER NOT NULL, `targetMaturityDate` INTEGER NOT NULL, `currentVolume` REAL NOT NULL, `originalVolume` REAL NOT NULL, `unit` TEXT NOT NULL, `notifyOnMaturity` INTEGER NOT NULL, `isArchived` INTEGER NOT NULL, `activeIngredient` TEXT, `activePercentage` TEXT, `formType` TEXT NOT NULL, `formulationCode` TEXT, `notes` TEXT NOT NULL, `phiDays` INTEGER, `stockQuantity` REAL, `stockUnit` TEXT, `imageUris` TEXT NOT NULL, `audioPath` TEXT, `locationNote` TEXT NOT NULL, `tags` TEXT NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `category` TEXT NOT NULL, `batchNumber` INTEGER NOT NULL, `batchCode` TEXT NOT NULL, `startDate` INTEGER NOT NULL, `targetMaturityDate` INTEGER NOT NULL, `currentVolume` REAL NOT NULL, `originalVolume` REAL NOT NULL, `unit` TEXT NOT NULL, `notifyOnMaturity` INTEGER NOT NULL, `isArchived` INTEGER NOT NULL, `activeIngredient` TEXT, `activePercentage` TEXT, `formType` TEXT NOT NULL, `formulationCode` TEXT, `notes` TEXT NOT NULL, `phiDays` INTEGER, `reiHours` INTEGER, `stockQuantity` REAL, `stockUnit` TEXT, `imageUris` TEXT NOT NULL, `audioPath` TEXT, `locationNote` TEXT NOT NULL, `tags` TEXT NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -110,6 +110,11 @@
           {
             "fieldPath": "phiDays",
             "columnName": "phiDays",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "reiHours",
+            "columnName": "reiHours",
             "affinity": "INTEGER"
           },
           {
@@ -599,7 +604,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '7d41b3272835169c5ff76bf1ad165baa')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '182c6e027efa154fc38c0a8a38d500f2')"
     ]
   }
 }

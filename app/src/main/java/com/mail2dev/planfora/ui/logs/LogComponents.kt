@@ -184,6 +184,7 @@ fun ExpandedLogCard(
             }
             
             PhiBadge(log)
+            ReiBadge(log)
             
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = log.title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
@@ -349,6 +350,7 @@ fun FollowUpLogCard(
                 }
             }
             PhiBadge(log)
+            ReiBadge(log)
             Spacer(modifier = Modifier.height(6.dp))
             Text(text = log.title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
             
@@ -421,6 +423,17 @@ fun CompactLogItem(
                         fontWeight = FontWeight.Bold
                     )
                 }
+                val reiExpiryStr = log.parameters.split("|").find { it.startsWith("rei_expiry:") }?.substringAfter("rei_expiry:")
+                if (reiExpiryStr != null) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    val isExpired = System.currentTimeMillis() >= (reiExpiryStr.toLongOrNull() ?: 0L)
+                    Text(
+                        text = if (isExpired) "✅ REI" else "⚠️ REI",
+                        color = if (isExpired) SageGreen else Color(0xFFFFB74D),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
         
@@ -470,6 +483,39 @@ fun PhiBadge(log: JournalLogEntity) {
         Color(0xFFFFB74D) to "⚠️ PHI: $remainingDays Days Left"
     } else {
         SageGreen to "✅ PHI Cleared"
+    }
+
+    Surface(
+        color = badgeColor.copy(alpha = 0.2f),
+        shape = RoundedCornerShape(16.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, badgeColor),
+        modifier = Modifier.padding(top = 4.dp)
+    ) {
+        Text(
+            text = label,
+            color = badgeColor,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+@Composable
+fun ReiBadge(log: JournalLogEntity) {
+    val reiExpiryStr = log.parameters.split("|").find { it.startsWith("rei_expiry:") }?.substringAfter("rei_expiry:")
+    val reiExpiry = reiExpiryStr?.toLongOrNull() ?: return
+    
+    val currentTime = System.currentTimeMillis()
+    val isExpired = currentTime >= reiExpiry
+    
+    val (badgeColor, label) = if (!isExpired) {
+        val remainingMillis = reiExpiry - currentTime
+        val remainingHours = (remainingMillis / (60L * 60 * 1000)).coerceAtLeast(1)
+        val remainingMins = ((remainingMillis % (60L * 60 * 1000)) / (60L * 1000))
+        Color(0xFFFFB74D) to "⚠️ REI: $remainingHours h ${remainingMins}m Left"
+    } else {
+        SageGreen to "✅ REI Cleared"
     }
 
     Surface(

@@ -23,6 +23,8 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -141,6 +143,9 @@ fun NewLogEntryScreen(
     var potSize by remember { mutableStateOf("") }
     
     var pruningType by remember { mutableStateOf("Sanitary") }
+
+    var weedingMethod by remember { mutableStateOf("Manual") }
+    var usedQty by remember { mutableStateOf("") }
     
     var selectedZones by remember { mutableStateOf(setOf<String>()) }
     var rowYields by remember { mutableStateOf(mutableMapOf<String, String>()) }
@@ -182,7 +187,7 @@ fun NewLogEntryScreen(
         )
     }
 
-    val activityTypes = listOf("Observation", "Feeding", "Pruning", "Pest Control", "Repotting", "Harvest", "Other")
+    val activityTypes = listOf("Observation", "Feeding", "Pruning", "Pest Control", "Repotting", "Harvest", "Weeding", "Other")
 
     // Loading editing log
     LaunchedEffect(editingLogId) {
@@ -215,6 +220,9 @@ fun NewLogEntryScreen(
                 potSize = params["pot_size"] ?: ""
                 
                 pruningType = params["pruning_type"] ?: "Sanitary"
+
+                weedingMethod = params["weeding_method"] ?: "Manual"
+                usedQty = params["used_qty"] ?: ""
                 
                 yieldUnit = params["unit"] ?: "kg"
                 qualityGrade = params["grade"] ?: "A"
@@ -276,6 +284,7 @@ fun NewLogEntryScreen(
                 "Harvest" -> if (yieldAmount.isNotBlank()) "$yieldAmount $yieldUnit" else ""
                 "Repotting" -> substrateMix
                 "Pruning" -> pruningType
+                "Weeding" -> weedingMethod
                 else -> ""
             }
 
@@ -615,6 +624,15 @@ fun NewLogEntryScreen(
                     pruningType = pruningType,
                     onTypeChange = { pruningType = it }
                 )
+                "Weeding" -> WeedingCard(
+                    supplies = supplies,
+                    selectedSupplyId = selectedSupplyId,
+                    weedingMethod = weedingMethod,
+                    usedQty = usedQty,
+                    onSupplyClick = { showSupplyBottomSheet = true },
+                    onMethodChange = { weedingMethod = it },
+                    onQtyChange = { usedQty = it }
+                )
             }
 
             // 4. Observation Notes
@@ -811,6 +829,15 @@ fun NewLogEntryScreen(
                             }
                             "Pruning" -> {
                                 parameters["pruning_type"] = pruningType
+                            }
+                            "Weeding" -> {
+                                parameters["weeding_method"] = weedingMethod
+                                parameters["used_qty"] = usedQty
+                                val selectedSupply = supplies.find { it.id == selectedSupplyId }
+                                if (weedingMethod == "Chemical" && selectedSupply?.reiHours != null && selectedSupply.reiHours!! > 0) {
+                                    val reiExpiry = selectedTimestamp + (selectedSupply.reiHours!! * 60L * 60 * 1000)
+                                    parameters["rei_expiry"] = reiExpiry.toString()
+                                }
                             }
                         }
 
@@ -1082,6 +1109,96 @@ fun RepottingCard(substrateMix: String, potSize: String, onSubstrateChange: (Str
         )
         OutlinedTextField(value = substrateMix, onValueChange = onSubstrateChange, label = { Text("Substrate Mix") }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("e.g. Coco/Perlite 70/30") }, colors = fieldColors)
         OutlinedTextField(value = potSize, onValueChange = onPotSizeChange, label = { Text("Pot Size / Bed ID") }, modifier = Modifier.fillMaxWidth(), colors = fieldColors)
+    }
+}
+
+@Composable
+fun WeedingCard(
+    supplies: List<DiySupplyEntity>,
+    selectedSupplyId: Long?,
+    weedingMethod: String,
+    usedQty: String,
+    onSupplyClick: () -> Unit,
+    onMethodChange: (String) -> Unit,
+    onQtyChange: (String) -> Unit
+) {
+    PlanForaSurfaceCard(title = "Weeding Details", isImportant = true) {
+        PlanForaFieldGroup(isImportant = true) {
+            listOf("Manual", "Mechanical", "Chemical").forEach { method ->
+                val isSelected = weedingMethod == method
+                Surface(
+                    onClick = { onMethodChange(method) },
+                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.weight(1f),
+                    border = if (!isSelected) BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline) else null
+                ) {
+                    Text(
+                        text = method, 
+                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant, 
+                        fontSize = 11.sp, 
+                        fontWeight = FontWeight.Bold, 
+                        textAlign = TextAlign.Center, 
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
+            }
+        }
+
+        if (weedingMethod == "Chemical") {
+            val selectedSupply = supplies.find { it.id == selectedSupplyId }
+            
+            OutlinedTextField(
+                value = selectedSupply?.batchCode ?: "Select Herbicide",
+                onValueChange = {},
+                readOnly = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onSupplyClick() },
+                enabled = false,
+                leadingIcon = { Icon(Icons.Default.Science, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp)) },
+                trailingIcon = { Icon(Icons.Default.ArrowDropDown, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
+                colors = planForaTextFieldColors(isImportant = true)
+            )
+
+            if (selectedSupply != null) {
+                PlanForaFieldGroup(isImportant = true) {
+                    OutlinedTextField(
+                        value = usedQty,
+                        onValueChange = onQtyChange,
+                        label = { Text("Used Quantity") },
+                        modifier = Modifier.weight(1f),
+                        suffix = { Text(selectedSupply.stockUnit ?: "") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        colors = planForaTextFieldColors(isImportant = true)
+                    )
+                    
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Current Stock", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                        Text(
+                            text = "${selectedSupply.stockQuantity ?: 0.0} ${selectedSupply.stockUnit ?: ""}",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                
+                if (selectedSupply.reiHours != null && selectedSupply.reiHours!! > 0) {
+                    Surface(
+                        color = Color(0xFFFFB74D).copy(alpha = 0.1f),
+                        shape = RoundedCornerShape(8.dp),
+                        border = BorderStroke(1.dp, Color(0xFFFFB74D).copy(alpha = 0.3f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Warning, null, tint = Color(0xFFFFB74D), modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("REI Active: ${selectedSupply.reiHours} Hours", color = Color(0xFFFFB74D), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

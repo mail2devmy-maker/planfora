@@ -251,7 +251,16 @@ fun AddSupplyScreen(
                             value = viewModel.phiDays.collectAsState().value,
                             onValueChange = viewModel::updatePhiDays,
                             label = { Text("PHI (Days)") },
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.weight(0.7f),
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                            colors = textFieldColors(isImportant = true)
+                        )
+
+                        OutlinedTextField(
+                            value = viewModel.reiHours.collectAsState().value,
+                            onValueChange = viewModel::updateReiHours,
+                            label = { Text("REI (Hrs)") },
+                            modifier = Modifier.weight(0.7f),
                             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
                             colors = textFieldColors(isImportant = true)
                         )

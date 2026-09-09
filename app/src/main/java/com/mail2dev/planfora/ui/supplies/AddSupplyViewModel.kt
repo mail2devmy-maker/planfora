@@ -63,6 +63,9 @@ class AddSupplyViewModel(
     private val _phiDays = MutableStateFlow("")
     val phiDays = _phiDays.asStateFlow()
 
+    private val _reiHours = MutableStateFlow("")
+    val reiHours = _reiHours.asStateFlow()
+
     private val _stockQuantity = MutableStateFlow("")
     val stockQuantity = _stockQuantity.asStateFlow()
 
@@ -226,6 +229,7 @@ class AddSupplyViewModel(
     }
 
     fun updatePhiDays(v: String) { _phiDays.value = v }
+    fun updateReiHours(v: String) { _reiHours.value = v }
     fun updateStockQuantity(v: String) { _stockQuantity.value = v }
     fun updateStockUnit(v: String) { _stockUnit.value = v }
 
@@ -240,6 +244,7 @@ class AddSupplyViewModel(
                 _notes.value = supply.notes
                 _activeIngredient.value = supply.activeIngredient ?: ""
                 _phiDays.value = supply.phiDays?.toString() ?: ""
+                _reiHours.value = supply.reiHours?.toString() ?: ""
                 _stockQuantity.value = supply.stockQuantity?.toString() ?: ""
                 _stockUnit.value = supply.stockUnit ?: "L"
                 _audioPath.value = supply.audioPath
@@ -292,6 +297,7 @@ class AddSupplyViewModel(
                 notes = _notes.value,
                 activeIngredient = _activeIngredient.value.ifBlank { null },
                 phiDays = _phiDays.value.toIntOrNull(),
+                reiHours = _reiHours.value.toIntOrNull(),
                 stockQuantity = _stockQuantity.value.toFloatOrNull(),
                 stockUnit = _stockUnit.value,
                 batchCode = _name.value,
@@ -324,6 +330,7 @@ class AddSupplyViewModel(
         _notes.value = ""
         _activeIngredient.value = ""
         _phiDays.value = ""
+        _reiHours.value = ""
         _stockQuantity.value = ""
         _stockUnit.value = "L"
         _location.value = ""
@@ -339,7 +346,7 @@ enum class OptionalSupplyField(val displayName: String) {
     AI("Active Ingredient (A.I.)"),
     PHI("Pre-Harvest Interval (PHI)"),
     STOCK("Stock & Inventory"),
-    REI("REI Days"),
+    REI("Re-Entry Interval (REI)"),
     NPK("NPK Ratio"),
     DILUTION("Dilution Rate"),
     TARGET_PESTS("Target Pests")

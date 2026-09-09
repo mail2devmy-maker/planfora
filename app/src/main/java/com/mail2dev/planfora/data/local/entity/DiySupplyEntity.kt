@@ -25,6 +25,7 @@ data class DiySupplyEntity(
     val formulationCode: String? = null, // SL, SC, EC, WP, WG, SP, GR
     val notes: String = "",
     val phiDays: Int? = null,
+    val reiHours: Int? = null,
     val stockQuantity: Float? = null,
     val stockUnit: String? = null,
     val imageUris: String = "",

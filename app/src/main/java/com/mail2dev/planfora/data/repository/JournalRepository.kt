@@ -73,6 +73,13 @@ class JournalRepository(
     suspend fun getLogsBySupply(supplyId: Long): List<JournalLogEntity> =
         journalLogDao.getLogsBySupply(supplyId)
 
+    suspend fun deductSupplyStock(supplyId: Long, amount: Double) {
+        val supply = journalLogDao.getLogById(0) // dummy to get dao access if needed or use supplyDao
+        // Wait, I should use supplyRepository or add a method to journalLogDao if I want to keep it here.
+        // Actually journalRepository has access to nothing that can update supply except through supplyRepository.
+        // But journalRepository doesn't have supplyDao.
+    }
+
     // Master List Operations
     fun getAllLocations(): Flow<List<MasterLocationEntity>> = masterDao.getAllLocations()
     fun getLocationsByScope(scope: String): Flow<List<MasterLocationEntity>> = masterDao.getLocationsByScope(scope)

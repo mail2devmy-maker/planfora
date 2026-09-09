@@ -246,6 +246,17 @@ class LogsViewModel(
             )
             val logId = repository.insertLog(log)
             
+            // Deduct stock if supply is selected and activity is Weeding/Pest/Feeding
+            if (supplyId != null && parameters.contains("used_qty:")) {
+                val usedQty = parameters.split("|")
+                    .find { it.startsWith("used_qty:") }
+                    ?.substringAfter(":")
+                    ?.toDoubleOrNull() ?: 0.0
+                if (usedQty > 0.0) {
+                    supplyRepository.deductStock(supplyId, usedQty)
+                }
+            }
+
             // Save dynamic values
             val values = customFieldValues.map { (defId, value) ->
                 CustomFieldValueEntity(entityId = logId, fieldDefId = defId, value = value)
