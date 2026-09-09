@@ -114,7 +114,7 @@ fun SupplyDetailScreen(
                         modifier = Modifier.background(Color(0xFF1E2120))
                     ) {
                         DropdownMenuItem(
-                            text = { Text("✏️ Edit Supply", color = Color.White) },
+                            text = { Text("Edit", color = Color.White) },
                             onClick = { 
                                 showMenu = false
                                 addSupplyViewModel.loadSupply(supplyId)
@@ -122,7 +122,7 @@ fun SupplyDetailScreen(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("🗑️ Delete Supply", color = Color.Red) },
+                            text = { Text("Delete", color = Color.Red) },
                             onClick = { 
                                 showMenu = false
                                 showDeleteConfirm = true

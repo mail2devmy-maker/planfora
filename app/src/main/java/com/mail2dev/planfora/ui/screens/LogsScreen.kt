@@ -323,11 +323,11 @@ fun LogDetailSheet(
                         modifier = Modifier.background(Color(0xFF1E2120))
                     ) {
                         DropdownMenuItem(
-                            text = { Text("✏️ Edit Log", color = Color.White) },
+                            text = { Text("Edit", color = Color.White) },
                             onClick = { showMenu = false; onEdit() }
                         )
                         DropdownMenuItem(
-                            text = { Text("🗑️ Delete Log", color = Color.Red) },
+                            text = { Text("Delete", color = Color.Red) },
                             onClick = { showMenu = false; onDelete() }
                         )
                     }

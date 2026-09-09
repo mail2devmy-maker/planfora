@@ -116,14 +116,14 @@ fun PlantDetailScreen(
                         modifier = Modifier.background(Color(0xFF1E2120))
                     ) {
                         DropdownMenuItem(
-                            text = { Text("🎓 Promote Category", color = Color.White) },
+                            text = { Text("Promote Category", color = Color.White) },
                             onClick = { 
                                 showMenu = false
                                 showPromoteDialog = true 
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("✏️ Edit Asset", color = Color.White) },
+                            text = { Text("Edit", color = Color.White) },
                             onClick = { 
                                 showMenu = false
                                 addAssetViewModel.loadAsset(plantId)
@@ -131,7 +131,7 @@ fun PlantDetailScreen(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("🗑️ Delete Asset", color = Color.Red) },
+                            text = { Text("Delete", color = Color.Red) },
                             onClick = { 
                                 showMenu = false
                                 showDeleteConfirm = true

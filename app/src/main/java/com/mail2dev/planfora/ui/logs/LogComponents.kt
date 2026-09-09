@@ -177,8 +177,8 @@ fun ExpandedLogCard(
                         Icon(Icons.Default.MoreVert, null, tint = Color.Gray, modifier = Modifier.size(16.dp))
                     }
                     DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }, modifier = Modifier.background(Color(0xFF1E2120))) {
-                        DropdownMenuItem(text = { Text("✏️ Edit Log", color = Color.White) }, onClick = { showMenu = false; onEditClick() })
-                        DropdownMenuItem(text = { Text("🗑️ Delete Log", color = Color.Red) }, onClick = { showMenu = false; onDeleteClick() })
+                        DropdownMenuItem(text = { Text("Edit", color = Color.White) }, onClick = { showMenu = false; onEditClick() })
+                        DropdownMenuItem(text = { Text("Delete", color = Color.Red) }, onClick = { showMenu = false; onDeleteClick() })
                     }
                 }
             }
@@ -343,8 +343,8 @@ fun FollowUpLogCard(
                         Icon(Icons.Default.MoreVert, null, tint = Color.Gray, modifier = Modifier.size(16.dp))
                     }
                     DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }, modifier = Modifier.background(Color(0xFF1E2120))) {
-                        DropdownMenuItem(text = { Text("✏️ Edit Log", color = Color.White) }, onClick = { showMenu = false; onEditClick() })
-                        DropdownMenuItem(text = { Text("🗑️ Delete Log", color = Color.Red) }, onClick = { showMenu = false; onDeleteClick() })
+                        DropdownMenuItem(text = { Text("Edit", color = Color.White) }, onClick = { showMenu = false; onEditClick() })
+                        DropdownMenuItem(text = { Text("Delete", color = Color.Red) }, onClick = { showMenu = false; onDeleteClick() })
                     }
                 }
             }
@@ -440,8 +440,8 @@ fun CompactLogItem(
                     Icon(Icons.Default.MoreVert, null, tint = Color.Gray, modifier = Modifier.size(16.dp))
                 }
                 DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }, modifier = Modifier.background(Color(0xFF1E2120))) {
-                    if (onEditClick != null) DropdownMenuItem(text = { Text("✏️ Edit", color = Color.White) }, onClick = { showMenu = false; onEditClick() })
-                    if (onDeleteClick != null) DropdownMenuItem(text = { Text("🗑️ Delete", color = Color.Red) }, onClick = { showMenu = false; onDeleteClick() })
+                    if (onEditClick != null) DropdownMenuItem(text = { Text("Edit", color = Color.White) }, onClick = { showMenu = false; onEditClick() })
+                    if (onDeleteClick != null) DropdownMenuItem(text = { Text("Delete", color = Color.Red) }, onClick = { showMenu = false; onDeleteClick() })
                 }
             }
         }
