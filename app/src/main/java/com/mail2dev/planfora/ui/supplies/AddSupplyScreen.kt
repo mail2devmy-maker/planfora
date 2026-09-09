@@ -441,17 +441,20 @@ fun AddSupplyScreen(
 
 @Composable
 fun ReadonlyTriggerField(label: String, value: String, icon: ImageVector, onClick: () -> Unit, modifier: Modifier = Modifier, isImportant: Boolean = false) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = {},
-        readOnly = true,
-        label = { Text(label) },
-        modifier = modifier.clickable { onClick() },
-        leadingIcon = { Icon(icon, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp)) },
-        enabled = true,
-        colors = textFieldColors(isImportant = isImportant),
-        shape = RoundedCornerShape(8.dp)
-    )
+    Box(modifier = modifier.clickable { onClick() }) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(label) },
+            modifier = Modifier.fillMaxWidth(),
+            leadingIcon = { Icon(icon, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp)) },
+            trailingIcon = { Icon(Icons.Default.ChevronRight, null, tint = Color.Gray, modifier = Modifier.size(18.dp)) },
+            enabled = false,
+            colors = textFieldColors(isImportant = isImportant),
+            shape = RoundedCornerShape(8.dp)
+        )
+    }
 }
 
 @OptIn(ExperimentalLayoutApi::class)

@@ -402,17 +402,19 @@ fun CategorySelector(selected: AssetCategory, onSelect: (AssetCategory) -> Unit)
 
 @Composable
 fun ReadonlyTriggerField(label: String, value: String, icon: ImageVector, onClick: () -> Unit, modifier: Modifier = Modifier, isImportant: Boolean = false) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = {},
-        readOnly = true,
-        label = { Text(label) },
-        modifier = modifier.clickable { onClick() },
-        leadingIcon = { Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp)) },
-        trailingIcon = { Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(18.dp)) },
-        enabled = false,
-        colors = textFieldColors(isImportant = isImportant)
-    )
+    Box(modifier = modifier.clickable { onClick() }) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(label) },
+            modifier = Modifier.fillMaxWidth(),
+            leadingIcon = { Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp)) },
+            trailingIcon = { Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(18.dp)) },
+            enabled = false,
+            colors = textFieldColors(isImportant = isImportant)
+        )
+    }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
