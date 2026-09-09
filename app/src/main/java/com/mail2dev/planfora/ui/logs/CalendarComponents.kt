@@ -1,5 +1,6 @@
 package com.mail2dev.planfora.ui.logs
 
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,13 +17,9 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronLeft
-import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,12 +42,45 @@ fun CalendarView(
     onDateSelected: (Long) -> Unit,
     onDateLongClick: (Long) -> Unit,
     eventDates: Set<Long>,
-    calendarMode: CalendarMode
+    calendarMode: CalendarMode,
+    onModeChange: (CalendarMode) -> Unit = {}
 ) {
-    when (calendarMode) {
-        CalendarMode.MONTH -> MonthCalendarView(selectedDate, onDateSelected, onDateLongClick, eventDates)
-        CalendarMode.WEEK -> WeekStripView(selectedDate, onDateSelected, onDateLongClick, eventDates)
-        CalendarMode.DAY -> DayTimelineHeader(selectedDate, onDateSelected, onDateLongClick, eventDates)
+    AnimatedContent(
+        targetState = calendarMode,
+        transitionSpec = {
+            if (targetState == CalendarMode.MONTH || initialState == CalendarMode.MONTH) {
+                expandVertically(expandFrom = Alignment.Top) + fadeIn() togetherWith
+                        shrinkVertically(shrinkTowards = Alignment.Top) + fadeOut()
+            } else {
+                fadeIn() togetherWith fadeOut()
+            }
+        },
+        label = "CalendarModeTransition"
+    ) { mode ->
+        when (mode) {
+            CalendarMode.MONTH -> MonthCalendarView(selectedDate, onDateSelected, onDateLongClick, eventDates, onCollapse = { onModeChange(CalendarMode.WEEK) })
+            CalendarMode.WEEK -> WeekStripView(selectedDate, onDateSelected, onDateLongClick, eventDates, onExpand = { onModeChange(CalendarMode.MONTH) })
+            CalendarMode.DAY -> DayTimelineHeader(selectedDate, onDateSelected, onDateLongClick, eventDates)
+        }
+    }
+
+    if (calendarMode != CalendarMode.DAY) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(20.dp)
+                .clickable {
+                    onModeChange(if (calendarMode == CalendarMode.MONTH) CalendarMode.WEEK else CalendarMode.MONTH)
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp, 4.dp)
+                    .clip(CircleShape)
+                    .background(Color.Gray.copy(alpha = 0.2f))
+            )
+        }
     }
 }
 
@@ -59,7 +89,8 @@ fun MonthCalendarView(
     selectedDate: Long,
     onDateSelected: (Long) -> Unit,
     onDateLongClick: (Long) -> Unit,
-    eventDates: Set<Long>
+    eventDates: Set<Long>,
+    onCollapse: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
     val initialDate = remember {
@@ -69,13 +100,11 @@ fun MonthCalendarView(
         }
     }
     
-    // Total pages: 200 years (100 past, 100 future)
     val totalPages = 2400
     val startPage = 1200
     
     val pagerState = rememberPagerState(initialPage = startPage) { totalPages }
     
-    // Sync pager with selectedDate changes (external)
     LaunchedEffect(selectedDate) {
         val selCal = Calendar.getInstance().apply { timeInMillis = selectedDate }
         val curCal = Calendar.getInstance().apply { 
@@ -92,7 +121,6 @@ fun MonthCalendarView(
     }
 
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-        // Month Navigation Header
         val currentViewMonth = remember(pagerState.currentPage) {
             Calendar.getInstance().apply {
                 timeInMillis = initialDate.timeInMillis
@@ -105,19 +133,26 @@ fun MonthCalendarView(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = { scope.launch { pagerState.animateScrollToPage(pagerState.currentPage - 1) } }) {
-                Icon(Icons.Default.ChevronLeft, contentDescription = "Previous Month", tint = SageGreen)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = { scope.launch { pagerState.animateScrollToPage(pagerState.currentPage - 1) } }) {
+                    Icon(Icons.Default.ChevronLeft, contentDescription = "Previous Month", tint = SageGreen)
+                }
+                
+                Text(
+                    text = SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(currentViewMonth.time),
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+                
+                IconButton(onClick = { scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) } }) {
+                    Icon(Icons.Default.ChevronRight, contentDescription = "Next Month", tint = SageGreen)
+                }
             }
-            
-            Text(
-                text = SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(currentViewMonth.time),
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp
-            )
-            
-            IconButton(onClick = { scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) } }) {
-                Icon(Icons.Default.ChevronRight, contentDescription = "Next Month", tint = SageGreen)
+
+            IconButton(onClick = onCollapse) {
+                Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Collapse", tint = Color.Gray)
             }
         }
         
@@ -147,7 +182,6 @@ fun MonthCalendarView(
                 timeInMillis = initialDate.timeInMillis
                 add(Calendar.MONTH, page - startPage)
                 set(Calendar.DAY_OF_MONTH, 1)
-                // Adjust to start of week
                 while (get(Calendar.DAY_OF_WEEK) != Calendar.SUNDAY) {
                     add(Calendar.DAY_OF_YEAR, -1)
                 }
@@ -230,83 +264,156 @@ fun WeekStripView(
     selectedDate: Long,
     onDateSelected: (Long) -> Unit,
     onDateLongClick: (Long) -> Unit,
-    eventDates: Set<Long>
+    eventDates: Set<Long>,
+    onExpand: () -> Unit = {}
 ) {
-    val dates = remember {
-        val today = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }
-        (0..28).map { offset ->
-            Calendar.getInstance().apply {
-                timeInMillis = today.timeInMillis
-                add(Calendar.DAY_OF_YEAR, offset)
-            }.timeInMillis
+    val initialDate = remember {
+        Calendar.getInstance().apply {
+            timeInMillis = selectedDate
+            // Start at the Sunday of the current week
+            while (get(Calendar.DAY_OF_WEEK) != Calendar.SUNDAY) {
+                add(Calendar.DAY_OF_YEAR, -1)
+            }
         }
     }
 
-    LazyRow(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-        contentPadding = PaddingValues(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        items(dates) { timestamp ->
-            val cal = Calendar.getInstance().apply { timeInMillis = timestamp }
-            val isSelected = isSameDay(timestamp, selectedDate)
-            val isToday = isSameDay(timestamp, System.currentTimeMillis())
-            val hasEvent = eventDates.contains(normalizeToStartOfDay(timestamp))
+    val totalPages = 10000
+    val startPage = 5000
+    val pagerState = rememberPagerState(initialPage = startPage) { totalPages }
+
+    LaunchedEffect(selectedDate) {
+        val selCal = Calendar.getInstance().apply { timeInMillis = selectedDate }
+        val curCal = Calendar.getInstance().apply {
+            timeInMillis = initialDate.timeInMillis
+            add(Calendar.WEEK_OF_YEAR, pagerState.currentPage - startPage)
+        }
+        
+        // Calculate weeks difference
+        val diffMillis = selCal.timeInMillis - curCal.timeInMillis
+        val weekDiff = Math.floor(diffMillis.toDouble() / (7 * 24 * 60 * 60 * 1000)).toInt()
+        
+        if (weekDiff != 0) {
+            pagerState.scrollToPage(pagerState.currentPage + weekDiff)
+        }
+    }
+
+    val currentWeekMonth = remember(pagerState.currentPage) {
+        Calendar.getInstance().apply {
+            timeInMillis = initialDate.timeInMillis
+            add(Calendar.WEEK_OF_YEAR, pagerState.currentPage - startPage)
+        }
+    }
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(currentWeekMonth.time),
+                color = SageGreen,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold
+            )
             
-            Column(
-                modifier = Modifier
-                    .width(48.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(if (isSelected) SageGreen else Color.Transparent)
-                    .pointerInput(Unit) {
-                        detectTapGestures(
-                            onTap = { onDateSelected(timestamp) },
-                            onLongPress = { onDateLongClick(timestamp) }
-                        )
-                    }
-                    .padding(vertical = 8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+            IconButton(onClick = onExpand, modifier = Modifier.size(32.dp)) {
+                Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Expand", tint = Color.Gray)
+            }
+        }
+
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxWidth().height(80.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            pageSpacing = 16.dp
+        ) { page ->
+            val weekCalendar = Calendar.getInstance().apply {
+                timeInMillis = initialDate.timeInMillis
+                add(Calendar.WEEK_OF_YEAR, page - startPage)
+            }
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(
-                    text = SimpleDateFormat("EEE", Locale.getDefault()).format(cal.time).uppercase(),
-                    color = if (isSelected) DarkBackground else Color.Gray,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .then(
-                            if (isToday) Modifier.border(1.5.dp, if (isSelected) ForestGreen else SageGreen, CircleShape)
-                            else Modifier
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = cal.get(Calendar.DAY_OF_MONTH).toString(),
-                        color = if (isSelected) DarkBackground else Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
+                (0..6).forEach { _ ->
+                    val timestamp = weekCalendar.timeInMillis
+                    DayStripItem(
+                        timestamp = timestamp,
+                        selectedDate = selectedDate,
+                        eventDates = eventDates,
+                        onDateSelected = onDateSelected,
+                        onDateLongClick = onDateLongClick,
+                        modifier = Modifier.weight(1f)
                     )
-                }
-                
-                if (hasEvent) {
-                    Box(
-                        modifier = Modifier
-                            .padding(top = 4.dp)
-                            .size(4.dp)
-                            .clip(CircleShape)
-                            .background(if (isSelected) DarkBackground else SageGreen)
-                    )
-                } else {
-                    Spacer(modifier = Modifier.height(8.dp))
+                    weekCalendar.add(Calendar.DAY_OF_YEAR, 1)
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun DayStripItem(
+    timestamp: Long,
+    selectedDate: Long,
+    eventDates: Set<Long>,
+    onDateSelected: (Long) -> Unit,
+    onDateLongClick: (Long) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val cal = Calendar.getInstance().apply { timeInMillis = timestamp }
+    val isSelected = isSameDay(timestamp, selectedDate)
+    val isToday = isSameDay(timestamp, System.currentTimeMillis())
+    val hasEvent = eventDates.contains(normalizeToStartOfDay(timestamp))
+    
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(if (isSelected) SageGreen else Color.Transparent)
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onTap = { onDateSelected(timestamp) },
+                    onLongPress = { onDateLongClick(timestamp) }
+                )
+            }
+            .padding(vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = SimpleDateFormat("EEE", Locale.getDefault()).format(cal.time).uppercase(),
+            color = if (isSelected) DarkBackground else Color.Gray,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold
+        )
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .then(
+                    if (isToday) Modifier.border(1.5.dp, if (isSelected) ForestGreen else SageGreen, CircleShape)
+                    else Modifier
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = cal.get(Calendar.DAY_OF_MONTH).toString(),
+                color = if (isSelected) DarkBackground else Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp
+            )
+        }
+        
+        if (hasEvent) {
+            Box(
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .size(4.dp)
+                    .clip(CircleShape)
+                    .background(if (isSelected) DarkBackground else SageGreen)
+            )
+        } else {
+            Spacer(modifier = Modifier.height(8.dp))
         }
     }
 }
@@ -327,9 +434,10 @@ fun CalendarDateStrip(
     onDateSelected: (Long) -> Unit,
     onDateLongClick: (Long) -> Unit,
     eventDates: Set<Long>,
-    calendarMode: CalendarMode
+    calendarMode: CalendarMode,
+    onModeChange: (CalendarMode) -> Unit = {}
 ) {
-    CalendarView(selectedDate, onDateSelected, onDateLongClick, eventDates, calendarMode)
+    CalendarView(selectedDate, onDateSelected, onDateLongClick, eventDates, calendarMode, onModeChange)
 }
 
 @Composable

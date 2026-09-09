@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -16,7 +17,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -56,6 +61,20 @@ fun LogsScreen(
     var logToDelete by remember { mutableStateOf<JournalLogEntity?>(null) }
     var selectedLogForDetail by remember { mutableStateOf<JournalLogEntity?>(null) }
 
+    val logsListState = rememberLazyListState()
+
+    val nestedScrollConnection = remember(calendarMode) {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                // Collapse on downward scroll
+                if (available.y < -15f && calendarMode == CalendarMode.MONTH) {
+                    viewModel.setCalendarMode(CalendarMode.WEEK)
+                }
+                return Offset.Zero
+            }
+        }
+    }
+
     if (logToDelete != null) {
         AlertDialog(
             onDismissRequest = { logToDelete = null },
@@ -93,6 +112,7 @@ fun LogsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .nestedScroll(nestedScrollConnection)
         ) {
             LogsHeader(
                 calendarMode = calendarMode,
@@ -123,7 +143,8 @@ fun LogsScreen(
                     navController.navigate(Screen.NewLog.createRoute(timestamp = timestamp))
                 },
                 eventDates = eventDates,
-                calendarMode = calendarMode
+                calendarMode = calendarMode,
+                onModeChange = viewModel::setCalendarMode
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -143,6 +164,7 @@ fun LogsScreen(
                 )
             } else {
                 LazyColumn(
+                    state = logsListState,
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(horizontal = 16.dp),
