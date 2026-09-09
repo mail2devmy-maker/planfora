@@ -47,7 +47,7 @@ import com.mail2dev.planfora.ui.components.PlanForaSurfaceCard
 import com.mail2dev.planfora.ui.components.TagPickerSheet
 import com.mail2dev.planfora.ui.components.planForaTextFieldColors
 import com.mail2dev.planfora.data.local.entity.FieldTargetType
-import com.mail2dev.planfora.ui.theme.ForestEmerald
+import com.mail2dev.planfora.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -402,18 +402,65 @@ fun CategorySelector(selected: AssetCategory, onSelect: (AssetCategory) -> Unit)
 
 @Composable
 fun ReadonlyTriggerField(label: String, value: String, icon: ImageVector, onClick: () -> Unit, modifier: Modifier = Modifier, isImportant: Boolean = false) {
-    Box(modifier = modifier.clickable { onClick() }) {
-        OutlinedTextField(
-            value = value,
-            onValueChange = {},
-            readOnly = true,
-            label = { Text(label) },
-            modifier = Modifier.fillMaxWidth(),
-            leadingIcon = { Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp)) },
-            trailingIcon = { Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(18.dp)) },
-            enabled = false,
-            colors = textFieldColors(isImportant = isImportant)
-        )
+    val borderColor = if (isImportant) MandatoryBorder else OptionalBorder
+    val labelColor = if (isImportant) SlateTextPrimary else SlateTextSecondary
+
+    Box(
+        modifier = modifier
+            .height(56.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color.Transparent)
+            .border(1.dp, borderColor, RoundedCornerShape(8.dp))
+            .clickable { onClick() }
+    ) {
+        // Label
+        Surface(
+            color = if (isImportant) MandatoryFill else OptionalFill,
+            modifier = Modifier
+                .padding(start = 8.dp)
+                .offset(y = (-8).dp)
+                .align(Alignment.TopStart)
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = labelColor.copy(alpha = 0.8f),
+                modifier = Modifier.padding(horizontal = 4.dp),
+                fontSize = 10.sp
+            )
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(18.dp)
+            )
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Text(
+                text = value,
+                color = if (value == "Select") Color.Gray else Color.White,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
+            )
+
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = Color.Gray.copy(alpha = 0.5f),
+                modifier = Modifier.size(16.dp)
+            )
+        }
     }
 }
 
