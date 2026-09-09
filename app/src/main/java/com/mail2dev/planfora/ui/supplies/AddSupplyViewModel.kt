@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mail2dev.planfora.data.local.entity.DiySupplyEntity
 import com.mail2dev.planfora.data.local.entity.CustomFieldDefinitionEntity
+import com.mail2dev.planfora.data.local.entity.CustomFieldValueEntity
+import com.mail2dev.planfora.data.local.entity.FieldTargetType
 import com.mail2dev.planfora.data.local.entity.MasterTagEntity
 import com.mail2dev.planfora.data.repository.JournalRepository
 import com.mail2dev.planfora.data.repository.SupplyRepository
@@ -47,7 +49,7 @@ class AddSupplyViewModel(
 
     // Custom Fields State (Scoped to SUPPLY)
     private val _customFieldDefinitions = _category.flatMapLatest { cat ->
-        journalRepository.getCustomFieldDefinitions("SUPPLY_${cat.name}")
+        journalRepository.getCustomFieldDefinitions(FieldTargetType.SUPPLY_CATEGORY, cat.displayName)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     val customFieldDefinitions = _customFieldDefinitions
 
@@ -258,16 +260,21 @@ class AddSupplyViewModel(
         }
     }
 
-    fun addCustomFieldDefinition(name: String, type: String, optionsJson: String?, isGlobal: Boolean) {
+    fun addCustomFieldDefinition(definition: CustomFieldDefinitionEntity) {
         viewModelScope.launch {
-            journalRepository.insertCustomFieldDefinition(
-                CustomFieldDefinitionEntity(
-                    category = if (isGlobal) "SUPPLY_Global" else "SUPPLY_${_category.value.name}",
-                    fieldName = name,
-                    fieldType = type,
-                    radioOptionsJson = optionsJson
-                )
-            )
+            journalRepository.insertCustomFieldDefinition(definition)
+        }
+    }
+
+    fun archiveCustomFieldDefinition(definitionId: Long) {
+        viewModelScope.launch {
+            journalRepository.archiveCustomFieldDefinition(definitionId)
+        }
+    }
+
+    fun updateCustomFieldDefinition(definition: CustomFieldDefinitionEntity) {
+        viewModelScope.launch {
+            journalRepository.updateCustomFieldDefinition(definition)
         }
     }
 
@@ -291,11 +298,19 @@ class AddSupplyViewModel(
                 tags = _selectedTags.value.joinToString(",")
             )
             
-            if (_editingSupplyId.value == null) {
+            val supplyId = if (_editingSupplyId.value == null) {
                 repository.insertSupply(entity)
             } else {
                 repository.updateSupply(entity)
+                _editingSupplyId.value!!
             }
+
+            // Save custom field values
+            val values = _customFieldValues.value.map { (defId, value) ->
+                CustomFieldValueEntity(entityId = supplyId, fieldDefId = defId, value = value)
+            }
+            journalRepository.insertCustomFieldValues(values)
+
             reset()
         }
     }

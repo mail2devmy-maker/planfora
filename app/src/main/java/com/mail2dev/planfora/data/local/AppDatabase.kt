@@ -12,6 +12,7 @@ import com.mail2dev.planfora.data.local.dao.JournalLogDao
 import com.mail2dev.planfora.data.local.dao.MasterDao
 import com.mail2dev.planfora.data.local.dao.PlantAssetDao
 import com.mail2dev.planfora.data.local.entity.*
+import androidx.room.TypeConverters
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -28,9 +29,10 @@ import kotlinx.coroutines.launch
         CustomFieldDefinitionEntity::class,
         CustomFieldValueEntity::class
     ],
-    version = 18,
+    version = 19,
     exportSchema = true
 )
+@TypeConverters(RoomTypeConverters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun diySupplyDao(): DiySupplyDao
     abstract fun plantAssetDao(): PlantAssetDao
@@ -302,6 +304,7 @@ abstract class AppDatabase : RoomDatabase() {
                     "planfora_database"
                 )
                     .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18)
+                    .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
                 instance

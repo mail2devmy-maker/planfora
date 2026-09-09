@@ -5,9 +5,11 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -35,15 +37,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.mail2dev.planfora.data.local.entity.SupplyFormType
+import com.mail2dev.planfora.ui.components.CreateCustomFieldDialog
+import com.mail2dev.planfora.ui.components.DynamicCustomFieldInput
 import com.mail2dev.planfora.ui.components.LocationSelectionBottomSheet
+import com.mail2dev.planfora.ui.components.ManageFieldDialog
 import com.mail2dev.planfora.ui.components.MediaAttachmentStrip
 import com.mail2dev.planfora.ui.components.PlanForaFieldGroup
 import com.mail2dev.planfora.ui.components.PlanForaSurfaceCard
 import com.mail2dev.planfora.ui.components.StringPickerSheet
 import com.mail2dev.planfora.ui.components.TagPickerSheet
 import com.mail2dev.planfora.ui.components.planForaTextFieldColors
+import com.mail2dev.planfora.data.local.entity.FieldTargetType
 import com.mail2dev.planfora.ui.theme.ForestEmerald
-import com.mail2dev.planfora.ui.assets.CustomFieldInputCompact
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -378,10 +383,12 @@ fun AddSupplyScreen(
     }
 
     if (showCustomFieldDialog) {
-        CustomFieldCreatorDialog(
+        CreateCustomFieldDialog(
+            targetType = FieldTargetType.SUPPLY_CATEGORY,
+            scope = category.displayName,
             onDismiss = { showCustomFieldDialog = false },
-            onFieldCreated = { name, type, options, isGlobal ->
-                viewModel.addCustomFieldDefinition(name, type, options, isGlobal)
+            onSave = { definition ->
+                viewModel.addCustomFieldDefinition(definition)
                 showCustomFieldDialog = false
             }
         )
@@ -412,7 +419,7 @@ fun OptionalSupplyPalette(
     onAddCustomField: () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text("Quick-Add Metrics & Metadata", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.SemiBold)
+        Text("Optional Fields", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.SemiBold)
         
         Row(
             modifier = Modifier
@@ -461,6 +468,7 @@ fun OptionalSupplyPalette(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DynamicSupplyFieldRenderer(
     viewModel: AddSupplyViewModel,
@@ -468,6 +476,9 @@ fun DynamicSupplyFieldRenderer(
     customFields: List<com.mail2dev.planfora.data.local.entity.CustomFieldDefinitionEntity>,
     customValues: Map<Long, String>
 ) {
+    var fieldToManage by remember { mutableStateOf<com.mail2dev.planfora.data.local.entity.CustomFieldDefinitionEntity?>(null) }
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         visibleFields.forEach { field ->
             MementoLedgerRow(
@@ -481,15 +492,37 @@ fun DynamicSupplyFieldRenderer(
         customFields.forEach { def ->
             MementoLedgerRow(
                 label = def.fieldName,
-                onRemove = { /* Logic to hide */ }
-            ) {
-                CustomFieldInputCompact(
-                    definition = def,
-                    value = customValues[def.id] ?: "",
-                    onValueChange = { viewModel.updateCustomFieldValue(def.id, it) }
+                onRemove = { /* Logic to hide */ },
+                modifier = Modifier.combinedClickable(
+                    onClick = {},
+                    onLongClick = {
+                        haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                        fieldToManage = def
+                    }
                 )
+            ) {
+                Box(modifier = Modifier.weight(1.5f)) {
+                    DynamicCustomFieldInput(
+                        definition = def,
+                        value = customValues[def.id] ?: "",
+                        onValueChange = { viewModel.updateCustomFieldValue(def.id, it) }
+                    )
+                }
             }
         }
+    }
+
+    fieldToManage?.let { def ->
+        ManageFieldDialog(
+            definition = def,
+            onDismiss = { fieldToManage = null },
+            onRename = { newName ->
+                viewModel.updateCustomFieldDefinition(def.copy(fieldName = newName))
+            },
+            onArchive = {
+                viewModel.archiveCustomFieldDefinition(def.id)
+            }
+        )
     }
 }
 
@@ -497,13 +530,14 @@ fun DynamicSupplyFieldRenderer(
 fun MementoLedgerRow(
     label: String,
     onRemove: () -> Unit,
+    modifier: Modifier = Modifier,
     content: @Composable RowScope.() -> Unit
 ) {
     Surface(
         color = Color(0xFF1E2120),
         shape = RoundedCornerShape(8.dp),
         border = BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.3f)),
-        modifier = Modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
@@ -535,67 +569,6 @@ fun RowScope.SimpleTextFieldCompact(value: String, onValueChange: (String) -> Un
         singleLine = true,
         textStyle = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
         colors = planForaTextFieldColors(isImportant = false)
-    )
-}
-
-@Composable
-fun CustomFieldCreatorDialog(onDismiss: () -> Unit, onFieldCreated: (String, String, String?, Boolean) -> Unit) {
-    var name by remember { mutableStateOf("") }
-    var type by remember { mutableStateOf("TEXT") }
-    var options by remember { mutableStateOf("") }
-    var isGlobal by remember { mutableStateOf(false) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = Color(0xFF1E2120),
-        title = { Text("New Product Metadata Field", color = Color.White) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Field Name") }, modifier = Modifier.fillMaxWidth())
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = isGlobal, onCheckedChange = { isGlobal = it })
-                    Text("Global (All products)", color = Color.LightGray, fontSize = 12.sp)
-                }
-                Text("Input Type", color = Color.Gray, fontSize = 12.sp)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf("TEXT", "NUMBER", "RADIO").forEach { t ->
-                        FilterChip(
-                            selected = type == t,
-                            onClick = { type = t },
-                            label = { Text(t) },
-                            colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primary,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
-                            labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                        ),
-                            border = FilterChipDefaults.filterChipBorder(
-                                enabled = true,
-                                selected = type == t,
-                                borderColor = Color.Gray.copy(alpha = 0.2f),
-                                selectedBorderColor = Color.Transparent
-                            )
-                        )
-                    }
-                }
-                if (type == "RADIO") {
-                    OutlinedTextField(value = options, onValueChange = { options = it }, label = { Text("Options (comma separated)") }, modifier = Modifier.fillMaxWidth())
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = { onFieldCreated(name, type, options.ifBlank { null }, isGlobal) },
-                enabled = name.isNotBlank(),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                shape = MaterialTheme.shapes.medium
-            ) {
-                Text("Create", color = Color.White)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel", color = Color.Gray) }
-        }
     )
 }
 

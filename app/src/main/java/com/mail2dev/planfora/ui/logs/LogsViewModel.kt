@@ -5,6 +5,9 @@ import androidx.lifecycle.viewModelScope
 import com.mail2dev.planfora.data.local.entity.JournalLogEntity
 import com.mail2dev.planfora.data.local.entity.DiySupplyEntity
 import com.mail2dev.planfora.data.local.entity.PlantAssetEntity
+import com.mail2dev.planfora.data.local.entity.CustomFieldDefinitionEntity
+import com.mail2dev.planfora.data.local.entity.CustomFieldValueEntity
+import com.mail2dev.planfora.data.local.entity.FieldTargetType
 import com.mail2dev.planfora.data.repository.JournalRepository
 import com.mail2dev.planfora.data.repository.SupplyRepository
 import kotlinx.coroutines.flow.*
@@ -129,6 +132,30 @@ class LogsViewModel(
         }
     }
 
+    // Dynamic Custom Fields
+    fun getCustomFieldDefinitions(targetType: FieldTargetType, scope: String) = 
+        repository.getCustomFieldDefinitions(targetType, scope)
+
+    fun addCustomFieldDefinition(definition: CustomFieldDefinitionEntity) {
+        viewModelScope.launch {
+            repository.insertCustomFieldDefinition(definition)
+        }
+    }
+
+    fun archiveCustomFieldDefinition(definitionId: Long) {
+        viewModelScope.launch {
+            repository.archiveCustomFieldDefinition(definitionId)
+        }
+    }
+
+    fun updateCustomFieldDefinition(definition: CustomFieldDefinitionEntity) {
+        viewModelScope.launch {
+            repository.updateCustomFieldDefinition(definition)
+        }
+    }
+
+    fun getCustomFieldValues(entityId: Long) = repository.getCustomFieldValues(entityId)
+
     suspend fun getLogById(id: Long): JournalLogEntity? {
         return repository.getLogById(id)
     }
@@ -187,7 +214,8 @@ class LogsViewModel(
         supplyId: Long? = null,
         customInputName: String? = null,
         batchGroupId: String? = null,
-        targetZones: String? = null
+        targetZones: String? = null,
+        customFieldValues: Map<Long, String> = emptyMap()
     ) {
         viewModelScope.launch {
             val log = JournalLogEntity(
@@ -209,7 +237,14 @@ class LogsViewModel(
                 batchGroupId = batchGroupId,
                 targetZones = targetZones
             )
-            repository.insertLog(log)
+            val logId = repository.insertLog(log)
+            
+            // Save dynamic values
+            val values = customFieldValues.map { (defId, value) ->
+                CustomFieldValueEntity(entityId = logId, fieldDefId = defId, value = value)
+            }
+            repository.insertCustomFieldValues(values)
+
             setShowAddBottomSheet(false)
         }
     }

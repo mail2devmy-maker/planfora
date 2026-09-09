@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.media.MediaRecorder
 import android.net.Uri
 import android.os.Build
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -57,7 +58,7 @@ fun MediaAttachmentStrip(
     var recordingDuration by remember { mutableIntStateOf(0) }
     var recorder by remember { mutableStateOf<MediaRecorder?>(null) }
     var tempAudioFile by remember { mutableStateOf<File?>(null) }
-    var amplitudeList by remember { mutableStateOf(listOf<Float>()) }
+    val amplitudeList = remember { mutableStateListOf<Float>() }
     var showRedoConfirm by remember { mutableStateOf(false) }
 
     // Camera URI persistence
@@ -104,25 +105,35 @@ fun MediaAttachmentStrip(
     LaunchedEffect(isRecording) {
         if (isRecording) {
             recordingDuration = 0
-            amplitudeList = List(20) { 0f }
+            amplitudeList.clear()
+            repeat(40) { amplitudeList.add(0.05f) }
+
+            var ticker = 0
             while (isRecording) {
-                delay(100)
-                val amp = recorder?.maxAmplitude ?: 0
-                // Use a non-linear scaling for better visibility at lower volumes
-                val normalized = if (amp > 0) {
-                    (Math.log10(amp.toDouble()) / Math.log10(32767.0)).coerceIn(0.0, 1.0).toFloat()
-                } else 0f
-                amplitudeList = (amplitudeList.drop(1) + normalized)
-            }
-        }
-    }
-    
-    LaunchedEffect(isRecording) {
-        if (isRecording) {
-            recordingDuration = 0
-            while (isRecording) {
-                delay(1000)
-                recordingDuration++
+                val currentRecorder = recorder
+                val raw = try {
+                    currentRecorder?.maxAmplitude?.toFloat() ?: 0f
+                } catch (e: Exception) {
+                    0f
+                }
+
+                // Highly sensitive divisor (4000f) so normal speech creates immediate spikes,
+                // while silence stays at a clean, low baseline instead of disappearing completely.
+                val normalized = (raw / 4000f).coerceIn(0f, 1f)
+                val visualValue = Math.sqrt(normalized.toDouble()).toFloat().coerceAtLeast(0.05f)
+
+                if (amplitudeList.size >= 40) {
+                    amplitudeList.removeAt(0)
+                }
+                amplitudeList.add(visualValue)
+
+                ticker++
+                if (ticker >= 20) {
+                    recordingDuration++
+                    ticker = 0
+                }
+
+                delay(50)
             }
         }
     }
@@ -194,7 +205,7 @@ fun MediaAttachmentStrip(
             if (recording) {
                 AudioRecordingHUD(
                     durationSeconds = recordingDuration,
-                    amplitudes = amplitudeList,
+                    amplitudes = amplitudeList.toList(), // Force recomposition on each poll
                     onStop = {
                         try {
                             recorder?.apply {
@@ -314,9 +325,9 @@ fun AudioRecordingHUD(
                     .clip(CircleShape)
                     .background(Color.Red.copy(alpha = alpha))
             )
-            
+
             Spacer(modifier = Modifier.width(8.dp))
-            
+
             Text(
                 text = formatDuration(durationSeconds),
                 color = Color.White,
@@ -325,42 +336,49 @@ fun AudioRecordingHUD(
             )
 
             Spacer(modifier = Modifier.width(12.dp))
-            
+
             // Amplitude Visualizer
             Box(modifier = Modifier.weight(1f).height(24.dp)) {
                 Canvas(modifier = Modifier.fillMaxSize()) {
-                    val barWidth = 3.dp.toPx()
+                    val barWidth = 2.dp.toPx()
                     val gap = 2.dp.toPx()
                     val centerY = size.height / 2
-                    
-                    amplitudes.forEachIndexed { index, amp ->
-                        // Amplified scaling for visual spikes
-                        val barHeight = (amp * size.height * 1.5f).coerceIn(2.dp.toPx(), size.height)
-                        drawRoundRect(
-                            color = Color.Red.copy(alpha = 0.6f),
-                            topLeft = Offset(index * (barWidth + gap), centerY - barHeight / 2),
-                            size = Size(barWidth, barHeight),
-                            cornerRadius = CornerRadius(barWidth / 2)
-                        )
+                    val displayList = if (amplitudes.isEmpty()) List(30) { 0.2f } else amplitudes
+
+                    val totalWidth = displayList.size * (barWidth + gap)
+                    val startX = (size.width - totalWidth).coerceAtLeast(0f)
+
+                    displayList.forEachIndexed { index, amp ->
+                        val barHeight = (amp * size.height * 0.95f).coerceIn(4.dp.toPx(), size.height)
+                        val x = startX + index * (barWidth + gap)
+
+                        if (x + barWidth <= size.width) {
+                            drawRoundRect(
+                                color = Color.Red.copy(alpha = 0.9f),
+                                topLeft = Offset(x, centerY - barHeight / 2),
+                                size = Size(barWidth, barHeight),
+                                cornerRadius = CornerRadius(barWidth / 2)
+                            )
+                        }
                     }
                 }
             }
-            
+
             Spacer(modifier = Modifier.width(8.dp))
-            
+
             IconButton(onClick = onCancel, modifier = Modifier.size(32.dp)) {
-                Icon(Icons.Default.Close, contentDescription = "Cancel", tint = Color.Gray, modifier = Modifier.size(20.dp))
+                Icon(Icons.Default.Close, contentDescription = "Cancel", tint = Color.LightGray)
             }
-            
+
+            Spacer(modifier = Modifier.width(4.dp))
+
             Button(
                 onClick = onStop,
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
-                modifier = Modifier.height(36.dp)
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                modifier = Modifier.height(32.dp)
             ) {
-                Icon(Icons.Default.Stop, null, modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(6.dp))
-                Text("Save", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text("Save", color = Color.White, fontSize = 12.sp)
             }
         }
     }
@@ -389,18 +407,31 @@ fun MediaActionButton(icon: androidx.compose.ui.graphics.vector.ImageVector, lab
 
 @Composable
 fun MediaPreviewItem(uri: Uri, onRemove: () -> Unit) {
-    Box(modifier = Modifier.size(70.dp)) {
+    Box(modifier = Modifier.size(72.dp)) {
         AsyncImage(
             model = uri,
             contentDescription = null,
-            modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(8.dp)),
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color.White.copy(alpha = 0.05f)),
             contentScale = ContentScale.Crop
         )
-        IconButton(
+        Surface(
             onClick = onRemove,
-            modifier = Modifier.align(Alignment.TopEnd).offset(x = 4.dp, y = (-4).dp).size(24.dp).background(Color.Black.copy(alpha = 0.6f), CircleShape)
+            color = Color.Black.copy(alpha = 0.7f),
+            shape = CircleShape,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(4.dp)
+                .size(18.dp)
         ) {
-            Icon(Icons.Default.Close, null, tint = Color.White, modifier = Modifier.size(14.dp))
+            Icon(
+                Icons.Default.Close, 
+                null, 
+                tint = Color.White, 
+                modifier = Modifier.padding(3.dp)
+            )
         }
     }
 }

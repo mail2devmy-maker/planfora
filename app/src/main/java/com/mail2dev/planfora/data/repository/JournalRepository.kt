@@ -25,8 +25,8 @@ class JournalRepository(
     suspend fun getLogById(id: Long): JournalLogEntity? =
         journalLogDao.getLogById(id)
 
-    suspend fun insertAsset(asset: PlantAssetEntity) {
-        plantAssetDao.insertAsset(asset)
+    suspend fun insertAsset(asset: PlantAssetEntity): Long {
+        return plantAssetDao.insertAsset(asset)
     }
 
     suspend fun updateAsset(asset: PlantAssetEntity) {
@@ -40,8 +40,8 @@ class JournalRepository(
     suspend fun getAssetById(id: Long): PlantAssetEntity? =
         plantAssetDao.getAssetById(id)
 
-    suspend fun insertLog(log: JournalLogEntity) {
-        journalLogDao.insertLog(log)
+    suspend fun insertLog(log: JournalLogEntity): Long {
+        val logId = journalLogDao.insertLog(log)
         // Update log count for the asset
         plantAssetDao.getAssetById(log.assetId)?.let { asset ->
             plantAssetDao.updateAsset(
@@ -51,6 +51,7 @@ class JournalRepository(
                 )
             )
         }
+        return logId
     }
 
     suspend fun updateLog(log: JournalLogEntity) {
@@ -97,9 +98,25 @@ class JournalRepository(
     suspend fun updateParameterName(oldName: String, newName: String) = masterDao.renameParameterCascading(oldName, newName)
     suspend fun deleteParameterByName(name: String) = masterDao.deleteParameterCascading(name)
 
-    // Custom Fields
-    fun getCustomFieldDefinitions(category: String) = customFieldDao.getDefinitionsByCategory(category)
-    suspend fun insertCustomFieldDefinition(definition: CustomFieldDefinitionEntity) = customFieldDao.insertDefinition(definition)
-    fun getCustomFieldValues(assetId: Long) = customFieldDao.getValuesByAsset(assetId)
-    suspend fun insertCustomFieldValues(values: List<CustomFieldValueEntity>) = customFieldDao.insertValues(values)
+    // Dynamic Custom Fields
+    fun getCustomFieldDefinitions(targetType: FieldTargetType, scope: String) = 
+        customFieldDao.getDefinitions(targetType, scope)
+
+    suspend fun insertCustomFieldDefinition(definition: CustomFieldDefinitionEntity) = 
+        customFieldDao.insertDefinition(definition)
+
+    suspend fun updateCustomFieldDefinition(definition: CustomFieldDefinitionEntity) = 
+        customFieldDao.updateDefinition(definition)
+
+    suspend fun archiveCustomFieldDefinition(definitionId: Long) = 
+        customFieldDao.archiveDefinition(definitionId)
+
+    fun getCustomFieldValues(entityId: Long) = 
+        customFieldDao.getValuesForEntity(entityId)
+
+    suspend fun insertCustomFieldValues(values: List<CustomFieldValueEntity>) = 
+        customFieldDao.insertValues(values)
+
+    suspend fun deleteCustomFieldValues(entityId: Long) =
+        customFieldDao.deleteValuesForEntity(entityId)
 }

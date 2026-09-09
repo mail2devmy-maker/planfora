@@ -3,6 +3,7 @@ package com.mail2dev.planfora.data.repository
 import com.mail2dev.planfora.data.local.dao.DiySupplyDao
 import com.mail2dev.planfora.data.local.entity.DiySupplyEntity
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -21,7 +22,7 @@ class SupplyRepositoryTest {
         override suspend fun getMaxBatchNumber(supplyTypeName: String): Int? {
             return if (supplyTypeName == "FPJ") 12 else null
         }
-        override fun getDistinctActiveIngredients(): Flow<List<String>> = TODO()
+        override fun getDistinctActiveIngredients(): Flow<List<String>> = flowOf(emptyList())
     }
 
     private val repository = SupplyRepository(fakeDao)

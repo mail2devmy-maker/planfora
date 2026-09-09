@@ -7,9 +7,12 @@ import androidx.compose.animation.*
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -42,14 +45,16 @@ import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import com.mail2dev.planfora.data.local.entity.PlantAssetEntity
 import com.mail2dev.planfora.ui.assets.AssetCategory
-import com.mail2dev.planfora.ui.assets.AssetsViewModel
+import com.mail2dev.planfora.ui.components.CreateCustomFieldDialog
+import com.mail2dev.planfora.ui.components.DynamicCustomFieldInput
+import com.mail2dev.planfora.ui.components.ManageFieldDialog
 import com.mail2dev.planfora.ui.components.HarvestActivityCard
 import com.mail2dev.planfora.ui.components.MediaAttachmentStrip
-import com.mail2dev.planfora.ui.components.ParameterInputSection
 import com.mail2dev.planfora.ui.components.PlanForaFieldGroup
 import com.mail2dev.planfora.ui.components.PlanForaSurfaceCard
 import com.mail2dev.planfora.ui.components.TagPickerSheet
 import com.mail2dev.planfora.ui.components.planForaTextFieldColors
+import com.mail2dev.planfora.data.local.entity.FieldTargetType
 import com.mail2dev.planfora.ui.logs.LogsViewModel
 import com.mail2dev.planfora.ui.theme.ForestEmerald
 import kotlinx.coroutines.launch
@@ -57,7 +62,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun NewLogEntryScreen(
     navController: NavController,
@@ -105,6 +110,13 @@ fun NewLogEntryScreen(
     
     var tags by remember { mutableStateOf(setOf<String>()) }
     var parameters by remember { mutableStateOf(mutableMapOf<String, String>()) }
+
+    // Dynamic Custom Fields State
+    val customFieldDefinitions by viewModel.getCustomFieldDefinitions(FieldTargetType.LOG_ACTIVITY, activityType).collectAsState(emptyList())
+    var customFieldValues by remember { mutableStateOf(mutableMapOf<Long, String>()) }
+    var showCustomFieldDialog by remember { mutableStateOf(false) }
+    var fieldToManage by remember { mutableStateOf<com.mail2dev.planfora.data.local.entity.CustomFieldDefinitionEntity?>(null) }
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
 
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
     
@@ -519,43 +531,83 @@ fun NewLogEntryScreen(
 
                 HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
 
-                // Option A: Quick-Add Metric Chips & Ledger
-                val masterParameters by viewModel.masterParameters.collectAsState()
-                ParameterInputSection(
-                    parameters = parameters,
-                    masterParameters = masterParameters,
-                    onParameterChange = { k, v ->
-                        val n = parameters.toMutableMap()
-                        n[k] = v
-                        parameters = n
-                    },
-                    onParameterRemove = { k ->
-                        val n = parameters.toMutableMap()
-                        n.remove(k)
-                        parameters = n
-                    },
-                    onCustomAdd = { k ->
-                        viewModel.addMasterParameter(k)
-                        val n = parameters.toMutableMap()
-                        n[k] = ""
-                        parameters = n
-                    },
-                    onRenameParameter = { old, new ->
-                        viewModel.updateMasterParameter(old, new)
-                        if (parameters.containsKey(old)) {
-                            val n = parameters.toMutableMap()
-                            n[new] = n[old] ?: ""
-                            n.remove(old)
-                            parameters = n
+                // Unified Dynamic Custom Fields
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Activity Metrics".uppercase(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold)
+                    
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AssistChip(
+                            onClick = { showCustomFieldDialog = true },
+                            label = { Text("Add Metric", fontSize = 11.sp) },
+                            leadingIcon = { Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp)) },
+                            colors = AssistChipDefaults.assistChipColors(
+                                labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+                            )
+                        )
+                    }
+
+                    customFieldDefinitions.forEach { def ->
+                        Surface(
+                            color = Color(0xFF1E2120),
+                            shape = RoundedCornerShape(8.dp),
+                            border = BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.3f)),
+                            modifier = Modifier.fillMaxWidth().combinedClickable(
+                                onClick = {},
+                                onLongClick = {
+                                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                                    fieldToManage = def
+                                }
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Text(def.fieldName, modifier = Modifier.weight(1f), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                Box(modifier = Modifier.weight(1.5f)) {
+                                    DynamicCustomFieldInput(
+                                        definition = def,
+                                        value = customFieldValues[def.id] ?: "",
+                                        onValueChange = { customFieldValues = customFieldValues.toMutableMap().apply { put(def.id, it) } }
+                                    )
+                                }
+                                IconButton(onClick = { customFieldValues = customFieldValues.toMutableMap().apply { remove(def.id) } }, modifier = Modifier.size(24.dp)) {
+                                    Icon(Icons.Default.Close, null, tint = Color.Gray, modifier = Modifier.size(16.dp))
+                                }
+                            }
                         }
+                    }
+                }
+            }
+
+            if (showCustomFieldDialog) {
+                CreateCustomFieldDialog(
+                    targetType = FieldTargetType.LOG_ACTIVITY,
+                    scope = activityType,
+                    onDismiss = { showCustomFieldDialog = false },
+                    onSave = { definition ->
+                        viewModel.addCustomFieldDefinition(definition)
+                        showCustomFieldDialog = false
+                    }
+                )
+            }
+
+            fieldToManage?.let { def ->
+                ManageFieldDialog(
+                    definition = def,
+                    onDismiss = { fieldToManage = null },
+                    onRename = { newName ->
+                        viewModel.updateCustomFieldDefinition(def.copy(fieldName = newName))
                     },
-                    onDeleteParameter = { name ->
-                        viewModel.deleteMasterParameter(name)
-                        if (parameters.containsKey(name)) {
-                            val n = parameters.toMutableMap()
-                            n.remove(name)
-                            parameters = n
-                        }
+                    onArchive = {
+                        viewModel.archiveCustomFieldDefinition(def.id)
                     }
                 )
             }
@@ -639,7 +691,8 @@ fun NewLogEntryScreen(
                                     supplyId = selectedSupplyId,
                                     customInputName = if (selectedSupplyId == null) customInputName else null,
                                     batchGroupId = batchGroupId,
-                                    targetZones = if (selectedZones.isNotEmpty()) selectedZones.joinToString(",") else null
+                                    targetZones = if (selectedZones.isNotEmpty()) selectedZones.joinToString(",") else null,
+                                    customFieldValues = customFieldValues
                                 )
                             }
                         }

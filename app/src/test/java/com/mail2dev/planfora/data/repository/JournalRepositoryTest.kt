@@ -34,12 +34,12 @@ class JournalRepositoryTest {
         override fun getLogsForAsset(assetId: Long): Flow<List<JournalLogEntity>> = TODO()
         override suspend fun getLogById(id: Long): JournalLogEntity? = TODO()
         override suspend fun insertLog(log: JournalLogEntity): Long = 1L
-        override suspend fun insertLogs(logs: List<JournalLogEntity>) = TODO()
-        override suspend fun updateLog(log: JournalLogEntity): Int = TODO()
-        override suspend fun deleteLog(log: JournalLogEntity): Int = TODO()
-        override suspend fun getLogsBySupply(supplyId: Long): List<JournalLogEntity> = TODO()
-        override suspend fun deleteBatchLogs(batchGroupId: String) = TODO()
-        override suspend fun getLogsByBatchGroup(batchGroupId: String): List<JournalLogEntity> = TODO()
+        override suspend fun insertLogs(logs: List<JournalLogEntity>) {}
+        override suspend fun updateLog(log: JournalLogEntity): Int = 0
+        override suspend fun deleteLog(log: JournalLogEntity): Int = 0
+        override suspend fun getLogsBySupply(supplyId: Long): List<JournalLogEntity> = emptyList()
+        override suspend fun deleteBatchLogs(batchGroupId: String) {}
+        override suspend fun getLogsByBatchGroup(batchGroupId: String): List<JournalLogEntity> = emptyList()
     }
 
     private val fakeMasterDao = object : MasterDao {
@@ -81,10 +81,12 @@ class JournalRepositoryTest {
 
     private val fakeCustomFieldDao = object : CustomFieldDao {
         override fun getDefinitionsByCategory(category: String): Flow<List<CustomFieldDefinitionEntity>> = TODO()
-        override suspend fun insertDefinition(definition: CustomFieldDefinitionEntity): Long = TODO()
+        override suspend fun insertDefinition(definition: CustomFieldDefinitionEntity): Long = 0
+        override suspend fun deleteDefinition(definition: CustomFieldDefinitionEntity) {}
+        override suspend fun deleteDefinitionsByCategory(category: String) {}
         override fun getValuesByAsset(assetId: Long): Flow<List<CustomFieldValueEntity>> = TODO()
-        override suspend fun insertValue(value: CustomFieldValueEntity): Long = TODO()
-        override suspend fun insertValues(values: List<CustomFieldValueEntity>) = TODO()
+        override suspend fun insertValue(value: CustomFieldValueEntity): Long = 0
+        override suspend fun insertValues(values: List<CustomFieldValueEntity>) {}
     }
 
     private val repository = JournalRepository(fakeLogDao, fakeAssetDao, fakeMasterDao, fakeCustomFieldDao)

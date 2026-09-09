@@ -303,10 +303,16 @@ Global list of custom tags for assets and logs.
     - Implemented real-time `maxAmplitude` sampling (100ms) and dynamic waveform rendering using Compose `Canvas`.
     - Added a Redo/Replacement workflow with an `AlertDialog` to prevent accidental overwrites of existing voice notes.
     - Enhanced `AudioRecordingHUD` with normalized amplitude spikes (0dp - 24dp).
-- **[2026-09-04] MediaRecorder Crash Fix & Audio Lifecycle Refactor**:
-    - Resolved `setAudioSource failed` crash by implementing API-level `MediaRecorder` instantiation (API 31+ context constructor).
-    - Integrated runtime `RECORD_AUDIO` permission guards and manifest declaration.
-    - Refactored recording lifecycle with `DisposableEffect` cleanup to prevent native leaks.
+- **[2026-09-08] UI/UX Polish: Input Responsiveness & Container Spacing**:
+    - Renamed "Quick-Add Metric" labels to "Optional Fields" in all entry forms.
+    - Implemented long-press gesture support for active custom fields in the logging ledger, enabling consistent management workflows.
+    - Optimized image thumbnail containers: removed negative offsets and introduced solid circular badges for the remove action to prevent visual overlap.
+    - Enhanced active voice recording feedback with non-linear amplitude spikes for a more responsive and professional waveform visualizer.
+- **[2026-09-08] UI/UX Refinement: Standardized Card Layouts & High-Density Spacing**:
+    - Refactored `LogDetailSheet`, `LogComponents`, and `SharedComponents` to tighten interior padding and reduce visual density.
+    - Standardized structural borders across all card containers (`PlanForaSurfaceCard`, `ExpandedLogCard`).
+    - Fixed input responsiveness by binding missing optional fields (`REI`, `NPK`, `Dilution`, `TargetPests`) to `AddSupplyViewModel` state.
+    - Re-styled select/dropdown triggers to appear interactive (`enabled=true` + `readOnly=true`) rather than faded.
 - **[2026-09-03] Standardized MediaAttachmentStrip & Voice Recording Controls**:
     - Built reusable `MediaAttachmentStrip.kt` with integrated Camera, Gallery, and Voice recording.
     - Implemented active recording HUD with animated pulse, live timer, and Discard/Cancel logic.

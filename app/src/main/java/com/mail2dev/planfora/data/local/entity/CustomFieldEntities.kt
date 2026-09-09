@@ -4,21 +4,37 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import kotlinx.serialization.Serializable
 
+enum class FieldTargetType {
+    LOG_ACTIVITY,
+    ASSET_CATEGORY,
+    SUPPLY_CATEGORY
+}
+
+enum class CustomFieldType {
+    TEXT,
+    NUMBER,
+    BOOLEAN,
+    SINGLE_SELECT,
+    MULTI_SELECT
+}
+
 @Entity(tableName = "custom_field_definitions")
 @Serializable
 data class CustomFieldDefinitionEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val category: String, // Tree, Crop/Veggie, Seedling, Cutting
+    val targetType: FieldTargetType,
+    val scope: String, // e.g., "Observation", "Feeding", "Tree", "Fertilizer"
     val fieldName: String,
-    val fieldType: String, // TEXT, NUMBER, RADIO
-    val radioOptionsJson: String? = null // Serialized list of options for RADIO type
+    val fieldType: CustomFieldType,
+    val optionsJson: String? = null, // Serialized list of options for select types
+    val isArchived: Boolean = false
 )
 
 @Entity(tableName = "custom_field_values")
 @Serializable
 data class CustomFieldValueEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val assetId: Long,
+    val entityId: Long, // Generic ID for logId, assetId, or supplyId
     val fieldDefId: Long,
     val value: String
 )
