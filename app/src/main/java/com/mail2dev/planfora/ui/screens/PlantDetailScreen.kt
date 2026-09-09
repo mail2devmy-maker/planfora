@@ -45,6 +45,9 @@ fun PlantDetailScreen(
     val use24HourFormat by profileViewModel.use24HourFormat.collectAsState()
     val showEditSheet by assetsViewModel.showAddBottomSheet.collectAsState()
     
+    val customFieldValues by logsViewModel.getCustomFieldValues(plantId).collectAsState(emptyList())
+    val customFieldDefinitions by logsViewModel.getCustomFieldDefinitions(com.mail2dev.planfora.data.local.entity.FieldTargetType.ASSET_CATEGORY, AssetCategory.entries.find { it.displayName == assets.find { a -> a.id == plantId }?.category }?.displayName ?: "").collectAsState(emptyList())
+
     val plant = assets.find { it.id == plantId }
     val plantLogs = allLogs.filter { it.assetId == plantId }.sortedByDescending { it.timestamp }
 
@@ -175,7 +178,7 @@ fun PlantDetailScreen(
                 contentPadding = PaddingValues(bottom = 80.dp)
             ) {
                 item {
-                    AssetPassportHeader(plant)
+                    AssetPassportHeader(plant, customFieldValues, customFieldDefinitions)
                 }
 
                 if (zonesList.isNotEmpty()) {
@@ -287,7 +290,11 @@ fun PlantDetailScreen(
 }
 
 @Composable
-fun AssetPassportHeader(plant: PlantAssetEntity) {
+fun AssetPassportHeader(
+    plant: PlantAssetEntity, 
+    customFieldValues: List<com.mail2dev.planfora.data.local.entity.CustomFieldValueEntity> = emptyList(),
+    customFieldDefinitions: List<com.mail2dev.planfora.data.local.entity.CustomFieldDefinitionEntity> = emptyList()
+) {
     val category = AssetCategory.entries.find { it.displayName == plant.category } ?: AssetCategory.TREE
     
     Card(
@@ -318,6 +325,23 @@ fun AssetPassportHeader(plant: PlantAssetEntity) {
             Spacer(modifier = Modifier.height(16.dp))
 
             MetadataGrid(plant)
+
+            if (customFieldValues.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    customFieldValues.forEach { value ->
+                        val def = customFieldDefinitions.find { it.id == value.fieldDefId }
+                        if (def != null && value.value.isNotBlank()) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Adjust, null, tint = Color.Gray, modifier = Modifier.size(14.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(text = "${def.fieldName}: ", color = Color.Gray, fontSize = 13.sp)
+                                Text(text = value.value, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+            }
 
             if (plant.notes.isNotBlank()) {
                 Spacer(modifier = Modifier.height(16.dp))

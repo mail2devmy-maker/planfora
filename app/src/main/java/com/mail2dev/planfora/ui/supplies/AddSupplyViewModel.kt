@@ -247,7 +247,10 @@ class AddSupplyViewModel(
                 _location.value = supply.locationNote
                 _selectedTags.value = supply.tags.split(",").filter { it.isNotBlank() }.toSet()
                 
-                // Parse tags if needed
+                // Load custom field values
+                journalRepository.getCustomFieldValues(supplyId).firstOrNull()?.let { values ->
+                    _customFieldValues.value = values.associate { it.fieldDefId to it.value }.toMutableMap()
+                }
             }
         }
     }
@@ -306,6 +309,7 @@ class AddSupplyViewModel(
             }
 
             // Save custom field values
+            journalRepository.deleteCustomFieldValues(supplyId)
             val values = _customFieldValues.value.map { (defId, value) ->
                 CustomFieldValueEntity(entityId = supplyId, fieldDefId = defId, value = value)
             }

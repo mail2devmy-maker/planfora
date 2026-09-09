@@ -57,6 +57,7 @@ import com.mail2dev.planfora.ui.components.TagPickerSheet
 import com.mail2dev.planfora.ui.components.planForaTextFieldColors
 import com.mail2dev.planfora.data.local.entity.FieldTargetType
 import com.mail2dev.planfora.ui.logs.LogsViewModel
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
@@ -231,6 +232,13 @@ fun NewLogEntryScreen(
                 
                 if (log.targetZones != null) {
                     selectedZones = log.targetZones.split(",").toSet()
+                }
+
+                // Load custom field values
+                scope.launch {
+                    viewModel.getCustomFieldValues(id).firstOrNull()?.let { values ->
+                        customFieldValues = values.associate { it.fieldDefId to it.value }.toMutableMap()
+                    }
                 }
             }
         }
@@ -823,7 +831,8 @@ fun NewLogEntryScreen(
                                     supplyId = selectedSupplyId,
                                     customInputName = if (selectedSupplyId == null) customInputName else null,
                                     targetZones = if (selectedZones.isNotEmpty()) selectedZones.joinToString(",") else null
-                                )
+                                ),
+                                customFieldValues = customFieldValues
                             )
                         } else {
                             selectedAssetIds.forEach { assetId ->

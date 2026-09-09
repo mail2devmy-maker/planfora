@@ -45,6 +45,9 @@ fun SupplyDetailScreen(
     val supply = supplies.find { it.id == supplyId }
     val showEditSheet by viewModel.showAddBottomSheet.collectAsState()
     
+    val customFieldValues by logsViewModel.getCustomFieldValues(supplyId).collectAsState(emptyList())
+    val customFieldDefinitions by logsViewModel.getCustomFieldDefinitions(com.mail2dev.planfora.data.local.entity.FieldTargetType.SUPPLY_CATEGORY, supply?.category ?: "").collectAsState(emptyList())
+
     val allLogs by logsViewModel.allLogs.collectAsState()
     val supplyLogs = allLogs.filter { it.supplyId == supplyId }.sortedByDescending { it.timestamp }
 
@@ -149,7 +152,7 @@ fun SupplyDetailScreen(
                 contentPadding = PaddingValues(bottom = 32.dp)
             ) {
                 item {
-                    ProductHeaderCard(supply)
+                    ProductHeaderCard(supply, customFieldValues, customFieldDefinitions)
                 }
 
                 if ((supply.phiDays ?: 0) > 0) {
@@ -207,7 +210,11 @@ fun SupplyDetailScreen(
 }
 
 @Composable
-fun ProductHeaderCard(supply: DiySupplyEntity) {
+fun ProductHeaderCard(
+    supply: DiySupplyEntity,
+    customFieldValues: List<com.mail2dev.planfora.data.local.entity.CustomFieldValueEntity> = emptyList(),
+    customFieldDefinitions: List<com.mail2dev.planfora.data.local.entity.CustomFieldDefinitionEntity> = emptyList()
+) {
     Card(
         colors = CardDefaults.cardColors(containerColor = Color(0xFF1E2120)),
         shape = RoundedCornerShape(16.dp),
@@ -234,6 +241,23 @@ fun ProductHeaderCard(supply: DiySupplyEntity) {
             Spacer(modifier = Modifier.height(16.dp))
 
             ProductMetadataGrid(supply)
+
+            if (customFieldValues.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    customFieldValues.forEach { value ->
+                        val def = customFieldDefinitions.find { it.id == value.fieldDefId }
+                        if (def != null && value.value.isNotBlank()) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Adjust, null, tint = Color.Gray, modifier = Modifier.size(14.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(text = "${def.fieldName}: ", color = Color.Gray, fontSize = 13.sp)
+                                Text(text = value.value, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+            }
 
             if (supply.notes.isNotBlank()) {
                 Spacer(modifier = Modifier.height(16.dp))

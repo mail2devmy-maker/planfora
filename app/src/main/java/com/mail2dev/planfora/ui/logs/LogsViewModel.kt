@@ -174,9 +174,16 @@ class LogsViewModel(
         }
     }
 
-    fun updateLog(log: JournalLogEntity) {
+    fun updateLog(log: JournalLogEntity, customFieldValues: Map<Long, String> = emptyMap()) {
         viewModelScope.launch {
             repository.updateLog(log)
+            
+            // Update dynamic values (delete old ones and insert new ones for simplicity)
+            repository.deleteCustomFieldValues(log.id)
+            val values = customFieldValues.map { (defId, value) ->
+                CustomFieldValueEntity(entityId = log.id, fieldDefId = defId, value = value)
+            }
+            repository.insertCustomFieldValues(values)
         }
     }
 

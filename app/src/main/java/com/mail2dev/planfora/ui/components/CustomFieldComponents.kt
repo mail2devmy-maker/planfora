@@ -3,6 +3,7 @@ package com.mail2dev.planfora.ui.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -183,6 +184,7 @@ fun ManageFieldDialog(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DynamicCustomFieldInput(
     definition: CustomFieldDefinitionEntity,
@@ -190,43 +192,60 @@ fun DynamicCustomFieldInput(
     onValueChange: (String) -> Unit
 ) {
     when (definition.fieldType) {
-        CustomFieldType.TEXT -> {
-            OutlinedTextField(
+        CustomFieldType.TEXT, CustomFieldType.NUMBER -> {
+            BasicTextField(
                 value = value,
                 onValueChange = onValueChange,
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-                placeholder = { Text("Enter text...", fontSize = 14.sp) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(36.dp),
                 textStyle = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
-                shape = RoundedCornerShape(8.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color.Gray.copy(alpha = 0.5f),
-                    unfocusedBorderColor = Color.Gray.copy(alpha = 0.3f),
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    cursorColor = MaterialTheme.colorScheme.primary,
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White
-                )
-            )
-        }
-        CustomFieldType.NUMBER -> {
-            OutlinedTextField(
-                value = value,
-                onValueChange = onValueChange,
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-                placeholder = { Text("0.0", fontSize = 14.sp) },
-                textStyle = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                shape = RoundedCornerShape(8.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color.Gray.copy(alpha = 0.5f),
-                    unfocusedBorderColor = Color.Gray.copy(alpha = 0.3f),
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    cursorColor = MaterialTheme.colorScheme.primary,
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White
-                )
+                keyboardOptions = if (definition.fieldType == CustomFieldType.NUMBER) 
+                    KeyboardOptions(keyboardType = KeyboardType.Decimal) 
+                else KeyboardOptions.Default,
+                singleLine = true,
+                cursorBrush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.primary),
+                decorationBox = { innerTextField: @Composable () -> Unit ->
+                    OutlinedTextFieldDefaults.DecorationBox(
+                        value = value,
+                        innerTextField = innerTextField,
+                        enabled = true,
+                        singleLine = true,
+                        visualTransformation = androidx.compose.ui.text.input.VisualTransformation.None,
+                        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                        placeholder = { 
+                            Text(
+                                text = "Value...",
+                                fontSize = 13.sp,
+                                color = Color.Gray,
+                                maxLines = 1
+                            ) 
+                        },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color.Gray.copy(alpha = 0.5f),
+                            unfocusedBorderColor = Color.Gray.copy(alpha = 0.3f),
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                        ),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                        container = {
+                            OutlinedTextFieldDefaults.ContainerBox(
+                                enabled = true,
+                                isError = false,
+                                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = Color.Gray.copy(alpha = 0.5f),
+                                    unfocusedBorderColor = Color.Gray.copy(alpha = 0.3f),
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent,
+                                ),
+                                shape = RoundedCornerShape(8.dp),
+                                focusedBorderThickness = 1.dp,
+                                unfocusedBorderThickness = 1.dp
+                            )
+                        }
+                    )
+                }
             )
         }
         CustomFieldType.BOOLEAN -> {

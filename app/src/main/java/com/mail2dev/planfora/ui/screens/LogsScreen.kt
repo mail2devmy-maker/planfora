@@ -253,6 +253,7 @@ fun LogsScreen(
             assetName = assetName,
             supplies = supplies,
             use24Hour = use24HourFormat,
+            viewModel = viewModel,
             onDismiss = { selectedLogForDetail = null },
             onEdit = {
                 val id = selectedLogForDetail!!.id
@@ -275,10 +276,14 @@ fun LogDetailSheet(
     assetName: String,
     supplies: List<com.mail2dev.planfora.data.local.entity.DiySupplyEntity>,
     use24Hour: Boolean,
+    viewModel: LogsViewModel,
     onDismiss: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
+    val customFieldValues by viewModel.getCustomFieldValues(log.id).collectAsState(emptyList())
+    val customFieldDefinitions by viewModel.getCustomFieldDefinitions(com.mail2dev.planfora.data.local.entity.FieldTargetType.LOG_ACTIVITY, log.activityType).collectAsState(emptyList())
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = Color(0xFF0B121C),
@@ -424,6 +429,18 @@ fun LogDetailSheet(
                                     Text(text = "${parts[0]}: ", color = Color.Gray, fontSize = 14.sp)
                                     Text(text = parts[1], color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                                 }
+                            }
+                        }
+                    }
+                }
+
+                if (customFieldValues.isNotEmpty()) {
+                    customFieldValues.forEach { value ->
+                        val def = customFieldDefinitions.find { it.id == value.fieldDefId }
+                        if (def != null && value.value.isNotBlank()) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(text = "${def.fieldName}: ", color = Color.Gray, fontSize = 14.sp)
+                                Text(text = value.value, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }

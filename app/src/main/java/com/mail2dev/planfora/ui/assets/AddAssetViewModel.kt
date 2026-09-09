@@ -226,6 +226,11 @@ class AddAssetViewModel(private val repository: JournalRepository) : ViewModel()
                 if ((asset.acquisitionDate ?: 0L) > 0L) newVisibleFields.add(OptionalField.ACQUISITION_DETAILS)
                 
                 _visibleOptionalFields.value = newVisibleFields
+
+                // Load custom field values
+                repository.getCustomFieldValues(assetId).firstOrNull()?.let { values ->
+                    _customFieldValues.value = values.associate { it.fieldDefId to it.value }.toMutableMap()
+                }
             }
         }
     }
@@ -289,6 +294,7 @@ class AddAssetViewModel(private val repository: JournalRepository) : ViewModel()
             }
             
             // Save custom field values
+            repository.deleteCustomFieldValues(assetId)
             val values = _customFieldValues.value.map { (defId, value) ->
                 CustomFieldValueEntity(entityId = assetId, fieldDefId = defId, value = value)
             }
