@@ -330,11 +330,14 @@ fun NewLogEntryScreen(
                 if (selectedAssetIds.isEmpty()) {
                     Box(modifier = Modifier.fillMaxWidth().clickable(enabled = parentLogId == null) { showAssetPicker = true }) {
                         OutlinedTextField(
-                            value = "Optional Plant Link",
+                            value = "Select Plant",
                             onValueChange = {},
                             readOnly = true,
                             enabled = false,
                             modifier = Modifier.fillMaxWidth(),
+                            leadingIcon = {
+                                Icon(Icons.Default.Park, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            },
                             trailingIcon = {
                                 if (parentLogId == null) {
                                     Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -491,7 +494,11 @@ fun NewLogEntryScreen(
 
             // 5. Streamlined Attachments & Tags
             PlanForaSurfaceCard(title = "Attachments & Metadata", isImportant = false) {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                androidx.compose.foundation.layout.FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     AssistChip(
                         onClick = { showTagSheet = true },
                         label = { Text("Tags") },
@@ -502,8 +509,20 @@ fun NewLogEntryScreen(
                         ),
                         border = BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.3f))
                     )
+
+                    tags.forEach { tag ->
+                        AssistChip(
+                            onClick = { tags = tags - tag },
+                            label = { Text(tag, fontSize = 10.sp) },
+                            trailingIcon = { Icon(Icons.Default.Close, null, modifier = Modifier.size(12.dp)) },
+                            colors = AssistChipDefaults.assistChipColors(labelColor = Color.White, containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+                        )
+                    }
                 }
 
+                HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
+
+                // Distinct Media Section
                 MediaAttachmentStrip(
                     imageUris = imageUris,
                     audioPath = audioPath,
@@ -512,22 +531,6 @@ fun NewLogEntryScreen(
                     onAudioCaptured = { audioPath = it },
                     onAudioRemove = { audioPath = null }
                 )
-
-                if (tags.isNotEmpty()) {
-                    androidx.compose.foundation.layout.FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        tags.forEach { tag ->
-                            AssistChip(
-                                onClick = { tags = tags - tag },
-                                label = { Text(tag, fontSize = 10.sp) },
-                                trailingIcon = { Icon(Icons.Default.Close, null, modifier = Modifier.size(12.dp)) },
-                                colors = AssistChipDefaults.assistChipColors(labelColor = Color.White, containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
-                            )
-                        }
-                    }
-                }
 
                 HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
 
