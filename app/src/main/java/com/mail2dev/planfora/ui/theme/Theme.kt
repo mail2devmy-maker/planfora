@@ -13,9 +13,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = ForestEmerald,
+    primary = ForestGreen,
     onPrimary = Color.White,
-    primaryContainer = ForestEmeraldDark,
+    primaryContainer = ForestGreen.copy(alpha = 0.7f),
     onPrimaryContainer = Color.White,
     secondary = SlateTextSecondary,
     onSecondary = Color.White,
@@ -49,7 +49,7 @@ private val LightColorScheme = lightColorScheme(
 fun PlanForaTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {

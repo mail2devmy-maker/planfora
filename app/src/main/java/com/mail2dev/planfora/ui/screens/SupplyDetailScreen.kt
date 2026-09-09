@@ -106,7 +106,7 @@ fun SupplyDetailScreen(
                 actions = {
                     var showMenu by remember { mutableStateOf(false) }
                     IconButton(onClick = { showMenu = true }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "More", tint = SageGreen)
+                        Icon(Icons.Default.MoreVert, contentDescription = "More", tint = MaterialTheme.colorScheme.primary)
                     }
                     DropdownMenu(
                         expanded = showMenu,
@@ -162,7 +162,7 @@ fun SupplyDetailScreen(
                     Text(
                         text = "Linked Application History",
                         style = MaterialTheme.typography.titleSmall,
-                        color = SageGreen,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(top = 8.dp)
                     )
@@ -217,15 +217,15 @@ fun ProductHeaderCard(supply: DiySupplyEntity) {
         Column(modifier = Modifier.padding(20.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Surface(
-                    color = SageGreen.copy(alpha = 0.1f),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Icon(Icons.Default.Science, null, tint = SageGreen, modifier = Modifier.padding(10.dp).size(24.dp))
+                    Icon(Icons.Default.Science, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(10.dp).size(24.dp))
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 Column {
                     Text(supply.name, style = MaterialTheme.typography.headlineSmall, color = Color.White, fontWeight = FontWeight.Bold)
-                    Text(supply.category, color = SageGreen, fontSize = 13.sp)
+                    Text(supply.category, color = MaterialTheme.colorScheme.primary, fontSize = 13.sp)
                 }
             }
 

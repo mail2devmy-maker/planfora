@@ -257,8 +257,8 @@ fun CategoryFilters(
                     }
                 },
                 colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = if (category == AssetCategory.ALL) Color(0xFFD0BCFF) else MaterialTheme.colorScheme.primary,
-                    selectedLabelColor = if (category == AssetCategory.ALL) Color.Black else MaterialTheme.colorScheme.onPrimary,
+                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
                     labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                     containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
                 ),

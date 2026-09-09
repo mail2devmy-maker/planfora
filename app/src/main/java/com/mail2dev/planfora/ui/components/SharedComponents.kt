@@ -76,11 +76,11 @@ fun PlanForaFieldGroup(
 
 @Composable
 fun planForaTextFieldColors(isImportant: Boolean = false) = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor = ForestEmerald,
+    focusedBorderColor = MaterialTheme.colorScheme.primary,
     unfocusedBorderColor = if (isImportant) MandatoryBorder else OptionalBorder,
-    focusedLabelColor = ForestEmerald,
+    focusedLabelColor = MaterialTheme.colorScheme.primary,
     unfocusedLabelColor = if (isImportant) SlateTextPrimary else SlateTextSecondary,
-    cursorColor = ForestEmerald,
+    cursorColor = MaterialTheme.colorScheme.primary,
     focusedContainerColor = Color.Transparent,
     unfocusedContainerColor = Color.Transparent,
     focusedTextColor = SlateTextPrimary,

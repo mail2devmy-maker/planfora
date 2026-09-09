@@ -34,7 +34,6 @@ import com.mail2dev.planfora.ui.logs.CalendarMode
 import com.mail2dev.planfora.ui.logs.LayoutMode
 import com.mail2dev.planfora.ui.logs.LogsViewModel
 import com.mail2dev.planfora.ui.navigation.Screen
-import com.mail2dev.planfora.ui.theme.SageGreen
 import java.io.File
 import java.util.*
 
@@ -301,7 +300,7 @@ fun LogDetailSheet(
                     Text(
                         text = log.activityType.uppercase(),
                         style = MaterialTheme.typography.labelMedium,
-                        color = SageGreen,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
@@ -400,13 +399,13 @@ fun LogDetailSheet(
                     ) {
                         log.tags.split(",").forEach { tag ->
                             Surface(
-                                color = SageGreen.copy(alpha = 0.1f),
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                                 shape = RoundedCornerShape(4.dp),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, SageGreen.copy(alpha = 0.2f))
+                                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
                             ) {
                                 Text(
                                     text = "#$tag",
-                                    color = SageGreen,
+                                    color = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold

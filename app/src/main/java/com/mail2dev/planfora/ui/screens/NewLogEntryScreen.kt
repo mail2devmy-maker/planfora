@@ -57,7 +57,6 @@ import com.mail2dev.planfora.ui.components.TagPickerSheet
 import com.mail2dev.planfora.ui.components.planForaTextFieldColors
 import com.mail2dev.planfora.data.local.entity.FieldTargetType
 import com.mail2dev.planfora.ui.logs.LogsViewModel
-import com.mail2dev.planfora.ui.theme.ForestEmerald
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
@@ -620,14 +619,14 @@ fun NewLogEntryScreen(
                     .heightIn(min = 120.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = ForestEmerald,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
                     focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f),
                     unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
                     focusedTextColor = Color.White,
                     unfocusedTextColor = Color.LightGray,
-                    cursorColor = ForestEmerald,
-                    focusedLabelColor = ForestEmerald,
+                    cursorColor = MaterialTheme.colorScheme.primary,
+                    focusedLabelColor = MaterialTheme.colorScheme.primary,
                     unfocusedLabelColor = Color.Gray
                 ),
                 placeholder = { Text("Describe your observations...", color = Color.Gray.copy(alpha = 0.6f), fontSize = 14.sp) }
@@ -1062,14 +1061,14 @@ fun TreatmentDetailsCard(
 fun RepottingCard(substrateMix: String, potSize: String, onSubstrateChange: (String) -> Unit, onPotSizeChange: (String) -> Unit) {
     PlanForaSurfaceCard(title = "Substrate & Container", isImportant = false) {
         val fieldColors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = ForestEmerald,
+            focusedBorderColor = MaterialTheme.colorScheme.primary,
             unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
             focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f),
             unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
             focusedTextColor = Color.White,
             unfocusedTextColor = Color.LightGray,
-            cursorColor = ForestEmerald,
-            focusedLabelColor = ForestEmerald,
+            cursorColor = MaterialTheme.colorScheme.primary,
+            focusedLabelColor = MaterialTheme.colorScheme.primary,
             unfocusedLabelColor = Color.Gray
         )
         OutlinedTextField(value = substrateMix, onValueChange = onSubstrateChange, label = { Text("Substrate Mix") }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("e.g. Coco/Perlite 70/30") }, colors = fieldColors)

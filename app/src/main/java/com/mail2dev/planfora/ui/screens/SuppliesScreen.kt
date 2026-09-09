@@ -24,7 +24,6 @@ import com.mail2dev.planfora.ui.supplies.AddSupplyViewModel
 import com.mail2dev.planfora.ui.supplies.SuppliesViewModel
 import com.mail2dev.planfora.ui.theme.DarkBackground
 import com.mail2dev.planfora.ui.theme.ForestGreen
-import com.mail2dev.planfora.ui.theme.SageGreen
 import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -168,8 +167,8 @@ fun SupplyCategoryFilters(
                 onClick = { onCategorySelected(category) },
                 label = { Text(category.displayName) },
                 colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = com.mail2dev.planfora.ui.theme.ForestGreen,
-                    selectedLabelColor = Color.White,
+                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
                     labelColor = Color.Gray,
                     containerColor = Color.Transparent
                 ),
@@ -189,7 +188,7 @@ fun SectionHeader(title: String) {
     Text(
         text = title,
         style = MaterialTheme.typography.titleLarge,
-        color = SageGreen,
+        color = MaterialTheme.colorScheme.primary,
         modifier = Modifier.padding(vertical = 8.dp)
     )
 }
@@ -267,7 +266,7 @@ fun FormulationCard(formulation: DiySupplyEntity, onClick: () -> Unit) {
             
             Text(
                 text = "${formulation.currentVolume} ${formulation.unit}",
-                color = SageGreen,
+                color = MaterialTheme.colorScheme.primary,
                 fontSize = 14.sp
             )
         }
@@ -278,7 +277,7 @@ fun FormulationCard(formulation: DiySupplyEntity, onClick: () -> Unit) {
 fun StatusBadge(formulation: DiySupplyEntity, currentTime: Long, isMature: Boolean) {
     val (badgeColor, label) = if (isMature) {
         val ageDays = TimeUnit.MILLISECONDS.toDays(currentTime - formulation.targetMaturityDate)
-        SageGreen to "Mature / Ready ($ageDays days old)"
+        com.mail2dev.planfora.ui.theme.ForestGreen to "Mature / Ready ($ageDays days old)"
     } else {
         val remainingDays = TimeUnit.MILLISECONDS.toDays(formulation.targetMaturityDate - currentTime)
         Color(0xFFFFB74D) to "Maturing ($remainingDays days left)"

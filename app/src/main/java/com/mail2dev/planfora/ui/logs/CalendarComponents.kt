@@ -31,7 +31,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mail2dev.planfora.ui.theme.DarkBackground
 import com.mail2dev.planfora.ui.theme.ForestGreen
-import com.mail2dev.planfora.ui.theme.SageGreen
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -135,7 +134,7 @@ fun MonthCalendarView(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { scope.launch { pagerState.animateScrollToPage(pagerState.currentPage - 1) } }) {
-                    Icon(Icons.Default.ChevronLeft, contentDescription = "Previous Month", tint = SageGreen)
+                    Icon(Icons.Default.ChevronLeft, contentDescription = "Previous Month", tint = MaterialTheme.colorScheme.primary)
                 }
                 
                 Text(
@@ -147,7 +146,7 @@ fun MonthCalendarView(
                 )
                 
                 IconButton(onClick = { scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) } }) {
-                    Icon(Icons.Default.ChevronRight, contentDescription = "Next Month", tint = SageGreen)
+                    Icon(Icons.Default.ChevronRight, contentDescription = "Next Month", tint = MaterialTheme.colorScheme.primary)
                 }
             }
 
@@ -213,7 +212,7 @@ fun MonthCalendarView(
                             .aspectRatio(1f)
                             .padding(2.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(if (isSelected) SageGreen else Color.Transparent)
+                            .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
                             .pointerInput(Unit) {
                                 detectTapGestures(
                                     onTap = { onDateSelected(timestamp) },
@@ -227,7 +226,7 @@ fun MonthCalendarView(
                                 modifier = Modifier
                                     .size(28.dp)
                                     .then(
-                                        if (isToday) Modifier.border(1.5.dp, if (isSelected) ForestGreen else SageGreen, CircleShape)
+                                        if (isToday) Modifier.border(1.5.dp, if (isSelected) com.mail2dev.planfora.ui.theme.ForestGreen else MaterialTheme.colorScheme.primary, CircleShape)
                                         else Modifier
                                     ),
                                 contentAlignment = Alignment.Center
@@ -248,7 +247,7 @@ fun MonthCalendarView(
                                     modifier = Modifier
                                         .size(4.dp)
                                         .clip(CircleShape)
-                                        .background(if (isSelected) DarkBackground else SageGreen)
+                                        .background(if (isSelected) DarkBackground else MaterialTheme.colorScheme.primary)
                                 )
                             }
                         }
@@ -312,7 +311,7 @@ fun WeekStripView(
         ) {
             Text(
                 text = SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(currentWeekMonth.time),
-                color = SageGreen,
+                color = MaterialTheme.colorScheme.primary,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -371,7 +370,7 @@ fun DayStripItem(
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(12.dp))
-            .background(if (isSelected) SageGreen else Color.Transparent)
+            .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
             .pointerInput(Unit) {
                 detectTapGestures(
                     onTap = { onDateSelected(timestamp) },
@@ -391,7 +390,7 @@ fun DayStripItem(
             modifier = Modifier
                 .size(32.dp)
                 .then(
-                    if (isToday) Modifier.border(1.5.dp, if (isSelected) ForestGreen else SageGreen, CircleShape)
+                    if (isToday) Modifier.border(1.5.dp, if (isSelected) com.mail2dev.planfora.ui.theme.ForestGreen else MaterialTheme.colorScheme.primary, CircleShape)
                     else Modifier
                 ),
             contentAlignment = Alignment.Center
@@ -410,7 +409,7 @@ fun DayStripItem(
                     .padding(top = 4.dp)
                     .size(4.dp)
                     .clip(CircleShape)
-                    .background(if (isSelected) DarkBackground else SageGreen)
+                    .background(if (isSelected) DarkBackground else MaterialTheme.colorScheme.primary)
             )
         } else {
             Spacer(modifier = Modifier.height(8.dp))
@@ -521,7 +520,7 @@ fun DayTimelineView(
                                     modifier = Modifier.fillMaxWidth().clickable { onLogClick(log) }
                                 ) {
                                     Row(modifier = Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                        Box(modifier = Modifier.size(4.dp, 24.dp).background(SageGreen, RoundedCornerShape(2.dp)))
+                                        Box(modifier = Modifier.size(4.dp, 24.dp).background(MaterialTheme.colorScheme.primary, RoundedCornerShape(2.dp)))
                                         Spacer(modifier = Modifier.width(8.dp))
                                         Text(log.title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                                     }
