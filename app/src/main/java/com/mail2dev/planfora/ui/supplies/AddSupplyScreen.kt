@@ -190,11 +190,11 @@ fun AddSupplyScreen(
 
                     PlanForaFieldGroup(isImportant = true) {
                         ReadonlyTriggerField(
-                            label = "📍 Storage Location",
-                            value = location.ifBlank { "Select Location" },
+                            label = "Storage Location",
+                            value = location.ifBlank { "Select" },
                             icon = Icons.Default.LocationOn,
                             onClick = { showLocationSheet = true },
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.weight(1.2f),
                             isImportant = true
                         )
                         ReadonlyTriggerField(
@@ -202,7 +202,7 @@ fun AddSupplyScreen(
                             value = if (selectedTags.isEmpty()) "Select" else "${selectedTags.size} tags",
                             icon = Icons.Default.Tag,
                             onClick = { showTagSheet = true },
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.weight(0.8f),
                             isImportant = true
                         )
                     }
@@ -212,46 +212,46 @@ fun AddSupplyScreen(
             // High-Speed Safety/Stock Fields
             PlanForaSurfaceCard(title = "Stock & Safety", isImportant = true) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    PlanForaFieldGroup(isImportant = true) {
-                        var showIngredientSheet by remember { mutableStateOf(false) }
-                        val activeIngredientValue = viewModel.activeIngredient.collectAsState().value
-                        
-                        OutlinedTextField(
-                            value = activeIngredientValue,
-                            onValueChange = viewModel::updateActiveIngredient,
-                            label = { Text("Active Ingredient") },
-                            modifier = Modifier.weight(1.5f),
-                            leadingIcon = { Icon(Icons.Default.Tag, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp)) },
-                            trailingIcon = {
-                                IconButton(onClick = { showIngredientSheet = true }) {
-                                    Icon(Icons.Default.List, contentDescription = "Select A.I.")
-                                }
-                            },
-                            colors = textFieldColors(isImportant = true),
-                            placeholder = { Text("e.g. Neem Oil") }
-                        )
+                    var showIngredientSheet by remember { mutableStateOf(false) }
+                    val activeIngredientValue = viewModel.activeIngredient.collectAsState().value
+                    
+                    OutlinedTextField(
+                        value = activeIngredientValue,
+                        onValueChange = viewModel::updateActiveIngredient,
+                        label = { Text("Active Ingredient") },
+                        modifier = Modifier.fillMaxWidth(),
+                        leadingIcon = { Icon(Icons.Default.Tag, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp)) },
+                        trailingIcon = {
+                            IconButton(onClick = { showIngredientSheet = true }) {
+                                Icon(Icons.Default.List, contentDescription = "Select A.I.")
+                            }
+                        },
+                        colors = textFieldColors(isImportant = true),
+                        placeholder = { Text("e.g. Neem Oil") }
+                    )
 
-                        if (showIngredientSheet) {
-                            val masterIngredients by viewModel.masterIngredients.collectAsState()
-                            StringPickerSheet(
-                                title = "Active Ingredient",
-                                selectedValue = activeIngredientValue,
-                                items = masterIngredients,
-                                onItemSelected = viewModel::updateActiveIngredient,
-                                onItemCreated = viewModel::addMasterIngredient,
-                                onItemRenamed = viewModel::updateMasterIngredient,
-                                onItemDeleted = viewModel::deleteMasterIngredient,
-                                onDismiss = { showIngredientSheet = false },
-                                placeholder = "Search or type chemical...",
-                                addLabel = "Add"
-                            )
-                        }
-                        
+                    if (showIngredientSheet) {
+                        val masterIngredients by viewModel.masterIngredients.collectAsState()
+                        StringPickerSheet(
+                            title = "Active Ingredient",
+                            selectedValue = activeIngredientValue,
+                            items = masterIngredients,
+                            onItemSelected = viewModel::updateActiveIngredient,
+                            onItemCreated = viewModel::addMasterIngredient,
+                            onItemRenamed = viewModel::updateMasterIngredient,
+                            onItemDeleted = viewModel::deleteMasterIngredient,
+                            onDismiss = { showIngredientSheet = false },
+                            placeholder = "Search or type chemical...",
+                            addLabel = "Add"
+                        )
+                    }
+
+                    PlanForaFieldGroup(isImportant = true) {
                         OutlinedTextField(
                             value = viewModel.phiDays.collectAsState().value,
                             onValueChange = viewModel::updatePhiDays,
                             label = { Text("PHI (Days)") },
-                            modifier = Modifier.weight(0.7f),
+                            modifier = Modifier.weight(1f),
                             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
                             colors = textFieldColors(isImportant = true)
                         )
@@ -259,8 +259,8 @@ fun AddSupplyScreen(
                         OutlinedTextField(
                             value = viewModel.reiHours.collectAsState().value,
                             onValueChange = viewModel::updateReiHours,
-                            label = { Text("REI (Hrs)") },
-                            modifier = Modifier.weight(0.7f),
+                            label = { Text("REI (Hours)") },
+                            modifier = Modifier.weight(1f),
                             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
                             colors = textFieldColors(isImportant = true)
                         )
