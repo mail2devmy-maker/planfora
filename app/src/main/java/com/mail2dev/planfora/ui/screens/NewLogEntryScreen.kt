@@ -146,7 +146,8 @@ fun NewLogEntryScreen(
 
     var parentLog by remember { mutableStateOf<JournalLogEntity?>(null) }
     var selectedTimestamp by remember { mutableStateOf(initialTimestamp ?: System.currentTimeMillis()) }
-    var showDateTimePicker by remember { mutableStateOf(false) }
+    var showDatePicker by remember { mutableStateOf(false) }
+    var showTimePicker by remember { mutableStateOf(false) }
 
     val activityTypes = listOf("Observation", "Feeding", "Pruning", "Pest Control", "Repotting", "Harvest", "Other")
 
@@ -300,17 +301,52 @@ fun NewLogEntryScreen(
                             textStyle = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                             modifier = Modifier.fillMaxWidth()
                         )
-                        val formattedDate = remember(selectedTimestamp) {
-                            SimpleDateFormat("EEE, MMM d, yyyy, h:mm a", Locale.getDefault()).format(Date(selectedTimestamp))
-                        }
-                        Text(
-                            text = formattedDate,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color.Gray,
+                        Row(
                             modifier = Modifier
-                                .padding(start = 16.dp, bottom = 8.dp)
-                                .clickable { showDateTimePicker = true }
-                        )
+                                .padding(start = 16.dp, bottom = 12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Date Badge
+                            val dateString = remember(selectedTimestamp) {
+                                SimpleDateFormat("EEE, MMM d, yyyy", Locale.getDefault()).format(Date(selectedTimestamp))
+                            }
+                            Surface(
+                                onClick = { showDatePicker = true },
+                                color = Color.White.copy(alpha = 0.05f),
+                                shape = RoundedCornerShape(8.dp),
+                                border = BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.3f))
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Icon(Icons.Default.CalendarToday, null, tint = Color.Gray, modifier = Modifier.size(12.dp))
+                                    Text(text = dateString, style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                                }
+                            }
+
+                            // Time Badge
+                            val timeString = remember(selectedTimestamp) {
+                                SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date(selectedTimestamp))
+                            }
+                            Surface(
+                                onClick = { showTimePicker = true },
+                                color = Color.White.copy(alpha = 0.05f),
+                                shape = RoundedCornerShape(8.dp),
+                                border = BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.3f))
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Icon(Icons.Default.Schedule, null, tint = Color.Gray, modifier = Modifier.size(12.dp))
+                                    Text(text = timeString, style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                                }
+                            }
+                        }
                     }
                 },
                 navigationIcon = {
@@ -323,8 +359,8 @@ fun NewLogEntryScreen(
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
-        if (showDateTimePicker) {
-            val cal = java.util.Calendar.getInstance().apply { timeInMillis = selectedTimestamp }
+        if (showDatePicker) {
+            val cal = Calendar.getInstance().apply { timeInMillis = selectedTimestamp }
             DisposableEffect(Unit) {
                 val datePicker = android.app.DatePickerDialog(
                     context,
@@ -332,27 +368,37 @@ fun NewLogEntryScreen(
                         cal.set(java.util.Calendar.YEAR, year)
                         cal.set(java.util.Calendar.MONTH, month)
                         cal.set(java.util.Calendar.DAY_OF_MONTH, dayOfMonth)
-                        
-                        android.app.TimePickerDialog(
-                            context,
-                            { _, hourOfDay, minute ->
-                                cal.set(java.util.Calendar.HOUR_OF_DAY, hourOfDay)
-                                cal.set(java.util.Calendar.MINUTE, minute)
-                                selectedTimestamp = cal.timeInMillis
-                                showDateTimePicker = false
-                            },
-                            cal.get(java.util.Calendar.HOUR_OF_DAY),
-                            cal.get(java.util.Calendar.MINUTE),
-                            false
-                        ).show()
+                        selectedTimestamp = cal.timeInMillis
+                        showDatePicker = false
                     },
                     cal.get(java.util.Calendar.YEAR),
                     cal.get(java.util.Calendar.MONTH),
                     cal.get(java.util.Calendar.DAY_OF_MONTH)
                 )
-                datePicker.setOnCancelListener { showDateTimePicker = false }
+                datePicker.setOnCancelListener { showDatePicker = false }
                 datePicker.show()
                 onDispose { datePicker.dismiss() }
+            }
+        }
+
+        if (showTimePicker) {
+            val cal = Calendar.getInstance().apply { timeInMillis = selectedTimestamp }
+            DisposableEffect(Unit) {
+                val timePicker = android.app.TimePickerDialog(
+                    context,
+                    { _, hourOfDay, minute ->
+                        cal.set(java.util.Calendar.HOUR_OF_DAY, hourOfDay)
+                        cal.set(java.util.Calendar.MINUTE, minute)
+                        selectedTimestamp = cal.timeInMillis
+                        showTimePicker = false
+                    },
+                    cal.get(java.util.Calendar.HOUR_OF_DAY),
+                    cal.get(java.util.Calendar.MINUTE),
+                    false
+                )
+                timePicker.setOnCancelListener { showTimePicker = false }
+                timePicker.show()
+                onDispose { timePicker.dismiss() }
             }
         }
 
