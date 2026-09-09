@@ -101,8 +101,8 @@ fun LogsScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { navController.navigate(Screen.NewLog.createRoute(timestamp = System.currentTimeMillis())) },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
+                containerColor = com.mail2dev.planfora.ui.theme.ForestGreen,
+                contentColor = Color.White
             ) {
                 Icon(Icons.Default.Add, contentDescription = "New Log")
             }

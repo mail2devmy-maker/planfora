@@ -20,6 +20,8 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
 import com.mail2dev.planfora.data.local.entity.JournalLogEntity
 import com.mail2dev.planfora.data.local.entity.PlantAssetEntity
 import com.mail2dev.planfora.ui.assets.AddAssetScreen
@@ -53,8 +55,8 @@ fun AssetsScreen(
                         addAssetViewModel.startNewAsset()
                         viewModel.setShowAddBottomSheet(true) 
                     },
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
+                    containerColor = com.mail2dev.planfora.ui.theme.ForestGreen,
+                    contentColor = Color.White
                 ) {
                     Icon(Icons.Rounded.Add, contentDescription = "New Asset")
                 }
@@ -203,17 +205,22 @@ fun LocationHeader(location: String, onSelectAll: () -> Unit) {
             .padding(top = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(Icons.Rounded.LocationOn, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
+        Icon(
+            Icons.Rounded.LocationOn, 
+            contentDescription = null, 
+            tint = Color.White, 
+            modifier = Modifier.size(16.dp)
+        )
         Spacer(modifier = Modifier.width(8.dp))
         Text(
             text = location,
             style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = Color.White,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.weight(1f)
         )
         TextButton(onClick = onSelectAll) {
-            Text("Select Zone", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+            Text("Select Zone", color = MaterialTheme.colorScheme.primary, fontSize = 12.sp)
         }
     }
 }
@@ -236,22 +243,29 @@ fun CategoryFilters(
                 onClick = { onCategorySelected(category) },
                 label = { 
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (category.icon.isNotBlank()) {
+                        if (category == AssetCategory.ALL) {
+                            Icon(
+                                Icons.Rounded.Folder, 
+                                contentDescription = null, 
+                                tint = Color(0xFFFFD54F),
+                                modifier = Modifier.size(16.dp).padding(end = 4.dp)
+                            )
+                        } else if (category.icon.isNotBlank()) {
                             Text(category.icon, modifier = Modifier.padding(end = 4.dp))
                         }
                         Text(category.displayName) 
                     }
                 },
                 colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = MaterialTheme.colorScheme.primary,
-                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                    selectedContainerColor = if (category == AssetCategory.ALL) Color(0xFFD0BCFF) else MaterialTheme.colorScheme.primary,
+                    selectedLabelColor = if (category == AssetCategory.ALL) Color.Black else MaterialTheme.colorScheme.onPrimary,
                     labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                     containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
                 ),
                 border = FilterChipDefaults.filterChipBorder(
                     enabled = true,
                     selected = selectedCategory == category,
-                    borderColor = MaterialTheme.colorScheme.outline,
+                    borderColor = Color.Gray.copy(alpha = 0.2f),
                     selectedBorderColor = Color.Transparent
                 )
             )
@@ -278,7 +292,7 @@ fun AssetCard(
 
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surface
+            containerColor = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color(0xFF1E2120)
         ),
         shape = RoundedCornerShape(12.dp),
         modifier = Modifier
@@ -291,81 +305,101 @@ fun AssetCard(
             },
         border = androidx.compose.foundation.BorderStroke(
             width = if (isSelected) 1.5.dp else 1.dp,
-            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+            color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray.copy(alpha = 0.1f)
         )
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (isMultiSelectMode) {
-                    Checkbox(
-                        checked = isSelected,
-                        onCheckedChange = { onClick() },
-                        colors = CheckboxDefaults.colors(
-                            checkedColor = MaterialTheme.colorScheme.primary,
-                            uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        ),
-                        modifier = Modifier.padding(end = 8.dp)
-                    )
-                }
-
-                Surface(
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text(category.icon, fontSize = 20.sp, modifier = Modifier.padding(6.dp))
-                }
-                
-                Spacer(modifier = Modifier.width(12.dp))
-                
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(asset.name, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    val physId = asset.tags.split(",").find { it.startsWith("PhysID:") }?.substringAfter(":") ?: ""
-                    if (physId.isNotBlank()) {
-                        Text("ID: $physId", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
-                    }
-                }
-
-                if (activePhiLog != null) {
-                    val phiExpiryStr = activePhiLog.parameters.split("|").find { it.startsWith("phi_expiry:") }?.substringAfter("phi_expiry:")
-                    val phiExpiry = phiExpiryStr?.toLongOrNull() ?: 0L
-                    val remainingDays = ((phiExpiry - System.currentTimeMillis()) / (24L * 60 * 60 * 1000)).coerceAtLeast(1)
-                    
-                    Surface(
-                        color = Color(0xFFFFB74D).copy(alpha = 0.2f),
-                        shape = RoundedCornerShape(16.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFFB74D).copy(alpha = 0.5f))
-                    ) {
-                        Text(
-                            text = "⚠️ PHI: $remainingDays d",
-                            color = Color(0xFFFFB74D),
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
+        Column {
+            val imageUri = asset.imageUris.split(",").firstOrNull { it.isNotBlank() }
+            if (imageUri != null) {
+                AsyncImage(
+                    model = imageUri,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxWidth().height(140.dp),
+                    contentScale = ContentScale.Crop
+                )
             }
 
-            if (asset.tags.isNotBlank()) {
-                Spacer(modifier = Modifier.height(12.dp))
-                androidx.compose.foundation.layout.FlowRow(
+            Column(modifier = Modifier.padding(12.dp)) {
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    asset.tags.split(",").filter { !it.startsWith("PhysID:") && !it.startsWith("Batch:") }.take(4).forEach { tag ->
+                    if (isMultiSelectMode) {
+                        Checkbox(
+                            checked = isSelected,
+                            onCheckedChange = { onClick() },
+                            colors = CheckboxDefaults.colors(
+                                checkedColor = MaterialTheme.colorScheme.primary,
+                                uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            ),
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                    }
+
+                    if (imageUri == null) {
                         Surface(
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                            shape = RoundedCornerShape(4.dp)
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+                            shape = RoundedCornerShape(8.dp)
                         ) {
-                            Text(
-                                text = "#$tag",
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
-                                fontSize = 10.sp
-                            )
+                            Text(category.icon, fontSize = 20.sp, modifier = Modifier.padding(6.dp))
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                    }
+                    
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(asset.name, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        val physId = asset.tags.split(",").find { it.startsWith("PhysID:") }?.substringAfter(":") ?: ""
+                        if (physId.isNotBlank()) {
+                            Text("ID: $physId", color = Color.Gray, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+
+                    if (activePhiLog != null) {
+                        val phiExpiryStr = activePhiLog.parameters.split("|").find { it.startsWith("phi_expiry:") }?.substringAfter("phi_expiry:")
+                        val phiExpiry = phiExpiryStr?.toLongOrNull() ?: 0L
+                        val remainingDays = ((phiExpiry - System.currentTimeMillis()) / (24L * 60 * 60 * 1000)).coerceAtLeast(1)
+                        
+                        Surface(
+                            color = Color(0xFFFFB74D).copy(alpha = 0.2f),
+                            shape = RoundedCornerShape(16.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFFB74D).copy(alpha = 0.5f))
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            ) {
+                                Icon(Icons.Rounded.Warning, null, tint = Color(0xFFFFB74D), modifier = Modifier.size(12.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "PHI: $remainingDays d",
+                                    color = Color(0xFFFFB74D),
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                }
+
+                if (asset.tags.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    androidx.compose.foundation.layout.FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        asset.tags.split(",").filter { !it.startsWith("PhysID:") && !it.startsWith("Batch:") }.take(4).forEach { tag ->
+                            Surface(
+                                color = Color.White.copy(alpha = 0.1f),
+                                shape = RoundedCornerShape(4.dp)
+                            ) {
+                                Text(
+                                    text = "#$tag",
+                                    color = Color.Gray,
+                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                                    fontSize = 10.sp
+                                )
+                            }
                         }
                     }
                 }

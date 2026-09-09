@@ -2,6 +2,7 @@ package com.mail2dev.planfora.ui.supplies
 
 import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -73,11 +74,48 @@ fun AddSupplyScreen(
     var showTagSheet by remember { mutableStateOf(false) }
     var showCustomFieldDialog by remember { mutableStateOf(false) }
     var showLocationSheet by remember { mutableStateOf(false) }
+    var showDiscardDialog by remember { mutableStateOf(false) }
+
+    val hasUnsavedChanges = remember(name, formulationCode, notes, location, selectedTags, imageUris) {
+        name.isNotBlank() || formulationCode != null || notes.isNotBlank() || location.isNotBlank() || selectedTags.isNotEmpty() || imageUris.isNotEmpty()
+    }
+
+    BackHandler(enabled = hasUnsavedChanges && editingSupplyId == null) {
+        showDiscardDialog = true
+    }
+
+    if (showDiscardDialog) {
+        AlertDialog(
+            onDismissRequest = { showDiscardDialog = false },
+            title = { Text("Discard changes?", color = Color.White) },
+            text = { Text("You have unsaved changes. Are you sure you want to discard them?", color = Color.LightGray) },
+            confirmButton = {
+                TextButton(onClick = { 
+                    showDiscardDialog = false
+                    onDismiss() 
+                }) {
+                    Text("Discard", color = Color.Red)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDiscardDialog = false }) {
+                    Text("Continue Editing", color = Color.White)
+                }
+            },
+            containerColor = Color(0xFF1E2120)
+        )
+    }
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     ModalBottomSheet(
-        onDismissRequest = onDismiss,
+        onDismissRequest = {
+            if (hasUnsavedChanges && editingSupplyId == null) {
+                showDiscardDialog = true
+            } else {
+                onDismiss()
+            }
+        },
         sheetState = sheetState,
         containerColor = MaterialTheme.colorScheme.background,
         tonalElevation = 0.dp
@@ -101,7 +139,13 @@ fun AddSupplyScreen(
                     color = Color.White,
                     fontWeight = FontWeight.Bold
                 )
-                IconButton(onClick = onDismiss) {
+                IconButton(onClick = {
+                    if (hasUnsavedChanges && editingSupplyId == null) {
+                        showDiscardDialog = true
+                    } else {
+                        onDismiss()
+                    }
+                }) {
                     Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.Gray)
                 }
             }

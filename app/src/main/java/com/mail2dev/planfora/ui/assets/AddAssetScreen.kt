@@ -1,6 +1,7 @@
 package com.mail2dev.planfora.ui.assets
 
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -71,11 +72,48 @@ fun AddAssetScreen(
     var showLocationSheet by remember { mutableStateOf(false) }
     var showTagSheet by remember { mutableStateOf(false) }
     var showCustomFieldDialog by remember { mutableStateOf(false) }
+    var showDiscardDialog by remember { mutableStateOf(false) }
+
+    val hasUnsavedChanges = remember(name, location, selectedTags, notes, imageUris, audioPath) {
+        name.isNotBlank() || location.isNotBlank() || selectedTags.isNotEmpty() || notes.isNotBlank() || imageUris.isNotEmpty() || audioPath != null
+    }
+
+    BackHandler(enabled = hasUnsavedChanges && editingAssetId == null) {
+        showDiscardDialog = true
+    }
+
+    if (showDiscardDialog) {
+        AlertDialog(
+            onDismissRequest = { showDiscardDialog = false },
+            title = { Text("Discard changes?", color = Color.White) },
+            text = { Text("You have unsaved changes. Are you sure you want to discard them?", color = Color.LightGray) },
+            confirmButton = {
+                TextButton(onClick = { 
+                    showDiscardDialog = false
+                    onDismiss() 
+                }) {
+                    Text("Discard", color = Color.Red)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDiscardDialog = false }) {
+                    Text("Continue Editing", color = Color.White)
+                }
+            },
+            containerColor = Color(0xFF1E2120)
+        )
+    }
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     ModalBottomSheet(
-        onDismissRequest = onDismiss,
+        onDismissRequest = {
+            if (hasUnsavedChanges && editingAssetId == null) {
+                showDiscardDialog = true
+            } else {
+                onDismiss()
+            }
+        },
         sheetState = sheetState,
         containerColor = MaterialTheme.colorScheme.background,
         tonalElevation = 0.dp
@@ -99,7 +137,13 @@ fun AddAssetScreen(
                     color = Color.White,
                     fontWeight = FontWeight.Bold
                 )
-                IconButton(onClick = onDismiss) {
+                IconButton(onClick = {
+                    if (hasUnsavedChanges && editingAssetId == null) {
+                        showDiscardDialog = true
+                    } else {
+                        onDismiss()
+                    }
+                }) {
                     Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.Gray)
                 }
             }

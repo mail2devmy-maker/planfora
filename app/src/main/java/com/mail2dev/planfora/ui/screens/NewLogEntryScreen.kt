@@ -2,6 +2,7 @@ package com.mail2dev.planfora.ui.screens
 
 import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.animation.*
 import androidx.activity.result.PickVisualMediaRequest
@@ -148,6 +149,38 @@ fun NewLogEntryScreen(
     var selectedTimestamp by remember { mutableStateOf(initialTimestamp ?: System.currentTimeMillis()) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
+    var showDiscardDialog by remember { mutableStateOf(false) }
+
+    val hasUnsavedChanges = remember(userEditedTitle, note, tags, imageUris, audioPath, customActivity, dosageAmount, yieldAmount, substrateMix) {
+        userEditedTitle || note.isNotBlank() || tags.isNotEmpty() || imageUris.isNotEmpty() || audioPath != null || 
+        customActivity.isNotBlank() || dosageAmount.isNotBlank() || yieldAmount.isNotBlank() || substrateMix.isNotBlank()
+    }
+
+    BackHandler(enabled = hasUnsavedChanges && editingLogId == null) {
+        showDiscardDialog = true
+    }
+
+    if (showDiscardDialog) {
+        AlertDialog(
+            onDismissRequest = { showDiscardDialog = false },
+            title = { Text("Discard changes?", color = Color.White) },
+            text = { Text("You have unsaved changes. Are you sure you want to discard them?", color = Color.LightGray) },
+            confirmButton = {
+                TextButton(onClick = { 
+                    showDiscardDialog = false
+                    navController.popBackStack() 
+                }) {
+                    Text("Discard", color = Color.Red)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDiscardDialog = false }) {
+                    Text("Continue Editing", color = Color.White)
+                }
+            },
+            containerColor = Color(0xFF1E2120)
+        )
+    }
 
     val activityTypes = listOf("Observation", "Feeding", "Pruning", "Pest Control", "Repotting", "Harvest", "Other")
 
@@ -304,7 +337,13 @@ fun NewLogEntryScreen(
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = { 
+                        if (hasUnsavedChanges && editingLogId == null) {
+                            showDiscardDialog = true
+                        } else {
+                            navController.popBackStack()
+                        }
+                    }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
                 },

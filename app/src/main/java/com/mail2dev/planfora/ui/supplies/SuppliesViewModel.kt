@@ -28,12 +28,25 @@ class SuppliesViewModel(private val repository: SupplyRepository) : ViewModel() 
     private val _selectedCategory = MutableStateFlow(SupplyCategory.ALL)
     val selectedCategory: StateFlow<SupplyCategory> = _selectedCategory.asStateFlow()
 
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
     val supplies: StateFlow<List<DiySupplyEntity>> = repository.getAllSupplies()
         .combine(_selectedCategory) { supplies, category ->
             if (category == SupplyCategory.ALL) {
                 supplies
             } else {
                 supplies.filter { it.category == category.displayName }
+            }
+        }.combine(_searchQuery) { filtered, query ->
+            if (query.isBlank()) {
+                filtered
+            } else {
+                filtered.filter { 
+                    it.name.contains(query, ignoreCase = true) || 
+                    it.category.contains(query, ignoreCase = true) ||
+                    it.batchCode.contains(query, ignoreCase = true)
+                }
             }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -43,6 +56,10 @@ class SuppliesViewModel(private val repository: SupplyRepository) : ViewModel() 
 
     fun setShowAddBottomSheet(show: Boolean) {
         _showAddBottomSheet.value = show
+    }
+
+    fun setSearchQuery(query: String) {
+        _searchQuery.value = query
     }
 
     fun setCategory(category: SupplyCategory) {

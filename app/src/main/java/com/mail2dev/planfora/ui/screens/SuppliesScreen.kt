@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -64,7 +65,28 @@ fun SuppliesScreen(
                 style = MaterialTheme.typography.headlineMedium,
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 8.dp)
+            )
+
+            val searchQuery by viewModel.searchQuery.collectAsState()
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { viewModel.setSearchQuery(it) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                placeholder = { Text("Search products...", color = Color.Gray) },
+                leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null, tint = Color.Gray) },
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = Color.Gray.copy(alpha = 0.3f),
+                    focusedContainerColor = Color(0xFF1E2120),
+                    unfocusedContainerColor = Color(0xFF1E2120)
+                )
             )
 
             SupplyCategoryFilters(
@@ -146,16 +168,16 @@ fun SupplyCategoryFilters(
                 onClick = { onCategorySelected(category) },
                 label = { Text(category.displayName) },
                 colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = SageGreen,
-                    selectedLabelColor = DarkBackground,
+                    selectedContainerColor = com.mail2dev.planfora.ui.theme.ForestGreen,
+                    selectedLabelColor = Color.White,
                     labelColor = Color.Gray,
                     containerColor = Color.Transparent
                 ),
                 border = FilterChipDefaults.filterChipBorder(
                     enabled = true,
                     selected = selectedCategory == category,
-                    borderColor = Color.Gray,
-                    selectedBorderColor = SageGreen
+                    borderColor = Color.Gray.copy(alpha = 0.5f),
+                    selectedBorderColor = Color.Transparent
                 )
             )
         }
@@ -177,27 +199,43 @@ fun StoreSupplyCard(supply: DiySupplyEntity, onClick: () -> Unit) {
     Card(
         colors = CardDefaults.cardColors(containerColor = Color(0xFF1E2120)),
         shape = RoundedCornerShape(12.dp),
-        modifier = Modifier.fillMaxWidth().clickable { onClick() }
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color.Gray.copy(alpha = 0.1f))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(supply.name, color = Color.White, fontWeight = FontWeight.Bold)
-                Text("${supply.currentVolume} / ${supply.originalVolume} ${supply.unit}", color = Color.Gray, fontSize = 12.sp)
+                Text(
+                    text = supply.name, 
+                    color = Color.White, 
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
+                Text(
+                    text = "${supply.currentVolume} / ${supply.originalVolume}", 
+                    color = Color.Gray, 
+                    fontSize = 12.sp
+                )
             }
             
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            val progress = (supply.currentVolume / supply.originalVolume).toFloat().coerceIn(0f, 1f)
-            LinearProgressIndicator(
-                progress = progress,
-                modifier = Modifier.fillMaxWidth().height(8.dp),
-                color = ForestGreen,
-                trackColor = Color.DarkGray,
-                strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
-            )
+            if (supply.originalVolume > 0) {
+                Spacer(modifier = Modifier.height(8.dp))
+                val progress = (supply.currentVolume / supply.originalVolume).toFloat().coerceIn(0f, 1f)
+                LinearProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(6.dp),
+                    color = com.mail2dev.planfora.ui.theme.ForestGreen,
+                    trackColor = Color.DarkGray,
+                    strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
+                )
+            }
         }
     }
 }
