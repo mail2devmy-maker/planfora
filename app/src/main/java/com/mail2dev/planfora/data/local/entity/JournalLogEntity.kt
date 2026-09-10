@@ -53,5 +53,6 @@ data class JournalLogEntity(
     val supplyId: Long? = null,
     val customInputName: String? = null,
     val batchGroupId: String? = null,
-    val targetZones: String? = null // Comma-separated zones targeted by this activity
+    val targetZones: String? = null, // Comma-separated zones targeted by this activity
+    val displayId: String = "" // Added in v21 for human-readable IDs like OB1, FE1.1
 )

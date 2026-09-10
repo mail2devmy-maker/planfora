@@ -41,7 +41,23 @@ class JournalRepository(
         plantAssetDao.getAssetById(id)
 
     suspend fun insertLog(log: JournalLogEntity): Long {
-        val logId = journalLogDao.insertLog(log)
+        val allLogs = journalLogDao.getAllLogsOnce()
+        val prefix = log.activityType.take(2).uppercase()
+        
+        val generatedDisplayId = if (log.parentLogId == null) {
+            val rootLogsForPrefix = allLogs.filter { it.parentLogId == null && it.displayId.startsWith(prefix) }
+            val nextNum = rootLogsForPrefix.mapNotNull { 
+                it.displayId.removePrefix(prefix).toIntOrNull() 
+            }.maxOrNull() ?: 0
+            "$prefix${nextNum + 1}"
+        } else {
+            val parentLog = allLogs.find { it.id == log.parentLogId }
+            val parentDisplayId = parentLog?.displayId ?: "${prefix}1"
+            val siblingCount = allLogs.count { it.parentLogId == log.parentLogId }
+            "$parentDisplayId.${siblingCount + 1}"
+        }
+
+        val logId = journalLogDao.insertLog(log.copy(displayId = generatedDisplayId))
         // Update log count for the asset
         plantAssetDao.getAssetById(log.assetId)?.let { asset ->
             plantAssetDao.updateAsset(

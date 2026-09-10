@@ -115,6 +115,22 @@ fun ExpandedLogCard(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                if (log.displayId.isNotBlank()) {
+                    Surface(
+                        color = Color.White.copy(alpha = 0.1f),
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text(
+                            text = log.displayId,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+
                 Surface(
                     color = SageGreen.copy(alpha = 0.2f),
                     shape = RoundedCornerShape(4.dp)
@@ -321,6 +337,22 @@ fun FollowUpLogCard(
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                if (log.displayId.isNotBlank()) {
+                    Surface(
+                        color = Color.White.copy(alpha = 0.1f),
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text(
+                            text = log.displayId,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+
                 Surface(
                     color = ForestGreen.copy(alpha = 0.2f),
                     shape = RoundedCornerShape(4.dp)
@@ -408,6 +440,22 @@ fun CompactLogItem(
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        if (log.displayId.isNotBlank()) {
+            Surface(
+                color = Color.White.copy(alpha = 0.1f),
+                shape = RoundedCornerShape(4.dp),
+                modifier = Modifier.padding(end = 12.dp)
+            ) {
+                Text(
+                    text = log.displayId,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+
         Column(modifier = Modifier.weight(1f)) {
             Text(text = log.title, color = Color.White, fontWeight = FontWeight.Medium, fontSize = 14.sp)
             Row(verticalAlignment = Alignment.CenterVertically) {

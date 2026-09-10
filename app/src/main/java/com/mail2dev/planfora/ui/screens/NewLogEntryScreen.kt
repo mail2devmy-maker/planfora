@@ -190,6 +190,7 @@ fun NewLogEntryScreen(
     }
 
     val activityTypes = listOf("Observation", "Feeding", "Pruning", "Pest Control", "Repotting", "Harvest", "Weeding", "Other")
+    val prefix = remember(activityType) { activityType.take(2).uppercase() }
 
     // Loading editing log
     LaunchedEffect(editingLogId) {
@@ -333,6 +334,23 @@ fun NewLogEntryScreen(
             TopAppBar(
                 title = { 
                     Column(modifier = Modifier.fillMaxWidth()) {
+                        // Display ID Badge from wireframe
+                        Surface(
+                            color = Color.White.copy(alpha = 0.1f),
+                            shape = RoundedCornerShape(4.dp),
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        ) {
+                            Text(
+                                text = if (editingLogId != null) editingLog?.displayId ?: "" 
+                                       else if (parentLog != null) "${parentLog?.displayId}.[Next]" 
+                                       else "$prefix[Next]",
+                                color = MaterialTheme.colorScheme.primary,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+
                         TextField(
                             value = title,
                             onValueChange = { 
