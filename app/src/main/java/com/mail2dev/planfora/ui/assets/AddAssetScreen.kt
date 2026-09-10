@@ -396,45 +396,58 @@ fun LivePreviewCard(name: String, category: AssetCategory, location: String, tag
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CategorySelector(selected: AssetCategory, onSelect: (AssetCategory) -> Unit) {
+    val categories = AssetCategory.entries.filter { it != AssetCategory.ALL }
+    
     Column {
         Text("Category", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(modifier = Modifier.height(8.dp))
-        FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-                AssetCategory.entries.filter { it != AssetCategory.ALL }.forEach { cat ->
-                    FilterChip(
-                        selected = selected == cat,
-                        onClick = { onSelect(cat) },
-                        label = { 
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                if (cat.iconVector != null) {
-                                    Icon(
-                                        imageVector = cat.iconVector,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(16.dp).padding(end = 4.dp),
-                                        tint = if (selected == cat) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary
-                                    )
-                                } else {
-                                    Text(cat.icon, modifier = Modifier.padding(end = 4.dp))
+        
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            categories.chunked(2).forEach { rowItems ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    rowItems.forEach { cat ->
+                        FilterChip(
+                            selected = selected == cat,
+                            onClick = { onSelect(cat) },
+                            modifier = Modifier.weight(1f),
+                            label = { 
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    if (cat.iconVector != null) {
+                                        Icon(
+                                            imageVector = cat.iconVector,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp).padding(end = 4.dp),
+                                            tint = if (selected == cat) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary
+                                        )
+                                    } else {
+                                        Text(cat.icon, modifier = Modifier.padding(end = 4.dp))
+                                    }
+                                    Text(cat.displayName, fontSize = 12.sp)
                                 }
-                                Text(cat.displayName)
-                            }
-                        },
-                        colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primary,
-                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
-                        labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                    ),
-                    border = FilterChipDefaults.filterChipBorder(
-                        enabled = true,
-                        selected = selected == cat,
-                        borderColor = Color.Gray.copy(alpha = 0.2f),
-                        selectedBorderColor = Color.Transparent
-                    )
-                )
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                                labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            ),
+                            border = FilterChipDefaults.filterChipBorder(
+                                enabled = true,
+                                selected = selected == cat,
+                                borderColor = Color.Gray.copy(alpha = 0.2f),
+                                selectedBorderColor = Color.Transparent
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                    }
+                }
             }
         }
     }
