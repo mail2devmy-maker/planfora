@@ -6,7 +6,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -25,6 +27,8 @@ import com.mail2dev.planfora.data.local.entity.CustomFieldType
 import com.mail2dev.planfora.data.local.entity.FieldTargetType
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -314,6 +318,92 @@ fun DynamicCustomFieldInput(
                         )
                     )
                 }
+            }
+        }
+        CustomFieldType.DATE, CustomFieldType.TIME, CustomFieldType.DATETIME -> {
+            var showDatePicker by remember { mutableStateOf(false) }
+            var showTimePicker by remember { mutableStateOf(false) }
+            
+            val currentTimestamp = value.toLongOrNull() ?: System.currentTimeMillis()
+            val dateDisplay = remember(currentTimestamp, definition.fieldType) {
+                val pattern = when (definition.fieldType) {
+                    CustomFieldType.DATE -> "MMM dd, yyyy"
+                    CustomFieldType.TIME -> "HH:mm"
+                    else -> "MMM dd, yyyy HH:mm"
+                }
+                SimpleDateFormat(pattern, Locale.getDefault()).format(Date(currentTimestamp))
+            }
+
+            Surface(
+                onClick = { 
+                    if (definition.fieldType == CustomFieldType.TIME) showTimePicker = true 
+                    else showDatePicker = true 
+                },
+                color = Color.White.copy(alpha = 0.05f),
+                shape = RoundedCornerShape(8.dp),
+                border = BorderStroke(1.dp, Color.Gray.copy(alpha = 0.2f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = if (definition.fieldType == CustomFieldType.TIME) Icons.Default.AccessTime else Icons.Default.CalendarToday,
+                        contentDescription = null,
+                        tint = Color.Gray,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = dateDisplay, color = Color.White, fontSize = 13.sp)
+                }
+            }
+
+            if (showDatePicker) {
+                val datePickerState = rememberDatePickerState(initialSelectedDateMillis = currentTimestamp)
+                DatePickerDialog(
+                    onDismissRequest = { showDatePicker = false },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            val selectedDate = datePickerState.selectedDateMillis ?: currentTimestamp
+                            if (definition.fieldType == CustomFieldType.DATETIME) {
+                                onValueChange(selectedDate.toString())
+                                showDatePicker = false
+                                showTimePicker = true
+                            } else {
+                                onValueChange(selectedDate.toString())
+                                showDatePicker = false
+                            }
+                        }) { Text("OK") }
+                    },
+                    dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text("Cancel") } }
+                ) { DatePicker(state = datePickerState) }
+            }
+
+            if (showTimePicker) {
+                val calendar = Calendar.getInstance().apply { timeInMillis = currentTimestamp }
+                val timePickerState = rememberTimePickerState(
+                    initialHour = calendar.get(Calendar.HOUR_OF_DAY),
+                    initialMinute = calendar.get(Calendar.MINUTE),
+                    is24Hour = true
+                )
+                AlertDialog(
+                    onDismissRequest = { showTimePicker = false },
+                    containerColor = Color(0xFF1E2120),
+                    confirmButton = {
+                        TextButton(onClick = {
+                            val newCalendar = Calendar.getInstance().apply {
+                                timeInMillis = currentTimestamp
+                                set(Calendar.HOUR_OF_DAY, timePickerState.hour)
+                                set(Calendar.MINUTE, timePickerState.minute)
+                            }
+                            onValueChange(newCalendar.timeInMillis.toString())
+                            showTimePicker = false
+                        }) { Text("OK") }
+                    },
+                    dismissButton = { TextButton(onClick = { showTimePicker = false }) { Text("Cancel") } },
+                    text = { TimePicker(state = timePickerState) }
+                )
             }
         }
     }

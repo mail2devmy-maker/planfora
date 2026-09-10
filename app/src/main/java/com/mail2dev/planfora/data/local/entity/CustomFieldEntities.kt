@@ -14,7 +14,10 @@ enum class CustomFieldType {
     TEXT,
     NUMBER,
     RADIO,
-    MULTI_SELECT
+    MULTI_SELECT,
+    DATE,
+    TIME,
+    DATETIME
 }
 
 @Entity(tableName = "custom_field_definitions")

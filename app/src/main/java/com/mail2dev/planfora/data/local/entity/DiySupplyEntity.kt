@@ -31,23 +31,17 @@ data class DiySupplyEntity(
     val imageUris: String = "",
     val audioPath: String? = null,
     val locationNote: String = "",
-    val tags: String = ""
+    val tags: String = "",
+    val subCategory: String? = null
 )
 
 enum class SupplyCategory(val displayName: String) {
     INSECTICIDE("Insecticides"),
     FUNGICIDE("Fungicides"),
     HERBICIDE("Herbicides"),
-    RODENTICIDE("Rodenticides"),
-    MITICIDE("Miticides"),
-    NEMATICIDE("Nematicides"),
-    MOLLUSCICIDE("Molluscicides"),
-    BACTERICIDE("Bactericides"),
     FERTILIZER("Fertilizer"),
     DIY("DIY"),
-    SUBSTRATE("Substrate"),
-    HARDWARE("Hardware"),
-    OTHER("Other")
+    SUPPLIES_TOOLS("Supplies & Tools")
 }
 
 enum class SupplyFormType(val displayName: String) {

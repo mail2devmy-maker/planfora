@@ -29,7 +29,7 @@ import kotlinx.coroutines.launch
         CustomFieldDefinitionEntity::class,
         CustomFieldValueEntity::class
     ],
-    version = 19,
+    version = 20,
     exportSchema = true
 )
 @TypeConverters(RoomTypeConverters::class)

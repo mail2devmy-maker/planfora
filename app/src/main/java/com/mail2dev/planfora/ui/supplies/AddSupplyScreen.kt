@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.mail2dev.planfora.data.local.entity.SupplyFormType
+import com.mail2dev.planfora.data.local.entity.SupplyCategory
 import com.mail2dev.planfora.ui.components.CreateCustomFieldDialog
 import com.mail2dev.planfora.ui.components.DynamicCustomFieldInput
 import com.mail2dev.planfora.ui.components.LocationSelectionBottomSheet
@@ -59,6 +60,7 @@ fun AddSupplyScreen(
 ) {
     val name by viewModel.name.collectAsState()
     val category by viewModel.category.collectAsState()
+    val subCategory by viewModel.subCategory.collectAsState()
     val formType by viewModel.formType.collectAsState()
     val formulationCode by viewModel.formulationCode.collectAsState()
     val notes by viewModel.notes.collectAsState()
@@ -172,9 +174,10 @@ fun AddSupplyScreen(
                     Text("Category", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     FlowRow(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        SupplyCategory.entries.filter { it != SupplyCategory.ALL }.forEach { cat ->
+                        SupplyCategory.entries.forEach { cat ->
                             FilterChip(
                                 selected = category == cat,
                                 onClick = { viewModel.updateCategory(cat) },
@@ -191,6 +194,25 @@ fun AddSupplyScreen(
                                     borderColor = Color.Gray.copy(alpha = 0.2f),
                                     selectedBorderColor = Color.Transparent
                                 )
+                            )
+                        }
+                    }
+
+                    if (category == SupplyCategory.DIY) {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(
+                                text = "Sub-Category (e.g. FFJ, FAA, FPJ)",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = SlateTextPrimary.copy(alpha = 0.9f),
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(start = 2.dp)
+                            )
+                            OutlinedTextField(
+                                value = subCategory,
+                                onValueChange = viewModel::updateSubCategory,
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true,
+                                colors = textFieldColors(isImportant = true)
                             )
                         }
                     }
@@ -217,9 +239,8 @@ fun AddSupplyScreen(
             }
 
             // High-Speed Safety/Stock Fields
-            val isChemical = category.displayName.contains("icide", ignoreCase = true) || category == SupplyCategory.FERTILIZER
             val isDiy = category == SupplyCategory.DIY
-            val isHardware = category == SupplyCategory.HARDWARE || category == SupplyCategory.SUBSTRATE
+            val isHardware = category == SupplyCategory.SUPPLIES_TOOLS
 
             PlanForaSurfaceCard(title = "Stock & Safety", isImportant = true) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -387,7 +408,7 @@ fun AddSupplyScreen(
                             }
                         }
 
-                        if (!isDiy && category != SupplyCategory.OTHER) {
+                        if (!isDiy) {
                             var showFormulationPicker by remember { mutableStateOf(false) }
                             Box(modifier = Modifier.weight(1f)) {
                                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -659,52 +680,6 @@ fun DynamicSupplyFieldRenderer(
             }
         )
     }
-}
-
-@Composable
-fun MementoLedgerRow(
-    label: String,
-    onRemove: () -> Unit,
-    modifier: Modifier = Modifier,
-    content: @Composable RowScope.() -> Unit
-) {
-    Surface(
-        color = Color(0xFF1E2120),
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, Color.Gray.copy(alpha = 0.1f)),
-        modifier = Modifier.fillMaxWidth().then(modifier)
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Text(
-                text = label,
-                modifier = Modifier.weight(1f),
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                fontSize = 14.sp
-            )
-            content()
-            IconButton(onClick = onRemove, modifier = Modifier.size(32.dp)) {
-                Icon(Icons.Default.Close, null, tint = Color.Gray, modifier = Modifier.size(20.dp))
-            }
-        }
-    }
-}
-
-@Composable
-fun RowScope.SimpleTextFieldCompact(value: String, onValueChange: (String) -> Unit) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        modifier = Modifier.fillMaxWidth().weight(1.5f),
-        placeholder = { Text("Enter...", fontSize = 12.sp) },
-        singleLine = true,
-        textStyle = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
-        colors = planForaTextFieldColors(isImportant = false)
-    )
 }
 
 @Composable

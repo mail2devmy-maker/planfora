@@ -8,6 +8,7 @@ import com.mail2dev.planfora.data.local.entity.CustomFieldDefinitionEntity
 import com.mail2dev.planfora.data.local.entity.CustomFieldValueEntity
 import com.mail2dev.planfora.data.local.entity.FieldTargetType
 import com.mail2dev.planfora.data.local.entity.MasterTagEntity
+import com.mail2dev.planfora.data.local.entity.SupplyCategory
 import com.mail2dev.planfora.data.repository.JournalRepository
 import com.mail2dev.planfora.data.repository.SupplyRepository
 import kotlinx.coroutines.flow.*
@@ -22,6 +23,9 @@ class AddSupplyViewModel(
 
     private val _category = MutableStateFlow(SupplyCategory.INSECTICIDE)
     val category = _category.asStateFlow()
+
+    private val _subCategory = MutableStateFlow("")
+    val subCategory = _subCategory.asStateFlow()
 
     private val _formType = MutableStateFlow(com.mail2dev.planfora.data.local.entity.SupplyFormType.LIQUID)
     val formType = _formType.asStateFlow()
@@ -146,6 +150,7 @@ class AddSupplyViewModel(
         }
     }
     fun updateCategory(v: SupplyCategory) { _category.value = v }
+    fun updateSubCategory(v: String) { _subCategory.value = v }
     fun updateFormType(v: com.mail2dev.planfora.data.local.entity.SupplyFormType) { 
         _formType.value = v 
         // Smart unit defaults based on form type
@@ -295,7 +300,8 @@ class AddSupplyViewModel(
             repository.getAllSupplies().firstOrNull()?.find { it.id == supplyId }?.let { supply ->
                 _editingSupplyId.value = supplyId
                 _name.value = supply.name
-                _category.value = SupplyCategory.entries.find { it.displayName == supply.category } ?: SupplyCategory.OTHER
+                _category.value = SupplyCategory.entries.find { it.displayName == supply.category } ?: SupplyCategory.DIY
+                _subCategory.value = supply.subCategory ?: ""
                 _formType.value = com.mail2dev.planfora.data.local.entity.SupplyFormType.entries.find { it.name == supply.formType } ?: com.mail2dev.planfora.data.local.entity.SupplyFormType.LIQUID
                 _formulationCode.value = supply.formulationCode
                 _notes.value = supply.notes
@@ -349,6 +355,7 @@ class AddSupplyViewModel(
                 id = _editingSupplyId.value ?: 0,
                 name = _name.value,
                 category = _category.value.displayName,
+                subCategory = if (_category.value == SupplyCategory.DIY) _subCategory.value else null,
                 formType = _formType.value.name,
                 formulationCode = _formulationCode.value,
                 notes = _notes.value,
@@ -384,6 +391,7 @@ class AddSupplyViewModel(
 
     private fun reset() {
         _name.value = ""
+        _subCategory.value = ""
         _notes.value = ""
         _activeIngredient.value = ""
         _phiDays.value = ""
