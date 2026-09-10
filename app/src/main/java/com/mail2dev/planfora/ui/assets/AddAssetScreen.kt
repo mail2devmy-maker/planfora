@@ -2,10 +2,8 @@ package com.mail2dev.planfora.ui.assets
 
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -13,13 +11,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -30,8 +25,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -63,7 +56,6 @@ fun AddAssetScreen(
     val location by viewModel.location.collectAsState()
     val selectedTags by viewModel.selectedTags.collectAsState()
     val notes by viewModel.notes.collectAsState()
-    val visibleOptionalFields by viewModel.visibleOptionalFields.collectAsState()
     val imageUris by viewModel.imageUris.collectAsState()
     val audioPath by viewModel.audioPath.collectAsState()
     val customFieldDefinitions by viewModel.customFieldDefinitions.collectAsState()
@@ -149,7 +141,7 @@ fun AddAssetScreen(
                 }
             }
 
-            // Live Preview Card (Memento Style)
+            // Live Preview Card
             LivePreviewCard(name, selectedCategory, location, selectedTags)
 
             // Asset Identity
@@ -194,13 +186,6 @@ fun AddAssetScreen(
                 }
             }
 
-            // Lifecycle Details
-            if (selectedCategory != AssetCategory.ALL) {
-                PlanForaSurfaceCard(title = "${selectedCategory.displayName} Details", isImportant = true) {
-                    CategoryCoreFields(selectedCategory, viewModel)
-                }
-            }
-
             // Attachments & Notes
             PlanForaSurfaceCard(title = "Attachments & Notes", isImportant = false) {
                 MediaAttachmentStrip(
@@ -231,16 +216,28 @@ fun AddAssetScreen(
                 }
             }
 
-            // Optional Field Palette
-            OptionalFieldPalette(
-                selectedCategory = selectedCategory,
-                visibleFields = visibleOptionalFields,
-                onToggleField = viewModel::toggleOptionalField,
-                onAddCustomField = { showCustomFieldDialog = true }
-            )
+            // Optional Field Section (EAV style)
+            PlanForaSurfaceCard(title = "Optional Fields", isImportant = false) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    AssistChip(
+                        onClick = { showCustomFieldDialog = true },
+                        label = { Text("Optional Fields", fontSize = 11.sp) },
+                        leadingIcon = { Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp)) },
+                        colors = AssistChipDefaults.assistChipColors(
+                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+                        ),
+                        border = BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.3f))
+                    )
+                }
 
-            // Dynamic Optional Inputs (Built-in + Custom)
-            DynamicFieldRenderer(viewModel, visibleOptionalFields, customFieldDefinitions, customFieldValues, selectedCategory)
+                DynamicFieldRenderer(viewModel, customFieldDefinitions, customFieldValues)
+            }
 
             Button(
                 onClick = {
@@ -302,51 +299,6 @@ fun AddAssetScreen(
 }
 
 @Composable
-fun CategoryCoreFields(category: AssetCategory, viewModel: AddAssetViewModel) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        when (category) {
-            AssetCategory.SEEDLING -> {
-                SimpleTextField("Batch / Tray ID", viewModel.batchTrayId.collectAsState().value, viewModel::updateBatchTrayId)
-                SimpleTextField("Quantity", viewModel.quantity.collectAsState().value, viewModel::updateQuantity)
-                SimpleTextField("Logical Zones / Rows (e.g. Row 1, Row 2)", viewModel.zones.collectAsState().value, viewModel::updateZones)
-            }
-            AssetCategory.CUTTING -> {
-                SimpleTextField("Mother Plant Link", viewModel.motherPlantLink.collectAsState().value, viewModel::updateMotherPlantLink)
-                DatePickerField("Propagated Date", viewModel.propagatedDate.collectAsState().value, viewModel::updatePropagatedDate)
-            }
-            AssetCategory.TREE -> {
-                SimpleTextField("Physical ID / Tree #", viewModel.physicalId.collectAsState().value, viewModel::updatePhysicalId)
-            }
-            AssetCategory.CROP -> {
-                SimpleTextField("Plot / Field ID", viewModel.plotRowId.collectAsState().value, viewModel::updatePlotRowId)
-                SimpleTextField("Logical Zones / Rows (e.g. Row 1, Row 2)", viewModel.zones.collectAsState().value, viewModel::updateZones)
-                DatePickerField("Expected Harvest Date", viewModel.expectedHarvestDate.collectAsState().value, viewModel::updateExpectedHarvestDate)
-            }
-            else -> {}
-        }
-    }
-}
-
-@Composable
-fun HeaderSection(onDismiss: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            "New Plant Profile",
-            style = MaterialTheme.typography.headlineSmall,
-            color = Color.White,
-            fontWeight = FontWeight.Bold
-        )
-        IconButton(onClick = onDismiss) {
-            Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.Gray)
-        }
-    }
-}
-
-@Composable
 fun LivePreviewCard(name: String, category: AssetCategory, location: String, tags: Set<String>) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f),
@@ -393,7 +345,6 @@ fun LivePreviewCard(name: String, category: AssetCategory, location: String, tag
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CategorySelector(selected: AssetCategory, onSelect: (AssetCategory) -> Unit) {
     val categories = AssetCategory.entries.filter { it != AssetCategory.ALL }
@@ -510,133 +461,52 @@ fun ReadonlyTriggerField(label: String, value: String, icon: ImageVector, onClic
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-fun OptionalFieldPalette(
-    selectedCategory: AssetCategory,
-    visibleFields: Set<OptionalField>,
-    onToggleField: (OptionalField) -> Unit,
-    onAddCustomField: () -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text("Optional Fields", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.SemiBold)
-        
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            OptionalField.entries.filter { isRelevant(it, selectedCategory) }.forEach { field ->
-                val isVisible = visibleFields.contains(field)
-                
-                FilterChip(
-                    selected = isVisible,
-                    onClick = { onToggleField(field) },
-                    label = { Text("+ ${field.displayName}", fontSize = 11.sp) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primary,
-                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
-                        labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                    ),
-                    border = FilterChipDefaults.filterChipBorder(
-                        enabled = true,
-                        selected = isVisible,
-                        borderColor = Color.Gray.copy(alpha = 0.2f),
-                        selectedBorderColor = Color.Transparent
-                    )
-                )
-            }
-
-            AssistChip(
-                onClick = onAddCustomField,
-                label = { Text("Custom", fontSize = 11.sp) },
-                leadingIcon = { Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp)) },
-                colors = AssistChipDefaults.assistChipColors(
-                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
-                ),
-                border = BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.3f))
-            )
-        }
-    }
-}
-
-private fun isRelevant(field: OptionalField, category: AssetCategory): Boolean {
-    return when (category) {
-        AssetCategory.SEEDLING -> field != OptionalField.MOTHER_PLANT_LINK && field != OptionalField.PHYSICAL_ID && field != OptionalField.ROOTSTOCK && field != OptionalField.BATCH_TRAY_ID && field != OptionalField.QUANTITY && field != OptionalField.PLOT_ROW_ID && field != OptionalField.EXPECTED_HARVEST_DATE && field != OptionalField.PROPAGATED_DATE
-        AssetCategory.CUTTING -> field != OptionalField.PHYSICAL_ID && field != OptionalField.ROOTSTOCK && field != OptionalField.MOTHER_PLANT_LINK && field != OptionalField.PROPAGATED_DATE && field != OptionalField.BATCH_TRAY_ID && field != OptionalField.QUANTITY && field != OptionalField.PLOT_ROW_ID && field != OptionalField.EXPECTED_HARVEST_DATE
-        AssetCategory.TREE -> field != OptionalField.BATCH_TRAY_ID && field != OptionalField.QUANTITY && field != OptionalField.PLOT_ROW_ID && field != OptionalField.EXPECTED_HARVEST_DATE && field != OptionalField.PHYSICAL_ID && field != OptionalField.MOTHER_PLANT_LINK && field != OptionalField.PROPAGATED_DATE
-        AssetCategory.CROP -> field != OptionalField.MOTHER_PLANT_LINK && field != OptionalField.ROOTSTOCK && field != OptionalField.PHYSICAL_ID && field != OptionalField.PLOT_ROW_ID && field != OptionalField.EXPECTED_HARVEST_DATE && field != OptionalField.BATCH_TRAY_ID && field != OptionalField.QUANTITY && field != OptionalField.PROPAGATED_DATE
-        else -> true
-    }
-}
-
-private fun isSuggested(field: OptionalField, category: AssetCategory): Boolean {
-    return when (category) {
-        AssetCategory.TREE -> field == OptionalField.PLANTING_DATE || field == OptionalField.GPS_COORDINATES
-        else -> false
-    }
-}
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DynamicFieldRenderer(
     viewModel: AddAssetViewModel,
-    visibleFields: Set<OptionalField>,
     customFields: List<com.mail2dev.planfora.data.local.entity.CustomFieldDefinitionEntity>,
-    customValues: Map<Long, String>,
-    category: AssetCategory
+    customValues: Map<Long, String>
 ) {
     var fieldToManage by remember { mutableStateOf<com.mail2dev.planfora.data.local.entity.CustomFieldDefinitionEntity?>(null) }
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        visibleFields.forEach { field ->
-            MementoLedgerRow(
-                label = field.displayName,
-                onRemove = { viewModel.toggleOptionalField(field) }
-            ) {
-                when (field) {
-                    OptionalField.PLANTING_DATE -> DatePickerFieldCompact(viewModel.plantedDate.collectAsState().value, viewModel::updatePlantedDate)
-                    OptionalField.ACQUISITION_DETAILS -> DatePickerFieldCompact(viewModel.acquisitionDate.collectAsState().value, viewModel::updateAcquisitionDate)
-                    OptionalField.COST_VALUE -> {
-                        SimpleTextFieldCompact(viewModel.costValue.collectAsState().value, viewModel::updateCostValue)
-                    }
-                    OptionalField.ROOTSTOCK -> {
-                        SimpleTextFieldCompact(viewModel.rootstock.collectAsState().value, viewModel::updateRootstock)
-                    }
-                    OptionalField.GPS_COORDINATES -> {
-                        SimpleTextFieldCompact("", { /* TODO */ })
-                    }
-                    OptionalField.SOURCE -> {
-                        SimpleTextFieldCompact("", { /* TODO: Bind to viewmodel source flow when added */ })
-                    }
-                    else -> {}
-                }
-            }
-        }
-
-        // Render Custom Fields (Scoped to Category)
         customFields.forEach { def ->
-            MementoLedgerRow(
-                label = def.fieldName,
-                onRemove = { viewModel.archiveCustomFieldDefinition(def.id) },
-                modifier = Modifier.combinedClickable(
+            Surface(
+                color = Color(0xFF1E2120),
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, Color.Gray.copy(alpha = 0.1f)),
+                modifier = Modifier.fillMaxWidth().combinedClickable(
                     onClick = {},
                     onLongClick = {
-                        haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         fieldToManage = def
                     }
                 )
             ) {
-                Box(modifier = Modifier.weight(2f)) {
-                    DynamicCustomFieldInput(
-                        definition = def,
-                        value = customValues[def.id] ?: "",
-                        onValueChange = { viewModel.updateCustomFieldValue(def.id, it) }
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Text(
+                        text = def.fieldName,
+                        modifier = Modifier.weight(1f),
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
                     )
+                    Box(modifier = Modifier.weight(2f)) {
+                        DynamicCustomFieldInput(
+                            definition = def,
+                            value = customValues[def.id] ?: "",
+                            onValueChange = { viewModel.updateCustomFieldValue(def.id, it) }
+                        )
+                    }
+                    IconButton(onClick = { viewModel.archiveCustomFieldDefinition(def.id) }, modifier = Modifier.size(32.dp)) {
+                        Icon(Icons.Default.Close, null, tint = Color.Gray, modifier = Modifier.size(20.dp))
+                    }
                 }
             }
         }
@@ -675,80 +545,6 @@ fun RowScope.SimpleTextFieldCompact(value: String, onValueChange: (String) -> Un
             unfocusedContainerColor = MaterialTheme.colorScheme.surface
         )
     )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun RowScope.DatePickerFieldCompact(value: Long?, onDateSelected: (Long?) -> Unit) {
-    var showPicker by remember { mutableStateOf(false) }
-    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
-    val locale = configuration.locales[0]
-    val dateDisplay = remember(value, locale) {
-        if (value != null) SimpleDateFormat("MMM dd, yyyy", locale).format(Date(value)) else "Select Date"
-    }
-    
-    OutlinedTextField(
-        value = dateDisplay,
-        onValueChange = {},
-        readOnly = true,
-        modifier = Modifier.fillMaxWidth().weight(1.5f).clickable { showPicker = true },
-        enabled = false,
-        colors = OutlinedTextFieldDefaults.colors(
-            disabledTextColor = if (value != null) Color.White else Color.Gray,
-            disabledBorderColor = Color.Transparent
-        )
-    )
-    if (showPicker) {
-        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = value ?: System.currentTimeMillis())
-        DatePickerDialog(
-            onDismissRequest = { showPicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    onDateSelected(datePickerState.selectedDateMillis)
-                    showPicker = false
-                }) { Text("OK") }
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    onDateSelected(null)
-                    showPicker = false
-                }) { Text("Clear") }
-            }
-        ) { DatePicker(state = datePickerState) }
-    }
-}
-
-@Composable
-fun MementoLedgerRow(
-    label: String,
-    onRemove: () -> Unit,
-    modifier: Modifier = Modifier,
-    content: @Composable RowScope.() -> Unit
-) {
-    Surface(
-        color = Color(0xFF1E2120),
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, Color.Gray.copy(alpha = 0.1f)),
-        modifier = Modifier.fillMaxWidth().then(modifier)
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Text(
-                text = label,
-                modifier = Modifier.weight(1f),
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                fontSize = 14.sp
-            )
-            content()
-            IconButton(onClick = onRemove, modifier = Modifier.size(32.dp)) {
-                Icon(Icons.Default.Close, null, tint = Color.Gray, modifier = Modifier.size(20.dp))
-            }
-        }
-    }
 }
 
 @Composable
@@ -804,7 +600,6 @@ fun DatePickerField(label: String, value: Long?, onDateSelected: (Long?) -> Unit
         )
     }
     if (showPicker) {
-        // ... (rest of DatePickerField logic)
         val datePickerState = rememberDatePickerState(initialSelectedDateMillis = value ?: System.currentTimeMillis())
         DatePickerDialog(
             onDismissRequest = { showPicker = false },
