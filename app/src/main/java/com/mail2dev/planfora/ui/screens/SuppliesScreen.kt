@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -34,6 +35,7 @@ fun SuppliesScreen(
     addSupplyViewModel: AddSupplyViewModel
 ) {
     val supplies by viewModel.supplies.collectAsState()
+    val selectedTab by viewModel.selectedTab.collectAsState()
     val selectedCategory by viewModel.selectedCategory.collectAsState()
     val showAddSheet by viewModel.showAddBottomSheet.collectAsState()
 
@@ -59,13 +61,45 @@ fun SuppliesScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            Text(
-                text = "Supplies & Inventory",
-                style = MaterialTheme.typography.headlineMedium,
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 8.dp)
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Inventory",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+                
+                // Tab Switcher
+                Row(
+                    modifier = Modifier
+                        .background(Color.DarkGray.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                        .padding(4.dp)
+                ) {
+                    com.mail2dev.planfora.ui.supplies.SupplyTab.entries.forEach { tab ->
+                        val isSelected = selectedTab == tab
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
+                                .clickable { viewModel.setTab(tab) }
+                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Text(
+                                text = if (tab == com.mail2dev.planfora.ui.supplies.SupplyTab.INVENTORY) "Stock" else "DIY Lab",
+                                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else Color.Gray,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
 
             val searchQuery by viewModel.searchQuery.collectAsState()
             OutlinedTextField(
@@ -88,10 +122,12 @@ fun SuppliesScreen(
                 )
             )
 
-            SupplyCategoryFilters(
-                selectedCategory = selectedCategory,
-                onCategorySelected = viewModel::setCategory
-            )
+            if (selectedTab == com.mail2dev.planfora.ui.supplies.SupplyTab.INVENTORY) {
+                SupplyCategoryFilters(
+                    selectedCategory = selectedCategory,
+                    onCategorySelected = viewModel::setCategory
+                )
+            }
 
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -108,19 +144,19 @@ fun SuppliesScreen(
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Icon(
-                                    Icons.Rounded.Inventory2,
+                                    if (selectedTab == com.mail2dev.planfora.ui.supplies.SupplyTab.INVENTORY) Icons.Rounded.Inventory2 else Icons.Rounded.Science,
                                     contentDescription = null,
                                     tint = Color.Gray.copy(alpha = 0.3f),
                                     modifier = Modifier.size(64.dp)
                                 )
                                 Spacer(modifier = Modifier.height(16.dp))
                                 Text(
-                                    text = "No supplies found",
+                                    text = if (selectedTab == com.mail2dev.planfora.ui.supplies.SupplyTab.INVENTORY) "No supplies found" else "DIY Lab is empty",
                                     color = Color.Gray,
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                                 Text(
-                                    text = "Tap + to manage your inventory",
+                                    text = "Tap + to ${if (selectedTab == com.mail2dev.planfora.ui.supplies.SupplyTab.INVENTORY) "add inventory" else "start a batch"}",
                                     color = Color.Gray.copy(alpha = 0.6f),
                                     style = MaterialTheme.typography.bodySmall
                                 )
@@ -131,7 +167,7 @@ fun SuppliesScreen(
 
                 items(supplies) { supply ->
                     val onClick = { navController.navigate(Screen.SupplyDetail.createRoute(supply.id)) }
-                    if (supply.targetMaturityDate > supply.startDate) {
+                    if (selectedTab == com.mail2dev.planfora.ui.supplies.SupplyTab.DIY_LAB) {
                         FormulationCard(supply, onClick)
                     } else {
                         StoreSupplyCard(supply, onClick)

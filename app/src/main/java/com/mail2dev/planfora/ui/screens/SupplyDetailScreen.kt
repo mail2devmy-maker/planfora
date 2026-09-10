@@ -52,7 +52,43 @@ fun SupplyDetailScreen(
     val supplyLogs = allLogs.filter { it.supplyId == supplyId }.sortedByDescending { it.timestamp }
 
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    var showFinalizeDialog by remember { mutableStateOf(false) }
+    var yieldInput by remember { mutableStateOf(supply?.currentVolume?.toString() ?: "") }
     var logToDelete by remember { mutableStateOf<com.mail2dev.planfora.data.local.entity.JournalLogEntity?>(null) }
+
+    if (showFinalizeDialog && supply != null) {
+        AlertDialog(
+            onDismissRequest = { showFinalizeDialog = false },
+            title = { Text("Finalize DIY Batch", color = Color.White) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Enter the total volume yielded from this batch. This will move the product to your main Inventory Stock.", color = Color.LightGray)
+                    OutlinedTextField(
+                        value = yieldInput,
+                        onValueChange = { yieldInput = it },
+                        label = { Text("Yield Volume (${supply.unit})") },
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val volume = yieldInput.toDoubleOrNull() ?: 0.0
+                        viewModel.finalizeBatch(supply, volume)
+                        showFinalizeDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                ) { Text("Finalize & Store") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showFinalizeDialog = false }) { Text("Cancel", color = Color.Gray) }
+            },
+            containerColor = Color(0xFF1E2120)
+        )
+    }
 
     if (logToDelete != null) {
         AlertDialog(
@@ -116,6 +152,16 @@ fun SupplyDetailScreen(
                         onDismissRequest = { showMenu = false },
                         modifier = Modifier.background(Color(0xFF1E2120))
                     ) {
+                        if (supply?.category == "DIY" && !supply.isArchived) {
+                            DropdownMenuItem(
+                                text = { Text("Finalize Batch", color = MaterialTheme.colorScheme.primary) },
+                                leadingIcon = { Icon(Icons.Default.CheckCircle, null, tint = MaterialTheme.colorScheme.primary) },
+                                onClick = { 
+                                    showMenu = false
+                                    showFinalizeDialog = true
+                                }
+                            )
+                        }
                         DropdownMenuItem(
                             text = { Text("Edit", color = Color.White) },
                             onClick = { 

@@ -17,7 +17,12 @@ enum class SupplyCategory(val displayName: String) {
     SUPPLIES_TOOLS("Supplies & Tools")
 }
 
+enum class SupplyTab { INVENTORY, DIY_LAB }
+
 class SuppliesViewModel(private val repository: SupplyRepository) : ViewModel() {
+
+    private val _selectedTab = MutableStateFlow(SupplyTab.INVENTORY)
+    val selectedTab: StateFlow<SupplyTab> = _selectedTab.asStateFlow()
 
     private val _selectedCategory = MutableStateFlow(SupplyCategory.ALL)
     val selectedCategory: StateFlow<SupplyCategory> = _selectedCategory.asStateFlow()
@@ -26,11 +31,18 @@ class SuppliesViewModel(private val repository: SupplyRepository) : ViewModel() 
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
     val supplies: StateFlow<List<DiySupplyEntity>> = repository.getAllSupplies()
-        .combine(_selectedCategory) { supplies, category ->
-            if (category == SupplyCategory.ALL) {
-                supplies
+        .combine(_selectedTab) { list, tab ->
+            if (tab == SupplyTab.INVENTORY) {
+                list.filter { it.category != "DIY" || it.isArchived }
             } else {
-                supplies.filter { it.category == category.displayName }
+                list.filter { it.category == "DIY" && !it.isArchived }
+            }
+        }
+        .combine(_selectedCategory) { list, category ->
+            if (category == SupplyCategory.ALL) {
+                list
+            } else {
+                list.filter { it.category == category.displayName }
             }
         }.combine(_searchQuery) { filtered, query ->
             if (query.isBlank()) {
@@ -48,6 +60,14 @@ class SuppliesViewModel(private val repository: SupplyRepository) : ViewModel() 
     private val _showAddBottomSheet = MutableStateFlow(false)
     val showAddBottomSheet: StateFlow<Boolean> = _showAddBottomSheet.asStateFlow()
 
+    fun setTab(tab: SupplyTab) {
+        _selectedTab.value = tab
+        // When switching to DIY Lab, reset category to ALL to see all DIY types
+        if (tab == SupplyTab.DIY_LAB) {
+            _selectedCategory.value = SupplyCategory.ALL
+        }
+    }
+
     fun setShowAddBottomSheet(show: Boolean) {
         _showAddBottomSheet.value = show
     }
@@ -58,6 +78,19 @@ class SuppliesViewModel(private val repository: SupplyRepository) : ViewModel() 
 
     fun setCategory(category: SupplyCategory) {
         _selectedCategory.value = category
+    }
+
+    fun finalizeBatch(supply: DiySupplyEntity, yieldVolume: Double) {
+        viewModelScope.launch {
+            repository.updateSupply(
+                supply.copy(
+                    isArchived = true,
+                    currentVolume = yieldVolume,
+                    originalVolume = yieldVolume,
+                    stockQuantity = yieldVolume.toFloat()
+                )
+            )
+        }
     }
 
     fun deleteSupply(supply: DiySupplyEntity) {
