@@ -47,7 +47,7 @@ fun CreateCustomFieldDialog(
                 OutlinedTextField(
                     value = fieldName,
                     onValueChange = { fieldName = it },
-                    label = { Text("Field Name (e.g. Soil pH, Batch #)") },
+                    label = { Text("Field Name") },
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = Color.White,
@@ -58,7 +58,7 @@ fun CreateCustomFieldDialog(
                 )
 
                 Text("Data Type", color = Color.Gray, style = MaterialTheme.typography.labelMedium)
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     CustomFieldType.entries.forEach { type ->
                         FilterChip(
                             selected = fieldType == type,
@@ -72,7 +72,7 @@ fun CreateCustomFieldDialog(
                     }
                 }
 
-                if (fieldType == CustomFieldType.SINGLE_SELECT || fieldType == CustomFieldType.MULTI_SELECT) {
+                if (fieldType == CustomFieldType.RADIO || fieldType == CustomFieldType.MULTI_SELECT) {
                     OutlinedTextField(
                         value = optionsText,
                         onValueChange = { optionsText = it },
@@ -184,7 +184,7 @@ fun ManageFieldDialog(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun DynamicCustomFieldInput(
     definition: CustomFieldDefinitionEntity,
@@ -248,38 +248,7 @@ fun DynamicCustomFieldInput(
                 }
             )
         }
-        CustomFieldType.BOOLEAN -> {
-            Surface(
-                color = Color.White.copy(alpha = 0.05f),
-                shape = RoundedCornerShape(24.dp),
-                border = BorderStroke(1.dp, Color.Gray.copy(alpha = 0.2f))
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Switch(
-                        checked = value.toBoolean(),
-                        onCheckedChange = { onValueChange(it.toString()) },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.White,
-                            checkedTrackColor = MaterialTheme.colorScheme.primary,
-                            uncheckedThumbColor = Color.Gray,
-                            uncheckedTrackColor = Color.DarkGray
-                        ),
-                        modifier = Modifier.scale(0.8f)
-                    )
-                    Text(
-                        text = if (value.toBoolean()) "Yes" else "No", 
-                        color = Color.White,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-            }
-        }
-        CustomFieldType.SINGLE_SELECT -> {
+        CustomFieldType.RADIO -> {
             val options = remember(definition.optionsJson) {
                 try {
                     definition.optionsJson?.let { Json.decodeFromString<List<String>>(it) } ?: emptyList()
@@ -287,19 +256,27 @@ fun DynamicCustomFieldInput(
                     emptyList()
                 }
             }
-            var expanded by remember { mutableStateOf(false) }
             
-            Box {
-                OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth()) {
-                    Text(if (value.isBlank()) "Select Option" else value)
-                }
-                DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                    options.forEach { option ->
-                        DropdownMenuItem(
-                            text = { Text(option) },
-                            onClick = { onValueChange(option); expanded = false }
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                options.forEach { option ->
+                    val isSelected = value == option
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { onValueChange(option) },
+                        label = { Text(option, fontSize = 10.sp) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                            containerColor = Color.DarkGray.copy(alpha = 0.5f),
+                            labelColor = Color.Gray
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = isSelected,
+                            borderColor = Color.Gray.copy(alpha = 0.3f),
+                            selectedBorderColor = Color.Transparent
                         )
-                    }
+                    )
                 }
             }
         }
@@ -313,18 +290,29 @@ fun DynamicCustomFieldInput(
             }
             val selectedOptions = value.split(",").filter { it.isNotBlank() }.toSet()
             
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 options.forEach { option ->
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(
-                            checked = selectedOptions.contains(option),
-                            onCheckedChange = { checked ->
-                                val newSet = if (checked) selectedOptions + option else selectedOptions - option
-                                onValueChange(newSet.joinToString(","))
-                            }
+                    val isSelected = selectedOptions.contains(option)
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { 
+                            val newSet = if (isSelected) selectedOptions - option else selectedOptions + option
+                            onValueChange(newSet.joinToString(","))
+                        },
+                        label = { Text(option, fontSize = 10.sp) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                            containerColor = Color.DarkGray.copy(alpha = 0.5f),
+                            labelColor = Color.Gray
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = isSelected,
+                            borderColor = Color.Gray.copy(alpha = 0.3f),
+                            selectedBorderColor = Color.Transparent
                         )
-                        Text(option, color = Color.White)
-                    }
+                    )
                 }
             }
         }

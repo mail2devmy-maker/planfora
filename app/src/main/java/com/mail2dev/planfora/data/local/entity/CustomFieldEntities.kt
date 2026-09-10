@@ -13,8 +13,7 @@ enum class FieldTargetType {
 enum class CustomFieldType {
     TEXT,
     NUMBER,
-    BOOLEAN,
-    SINGLE_SELECT,
+    RADIO,
     MULTI_SELECT
 }
 
