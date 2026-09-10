@@ -7,12 +7,15 @@ import com.mail2dev.planfora.data.repository.JournalRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Grass
+import androidx.compose.ui.graphics.vector.ImageVector
 import com.mail2dev.planfora.R
 
-enum class AssetCategory(val displayName: String, val description: String = "", val icon: String = "", val iconRes: Int? = null) {
+enum class AssetCategory(val displayName: String, val description: String = "", val icon: String = "", val iconVector: ImageVector? = null) {
     ALL("All", "", "📁"),
     TREE("Tree", "For old orchard trees, mature perennials", "🌳"),
-    CROP("Crop", "For short-term produce, vegetable beds, row crops", "", R.drawable.grass_24),
+    CROP("Crop", "For short-term produce, vegetable beds, row crops", "", Icons.Rounded.Grass),
     SEEDLING("Seedling", "For seeds, germination trays, young nursery stock", "🌱"),
     CUTTING("Cutting", "For marcots, air layers, clones, stem pieces", "✂️");
 

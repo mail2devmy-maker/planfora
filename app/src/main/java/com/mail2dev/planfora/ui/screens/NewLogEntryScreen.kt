@@ -506,9 +506,9 @@ fun NewLogEntryScreen(
                                 onClick = { /* Could remove individual if desired */ },
                                 label = { Text(asset?.name ?: "Unknown") },
                                 leadingIcon = { 
-                                    if (category?.iconRes != null) {
+                                    if (category?.iconVector != null) {
                                         Icon(
-                                            painter = painterResource(id = category.iconRes),
+                                            imageVector = category.iconVector,
                                             contentDescription = null,
                                             modifier = Modifier.size(16.dp),
                                             tint = MaterialTheme.colorScheme.primary
@@ -1382,9 +1382,9 @@ fun AssetPickerBottomSheet(
                         onClick = { selectedCategory = cat },
                         label = { 
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                if (cat.iconRes != null) {
+                                if (cat.iconVector != null) {
                                     Icon(
-                                        painter = painterResource(id = cat.iconRes),
+                                        imageVector = cat.iconVector,
                                         contentDescription = null,
                                         modifier = Modifier.size(16.dp).padding(end = 4.dp),
                                         tint = if (selectedCategory == cat) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary
@@ -1472,9 +1472,9 @@ fun AssetPickerBottomSheet(
                     ) {
                         Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                             Box(modifier = Modifier.size(44.dp).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f), CircleShape), contentAlignment = Alignment.Center) { 
-                                if (category?.iconRes != null) {
+                                if (category?.iconVector != null) {
                                     Icon(
-                                        painter = painterResource(id = category.iconRes),
+                                        imageVector = category.iconVector,
                                         contentDescription = null,
                                         modifier = Modifier.size(24.dp),
                                         tint = MaterialTheme.colorScheme.primary

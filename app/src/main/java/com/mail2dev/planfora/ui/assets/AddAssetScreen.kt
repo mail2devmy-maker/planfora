@@ -356,9 +356,9 @@ fun LivePreviewCard(name: String, category: AssetCategory, location: String, tag
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                if (category.iconRes != null) {
+                if (category.iconVector != null) {
                     Icon(
-                        painter = painterResource(id = category.iconRes),
+                        imageVector = category.iconVector,
                         contentDescription = null,
                         modifier = Modifier.size(24.dp),
                         tint = MaterialTheme.colorScheme.primary
@@ -409,9 +409,9 @@ fun CategorySelector(selected: AssetCategory, onSelect: (AssetCategory) -> Unit)
                         onClick = { onSelect(cat) },
                         label = { 
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                if (cat.iconRes != null) {
+                                if (cat.iconVector != null) {
                                     Icon(
-                                        painter = painterResource(id = cat.iconRes),
+                                        imageVector = cat.iconVector,
                                         contentDescription = null,
                                         modifier = Modifier.size(16.dp).padding(end = 4.dp),
                                         tint = if (selected == cat) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary

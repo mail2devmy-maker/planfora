@@ -251,9 +251,9 @@ fun CategoryFilters(
                                 tint = Color(0xFFFFD54F),
                                 modifier = Modifier.size(16.dp).padding(end = 4.dp)
                             )
-                        } else if (category.iconRes != null) {
+                        } else if (category.iconVector != null) {
                             Icon(
-                                painter = painterResource(id = category.iconRes),
+                                imageVector = category.iconVector,
                                 contentDescription = null,
                                 modifier = Modifier.size(16.dp).padding(end = 4.dp),
                                 tint = MaterialTheme.colorScheme.primary
@@ -349,9 +349,9 @@ fun AssetCard(
                             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
                             shape = RoundedCornerShape(8.dp)
                         ) {
-                            if (category.iconRes != null) {
+                            if (category.iconVector != null) {
                                 Icon(
-                                    painter = painterResource(id = category.iconRes),
+                                    imageVector = category.iconVector,
                                     contentDescription = null,
                                     modifier = Modifier.size(32.dp).padding(6.dp),
                                     tint = MaterialTheme.colorScheme.primary

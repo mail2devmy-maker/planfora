@@ -273,9 +273,9 @@ fun PlantDetailScreen(
                                 modifier = Modifier.padding(12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                if (category.iconRes != null) {
+                                if (category.iconVector != null) {
                                     Icon(
-                                        painter = painterResource(id = category.iconRes),
+                                        imageVector = category.iconVector,
                                         contentDescription = null,
                                         modifier = Modifier.size(20.dp),
                                         tint = MaterialTheme.colorScheme.primary
@@ -319,9 +319,9 @@ fun AssetPassportHeader(
                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    if (category.iconRes != null) {
+                    if (category.iconVector != null) {
                         Icon(
-                            painter = painterResource(id = category.iconRes),
+                            imageVector = category.iconVector,
                             contentDescription = null,
                             modifier = Modifier.size(32.dp).padding(8.dp),
                             tint = MaterialTheme.colorScheme.primary
