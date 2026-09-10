@@ -34,6 +34,9 @@ class LogsViewModel(
     private val _locationFilter = MutableStateFlow<String?>(null)
     val locationFilter: StateFlow<String?> = _locationFilter.asStateFlow()
 
+    private val _activityTypeFilter = MutableStateFlow<String?>(null)
+    val activityTypeFilter: StateFlow<String?> = _activityTypeFilter.asStateFlow()
+
     private val _phiFilterActive = MutableStateFlow(false)
     val phiFilterActive: StateFlow<Boolean> = _phiFilterActive.asStateFlow()
 
@@ -62,13 +65,15 @@ class LogsViewModel(
         _allLogs, 
         _selectedDate, 
         _locationFilter, 
+        _activityTypeFilter,
         _phiFilterActive
-    ) { logs, date, location, phiOnly ->
+    ) { logs, date, location, activityType, phiOnly ->
         logs.filter { log -> 
             val dateMatch = isSameDay(log.timestamp, date)
             val locationMatch = location == null || assets.value.find { it.id == log.assetId }?.locationNote == location
+            val activityMatch = activityType == null || log.activityType == activityType
             val phiMatch = !phiOnly || isPhiActive(log)
-            dateMatch && locationMatch && phiMatch
+            dateMatch && locationMatch && activityMatch && phiMatch
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -93,6 +98,7 @@ class LogsViewModel(
     fun setLayoutMode(mode: LayoutMode) { _layoutMode.value = mode }
     fun setSelectedDate(timestamp: Long) { _selectedDate.value = timestamp }
     fun setLocationFilter(location: String?) { _locationFilter.value = location }
+    fun setActivityTypeFilter(type: String?) { _activityTypeFilter.value = type }
     fun togglePhiFilter() { _phiFilterActive.value = !_phiFilterActive.value }
     fun setShowAddBottomSheet(show: Boolean) { _showAddBottomSheet.value = show }
 

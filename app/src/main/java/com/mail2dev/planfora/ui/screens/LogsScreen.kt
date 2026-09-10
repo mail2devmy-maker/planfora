@@ -52,6 +52,7 @@ fun LogsScreen(
     val layoutMode by viewModel.layoutMode.collectAsState()
     val selectedDate by viewModel.selectedDate.collectAsState()
     val locationFilter by viewModel.locationFilter.collectAsState()
+    val activityTypeFilter by viewModel.activityTypeFilter.collectAsState()
     val phiFilterActive by viewModel.phiFilterActive.collectAsState()
     val masterLocations by viewModel.masterLocations.collectAsState()
     val use24HourFormat by profileViewModel.use24HourFormat.collectAsState()
@@ -122,15 +123,17 @@ fun LogsScreen(
                     viewModel.setLayoutMode(newMode)
                 },
                 onToggleFilters = { showFilters = !showFilters },
-                filtersActive = locationFilter != null || phiFilterActive
+                filtersActive = locationFilter != null || activityTypeFilter != null || phiFilterActive
             )
 
             AnimatedVisibility(visible = showFilters) {
                 FilterStrip(
                     locations = masterLocations,
                     selectedLocation = locationFilter,
+                    selectedActivityType = activityTypeFilter,
                     phiActive = phiFilterActive,
                     onLocationSelected = viewModel::setLocationFilter,
+                    onActivityTypeSelected = viewModel::setActivityTypeFilter,
                     onTogglePhi = viewModel::togglePhiFilter
                 )
             }
@@ -569,72 +572,128 @@ fun LogsHeader(
 fun FilterStrip(
     locations: List<String>,
     selectedLocation: String?,
+    selectedActivityType: String?,
     phiActive: Boolean,
     onLocationSelected: (String?) -> Unit,
+    onActivityTypeSelected: (String?) -> Unit,
     onTogglePhi: () -> Unit
 ) {
-    androidx.compose.foundation.lazy.LazyRow(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        item {
-            FilterChip(
-                selected = phiActive,
-                onClick = onTogglePhi,
-                label = { Text("⚠️ Active PHI") },
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = Color(0xFFFFB74D),
-                    selectedLabelColor = Color.Black
-                ),
-                leadingIcon = { if (phiActive) Icon(Icons.Default.Check, null, modifier = Modifier.size(14.dp)) }
-            )
-        }
+    val activityTypes = listOf("Observation", "Feeding", "Pruning", "Pest Control", "Repotting", "Harvest", "Weeding", "Other")
 
-        item {
-            VerticalDivider(modifier = Modifier.height(24.dp).padding(horizontal = 4.dp), color = Color.Gray.copy(alpha = 0.3f))
-        }
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+        // Row 1: Location & PHI
+        androidx.compose.foundation.lazy.LazyRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            item {
+                FilterChip(
+                    selected = phiActive,
+                    onClick = onTogglePhi,
+                    label = { Text("⚠️ Active PHI", fontSize = 11.sp) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = Color(0xFFFFB74D),
+                        selectedLabelColor = Color.Black
+                    ),
+                    leadingIcon = { if (phiActive) Icon(Icons.Default.Check, null, modifier = Modifier.size(14.dp)) }
+                )
+            }
 
-        item {
-            FilterChip(
-                selected = selectedLocation == null,
-                onClick = { onLocationSelected(null) },
-                label = { Text("All Zones") },
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = MaterialTheme.colorScheme.primary,
-                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
-                    labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                ),
-                border = FilterChipDefaults.filterChipBorder(
-                    enabled = true,
+            item {
+                VerticalDivider(modifier = Modifier.height(24.dp).padding(horizontal = 4.dp), color = Color.Gray.copy(alpha = 0.3f))
+            }
+
+            item {
+                FilterChip(
                     selected = selectedLocation == null,
-                    borderColor = MaterialTheme.colorScheme.outline,
-                    selectedBorderColor = Color.Transparent
+                    onClick = { onLocationSelected(null) },
+                    label = { Text("All Zones", fontSize = 11.sp) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                        labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = selectedLocation == null,
+                        borderColor = MaterialTheme.colorScheme.outline,
+                        selectedBorderColor = Color.Transparent
+                    )
                 )
-            )
+            }
+
+            items(locations) { loc ->
+                FilterChip(
+                    selected = selectedLocation == loc,
+                    onClick = { onLocationSelected(loc) },
+                    label = { Text(loc, fontSize = 11.sp) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                        labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = selectedLocation == loc,
+                        borderColor = MaterialTheme.colorScheme.outline,
+                        selectedBorderColor = Color.Transparent
+                    )
+                )
+            }
         }
 
-        items(locations) { loc ->
-            FilterChip(
-                selected = selectedLocation == loc,
-                onClick = { onLocationSelected(loc) },
-                label = { Text(loc) },
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = MaterialTheme.colorScheme.primary,
-                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
-                    labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                ),
-                border = FilterChipDefaults.filterChipBorder(
-                    enabled = true,
-                    selected = selectedLocation == loc,
-                    borderColor = MaterialTheme.colorScheme.outline,
-                    selectedBorderColor = Color.Transparent
+        // Row 2: Activity Type
+        androidx.compose.foundation.lazy.LazyRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            item {
+                FilterChip(
+                    selected = selectedActivityType == null,
+                    onClick = { onActivityTypeSelected(null) },
+                    label = { Text("All Activities", fontSize = 11.sp) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.secondary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onSecondary,
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                        labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = selectedActivityType == null,
+                        borderColor = MaterialTheme.colorScheme.outline,
+                        selectedBorderColor = Color.Transparent
+                    )
                 )
-            )
+            }
+
+            items(activityTypes) { type ->
+                FilterChip(
+                    selected = selectedActivityType == type,
+                    onClick = { onActivityTypeSelected(type) },
+                    label = { Text(type, fontSize = 11.sp) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.secondary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onSecondary,
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                        labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = selectedActivityType == type,
+                        borderColor = MaterialTheme.colorScheme.outline,
+                        selectedBorderColor = Color.Transparent
+                    )
+                )
+            }
         }
     }
 }
