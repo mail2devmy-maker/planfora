@@ -172,8 +172,8 @@ fun AddAssetScreen(
                 CategorySelector(selectedCategory, viewModel::updateCategory)
             }
 
-            // Location & Taxonomy
-            PlanForaSurfaceCard(title = "Location & Taxonomy", isImportant = false) {
+            // Location & Tags
+            PlanForaSurfaceCard(title = "Location & Tags", isImportant = false) {
                 PlanForaFieldGroup(isImportant = false) {
                     ReadonlyTriggerField(
                         label = "Location",
@@ -223,7 +223,7 @@ fun AddAssetScreen(
                     OutlinedTextField(
                         value = notes,
                         onValueChange = viewModel::updateNotes,
-                        placeholder = { Text("Quick observation or asset details...") },
+                        placeholder = { Text("Remark for asset or asset detail...") },
                         modifier = Modifier.fillMaxWidth().height(80.dp),
                         colors = textFieldColors(isImportant = false),
                         maxLines = 3
@@ -596,6 +596,9 @@ fun DynamicFieldRenderer(
                     }
                     OptionalField.GPS_COORDINATES -> {
                         SimpleTextFieldCompact("", { /* TODO */ })
+                    }
+                    OptionalField.SOURCE -> {
+                        SimpleTextFieldCompact("", { /* TODO: Bind to viewmodel source flow when added */ })
                     }
                     else -> {}
                 }

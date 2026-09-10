@@ -331,6 +331,7 @@ enum class OptionalField(val displayName: String, val icon: String) {
     ACQUISITION_DETAILS("Acquisition Details", "🛒"),
     GPS_COORDINATES("GPS Coordinates", "📍"),
     COST_VALUE("Cost/Value", "💰"),
+    SOURCE("Source", "🏪"),
     BATCH_TRAY_ID("Batch / Tray ID", "🧪"),
     MOTHER_PLANT_LINK("Mother Plant Link", "✂️"),
     PHYSICAL_ID("Physical ID / Tree #", "🔢"),
