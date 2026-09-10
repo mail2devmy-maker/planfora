@@ -30,6 +30,9 @@ class AddAssetViewModel(private val repository: JournalRepository) : ViewModel()
     private val _subLocation = MutableStateFlow("")
     val subLocation = _subLocation.asStateFlow()
 
+    private val _totalPlants = MutableStateFlow("")
+    val totalPlants = _totalPlants.asStateFlow()
+
     private val _selectedTags = MutableStateFlow(setOf<String>())
     val selectedTags = _selectedTags.asStateFlow()
 
@@ -81,6 +84,7 @@ class AddAssetViewModel(private val repository: JournalRepository) : ViewModel()
     fun updateCategory(category: AssetCategory) { _selectedCategory.value = category }
     fun updateLocation(newLocation: String) { _location.value = newLocation }
     fun updateSubLocation(v: String) { _subLocation.value = v }
+    fun updateTotalPlants(v: String) { _totalPlants.value = v }
     
     fun toggleTag(tag: String) {
         _selectedTags.update { tags ->
@@ -180,6 +184,7 @@ class AddAssetViewModel(private val repository: JournalRepository) : ViewModel()
                 tags = combinedTags.joinToString(","),
                 locationNote = _location.value,
                 subLocation = _subLocation.value,
+                totalPlants = _totalPlants.value.toIntOrNull() ?: 0,
                 acquisitionDate = _acquisitionDate.value,
                 notes = _notes.value,
                 zones = _zones.value,
@@ -212,6 +217,7 @@ class AddAssetViewModel(private val repository: JournalRepository) : ViewModel()
                 _selectedCategory.value = AssetCategory.entries.find { it.displayName == asset.category } ?: AssetCategory.TREE
                 _location.value = asset.locationNote
                 _subLocation.value = asset.subLocation
+                _totalPlants.value = if (asset.totalPlants > 0) asset.totalPlants.toString() else ""
                 _notes.value = asset.notes
                 _zones.value = asset.zones
                 _plantedDate.value = if ((asset.plantedDate ?: 0L) > 0L) asset.plantedDate else null
@@ -236,6 +242,7 @@ class AddAssetViewModel(private val repository: JournalRepository) : ViewModel()
         _notes.value = ""
         _location.value = ""
         _subLocation.value = ""
+        _totalPlants.value = ""
         _selectedTags.value = emptySet()
         _plantedDate.value = null
         _acquisitionDate.value = null

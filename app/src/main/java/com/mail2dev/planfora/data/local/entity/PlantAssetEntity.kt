@@ -19,6 +19,7 @@ data class PlantAssetEntity(
     val notes: String = "",
     val zones: String = "", // NEW: Comma-separated zone names
     val subLocation: String = "", // Added in v22 for Block/Zone grouping
+    val totalPlants: Int = 0, // Added in v23 for population tracking
     val imageUris: String = "",
     val audioPath: String? = null
 )

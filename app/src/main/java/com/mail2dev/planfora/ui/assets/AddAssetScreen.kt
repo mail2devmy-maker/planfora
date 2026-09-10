@@ -161,6 +161,26 @@ fun AddAssetScreen(
                         colors = textFieldColors(isImportant = true)
                     )
                 }
+
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = "Total Plants / Population",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = SlateTextSecondary.copy(alpha = 0.9f),
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(start = 2.dp)
+                    )
+                    OutlinedTextField(
+                        value = viewModel.totalPlants.collectAsState().value,
+                        onValueChange = viewModel::updateTotalPlants,
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("e.g. 500") },
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                        colors = textFieldColors(isImportant = false),
+                        singleLine = true
+                    )
+                }
+
                 CategorySelector(selectedCategory, viewModel::updateCategory)
             }
 
