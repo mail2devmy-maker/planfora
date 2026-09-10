@@ -2,6 +2,7 @@ package com.mail2dev.planfora.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -53,11 +54,13 @@ fun LogsScreen(
     val selectedDate by viewModel.selectedDate.collectAsState()
     val locationFilter by viewModel.locationFilter.collectAsState()
     val activityTypeFilter by viewModel.activityTypeFilter.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState()
     val phiFilterActive by viewModel.phiFilterActive.collectAsState()
     val masterLocations by viewModel.masterLocations.collectAsState()
     val use24HourFormat by profileViewModel.use24HourFormat.collectAsState()
 
     var showFilters by remember { mutableStateOf(false) }
+    var showSearch by remember { mutableStateOf(false) }
     var logToDelete by remember { mutableStateOf<JournalLogEntity?>(null) }
     var selectedLogForDetail by remember { mutableStateOf<JournalLogEntity?>(null) }
 
@@ -122,9 +125,25 @@ fun LogsScreen(
                     val newMode = if (layoutMode == LayoutMode.EXPANDED_CARD) LayoutMode.COMPACT_LIST else LayoutMode.EXPANDED_CARD
                     viewModel.setLayoutMode(newMode)
                 },
-                onToggleFilters = { showFilters = !showFilters },
-                filtersActive = locationFilter != null || activityTypeFilter != null || phiFilterActive
+                onToggleSearch = { 
+                    showSearch = !showSearch 
+                    if (showSearch) showFilters = false // Auto-close filters when searching
+                },
+                onToggleFilters = { 
+                    showFilters = !showFilters 
+                    if (showFilters) showSearch = false // Auto-close search when filtering
+                },
+                filtersActive = locationFilter != null || activityTypeFilter != null || phiFilterActive,
+                searchActive = searchQuery.isNotBlank()
             )
+
+            AnimatedVisibility(visible = showSearch) {
+                SearchBox(
+                    query = searchQuery,
+                    onQueryChange = viewModel::setSearchQuery,
+                    onClear = { viewModel.setSearchQuery("") }
+                )
+            }
 
             AnimatedVisibility(visible = showFilters) {
                 FilterStrip(
@@ -515,8 +534,10 @@ fun LogsHeader(
     layoutMode: LayoutMode,
     onCalendarModeChange: (CalendarMode) -> Unit,
     onLayoutModeChange: () -> Unit,
+    onToggleSearch: () -> Unit,
     onToggleFilters: () -> Unit,
-    filtersActive: Boolean
+    filtersActive: Boolean,
+    searchActive: Boolean
 ) {
     Row(
         modifier = Modifier
@@ -550,6 +571,13 @@ fun LogsHeader(
         }
 
         Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onToggleSearch) {
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = "Search",
+                    tint = if (searchActive) MaterialTheme.colorScheme.primary else Color.White
+                )
+            }
             IconButton(onClick = onToggleFilters) {
                 Icon(
                     imageVector = Icons.Default.FilterList,
@@ -565,6 +593,46 @@ fun LogsHeader(
                 )
             }
         }
+    }
+}
+
+@Composable
+fun SearchBox(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onClear: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .background(Color(0xFF1E2120), RoundedCornerShape(12.dp))
+            .border(1.dp, Color.Gray.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
+    ) {
+        TextField(
+            value = query,
+            onValueChange = onQueryChange,
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text("Search by ID, title or note...", color = Color.Gray, fontSize = 14.sp) },
+            leadingIcon = { Icon(Icons.Default.Search, null, tint = Color.Gray, modifier = Modifier.size(20.dp)) },
+            trailingIcon = {
+                if (query.isNotBlank()) {
+                    IconButton(onClick = onClear) {
+                        Icon(Icons.Default.Close, null, tint = Color.Gray, modifier = Modifier.size(20.dp))
+                    }
+                }
+            },
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = Color.Transparent,
+                unfocusedContainerColor = Color.Transparent,
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                cursorColor = MaterialTheme.colorScheme.primary
+            ),
+            singleLine = true
+        )
     }
 }
 

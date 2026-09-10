@@ -37,6 +37,9 @@ class LogsViewModel(
     private val _activityTypeFilter = MutableStateFlow<String?>(null)
     val activityTypeFilter: StateFlow<String?> = _activityTypeFilter.asStateFlow()
 
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
     private val _phiFilterActive = MutableStateFlow(false)
     val phiFilterActive: StateFlow<Boolean> = _phiFilterActive.asStateFlow()
 
@@ -66,14 +69,26 @@ class LogsViewModel(
         _selectedDate, 
         _locationFilter, 
         _activityTypeFilter,
+        _searchQuery,
         _phiFilterActive
-    ) { logs, date, location, activityType, phiOnly ->
+    ) { args ->
+        val logs = args[0] as List<JournalLogEntity>
+        val date = args[1] as Long
+        val location = args[2] as String?
+        val activityType = args[3] as String?
+        val query = args[4] as String
+        val phiOnly = args[5] as Boolean
+
         logs.filter { log -> 
             val dateMatch = isSameDay(log.timestamp, date)
             val locationMatch = location == null || assets.value.find { it.id == log.assetId }?.locationNote == location
             val activityMatch = activityType == null || log.activityType == activityType
+            val queryMatch = query.isBlank() || 
+                log.title.contains(query, ignoreCase = true) || 
+                log.note.contains(query, ignoreCase = true) || 
+                log.displayId.contains(query, ignoreCase = true)
             val phiMatch = !phiOnly || isPhiActive(log)
-            dateMatch && locationMatch && activityMatch && phiMatch
+            dateMatch && locationMatch && activityMatch && queryMatch && phiMatch
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -99,6 +114,7 @@ class LogsViewModel(
     fun setSelectedDate(timestamp: Long) { _selectedDate.value = timestamp }
     fun setLocationFilter(location: String?) { _locationFilter.value = location }
     fun setActivityTypeFilter(type: String?) { _activityTypeFilter.value = type }
+    fun setSearchQuery(query: String) { _searchQuery.value = query }
     fun togglePhiFilter() { _phiFilterActive.value = !_phiFilterActive.value }
     fun setShowAddBottomSheet(show: Boolean) { _showAddBottomSheet.value = show }
 
