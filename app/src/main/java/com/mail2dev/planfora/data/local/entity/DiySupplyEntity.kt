@@ -44,6 +44,7 @@ enum class SupplyCategory(val displayName: String) {
     MOLLUSCICIDE("Molluscicides"),
     BACTERICIDE("Bactericides"),
     FERTILIZER("Fertilizer"),
+    DIY("DIY"),
     SUBSTRATE("Substrate"),
     HARDWARE("Hardware"),
     OTHER("Other")

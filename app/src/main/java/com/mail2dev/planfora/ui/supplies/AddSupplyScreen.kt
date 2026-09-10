@@ -217,83 +217,89 @@ fun AddSupplyScreen(
             }
 
             // High-Speed Safety/Stock Fields
+            val isChemical = category.displayName.contains("icide", ignoreCase = true) || category == SupplyCategory.FERTILIZER
+            val isDiy = category == SupplyCategory.DIY
+            val isHardware = category == SupplyCategory.HARDWARE || category == SupplyCategory.SUBSTRATE
+
             PlanForaSurfaceCard(title = "Stock & Safety", isImportant = true) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    var showIngredientSheet by remember { mutableStateOf(false) }
-                    val activeIngredientValue = viewModel.activeIngredient.collectAsState().value
-                    
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(
-                            text = "Active Ingredient",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = SlateTextPrimary.copy(alpha = 0.9f),
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(start = 2.dp)
-                        )
-                        OutlinedTextField(
-                            value = activeIngredientValue,
-                            onValueChange = viewModel::updateActiveIngredient,
-                            modifier = Modifier.fillMaxWidth(),
-                            leadingIcon = { Icon(Icons.Default.Tag, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp)) },
-                            trailingIcon = {
-                                IconButton(onClick = { showIngredientSheet = true }) {
-                                    Icon(Icons.Default.List, contentDescription = "Select A.I.")
-                                }
-                            },
-                            colors = textFieldColors(isImportant = true),
-                            placeholder = { Text("azoxystrobin") }
-                        )
-                    }
-
-                    if (showIngredientSheet) {
-                        val masterIngredients by viewModel.masterIngredients.collectAsState()
-                        StringPickerSheet(
-                            title = "Active Ingredient",
-                            selectedValue = activeIngredientValue,
-                            items = masterIngredients,
-                            onItemSelected = viewModel::updateActiveIngredient,
-                            onItemCreated = viewModel::addMasterIngredient,
-                            onItemRenamed = viewModel::updateMasterIngredient,
-                            onItemDeleted = viewModel::deleteMasterIngredient,
-                            onDismiss = { showIngredientSheet = false },
-                            placeholder = "Search or type chemical...",
-                            addLabel = "Add"
-                        )
-                    }
-
-                    PlanForaFieldGroup(isImportant = true) {
-                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    if (!isDiy && !isHardware) {
+                        var showIngredientSheet by remember { mutableStateOf(false) }
+                        val activeIngredientValue = viewModel.activeIngredient.collectAsState().value
+                        
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(
-                                text = "PHI (Days)",
+                                text = "Active Ingredient",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = SlateTextPrimary.copy(alpha = 0.9f),
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(start = 2.dp)
                             )
                             OutlinedTextField(
-                                value = viewModel.phiDays.collectAsState().value,
-                                onValueChange = viewModel::updatePhiDays,
+                                value = activeIngredientValue,
+                                onValueChange = viewModel::updateActiveIngredient,
                                 modifier = Modifier.fillMaxWidth(),
-                                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
-                                colors = textFieldColors(isImportant = true)
+                                leadingIcon = { Icon(Icons.Default.Tag, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp)) },
+                                trailingIcon = {
+                                    IconButton(onClick = { showIngredientSheet = true }) {
+                                        Icon(Icons.Default.List, contentDescription = "Select A.I.")
+                                    }
+                                },
+                                colors = textFieldColors(isImportant = true),
+                                placeholder = { Text("azoxystrobin") }
                             )
                         }
 
-                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(
-                                text = "REI (Hours)",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = SlateTextPrimary.copy(alpha = 0.9f),
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(start = 2.dp)
+                        if (showIngredientSheet) {
+                            val masterIngredients by viewModel.masterIngredients.collectAsState()
+                            StringPickerSheet(
+                                title = "Active Ingredient",
+                                selectedValue = activeIngredientValue,
+                                items = masterIngredients,
+                                onItemSelected = viewModel::updateActiveIngredient,
+                                onItemCreated = viewModel::addMasterIngredient,
+                                onItemRenamed = viewModel::updateMasterIngredient,
+                                onItemDeleted = viewModel::deleteMasterIngredient,
+                                onDismiss = { showIngredientSheet = false },
+                                placeholder = "Search or type chemical...",
+                                addLabel = "Add"
                             )
-                            OutlinedTextField(
-                                value = viewModel.reiHours.collectAsState().value,
-                                onValueChange = viewModel::updateReiHours,
-                                modifier = Modifier.fillMaxWidth(),
-                                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
-                                colors = textFieldColors(isImportant = true)
-                            )
+                        }
+
+                        PlanForaFieldGroup(isImportant = true) {
+                            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(
+                                    text = "PHI (Days)",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = SlateTextPrimary.copy(alpha = 0.9f),
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(start = 2.dp)
+                                )
+                                OutlinedTextField(
+                                    value = viewModel.phiDays.collectAsState().value,
+                                    onValueChange = viewModel::updatePhiDays,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                                    colors = textFieldColors(isImportant = true)
+                                )
+                            }
+
+                            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(
+                                    text = "REI (Hours)",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = SlateTextPrimary.copy(alpha = 0.9f),
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(start = 2.dp)
+                                )
+                                OutlinedTextField(
+                                    value = viewModel.reiHours.collectAsState().value,
+                                    onValueChange = viewModel::updateReiHours,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                                    colors = textFieldColors(isImportant = true)
+                                )
+                            }
                         }
                     }
 
@@ -348,71 +354,73 @@ fun AddSupplyScreen(
             }
 
             // Product Formulation Row
-            PlanForaSurfaceCard(title = "Product Formulation", isImportant = false) {
-                PlanForaFieldGroup(isImportant = false) {
-                    var showFormTypePicker by remember { mutableStateOf(false) }
-                    Box(modifier = Modifier.weight(1f)) {
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(
-                                text = "Form / Type",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = SlateTextSecondary.copy(alpha = 0.9f),
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(start = 2.dp)
-                            )
-                            OutlinedTextField(
-                                value = formType.displayName,
-                                onValueChange = {},
-                                readOnly = true,
-                                modifier = Modifier.fillMaxWidth(),
-                                trailingIcon = {
-                                    IconButton(onClick = { showFormTypePicker = true }) {
-                                        Icon(Icons.Default.ArrowDropDown, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    }
-                                },
-                                colors = textFieldColors(isImportant = false)
-                            )
-                        }
-                        DropdownMenu(expanded = showFormTypePicker, onDismissRequest = { showFormTypePicker = false }) {
-                            SupplyFormType.entries.forEach { type ->
-                                DropdownMenuItem(text = { Text(type.displayName) }, onClick = { viewModel.updateFormType(type); showFormTypePicker = false })
-                            }
-                        }
-                    }
-
-                    if (category != SupplyCategory.HARDWARE && category != SupplyCategory.SUBSTRATE) {
-                        var showFormulationPicker by remember { mutableStateOf(false) }
+            if (!isHardware) {
+                PlanForaSurfaceCard(title = "Product Formulation", isImportant = false) {
+                    PlanForaFieldGroup(isImportant = false) {
+                        var showFormTypePicker by remember { mutableStateOf(false) }
                         Box(modifier = Modifier.weight(1f)) {
                             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 Text(
-                                    text = "Form. Code",
+                                    text = "Form / Type",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = SlateTextSecondary.copy(alpha = 0.9f),
                                     fontWeight = FontWeight.Bold,
                                     modifier = Modifier.padding(start = 2.dp)
                                 )
                                 OutlinedTextField(
-                                    value = formulationCode ?: "N/A",
+                                    value = formType.displayName,
                                     onValueChange = {},
                                     readOnly = true,
                                     modifier = Modifier.fillMaxWidth(),
                                     trailingIcon = {
-                                        IconButton(onClick = { showFormulationPicker = true }) {
+                                        IconButton(onClick = { showFormTypePicker = true }) {
                                             Icon(Icons.Default.ArrowDropDown, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                         }
                                     },
                                     colors = textFieldColors(isImportant = false)
                                 )
                             }
-                            DropdownMenu(expanded = showFormulationPicker, onDismissRequest = { showFormulationPicker = false }) {
-                                val availableCodes = when (formType) {
-                                    com.mail2dev.planfora.data.local.entity.SupplyFormType.LIQUID -> listOf("SL", "SC", "EC", "Other")
-                                    com.mail2dev.planfora.data.local.entity.SupplyFormType.POWDER -> listOf("WP", "SP", "Other")
-                                    com.mail2dev.planfora.data.local.entity.SupplyFormType.GRANULAR -> listOf("WG", "GR", "Other")
-                                    com.mail2dev.planfora.data.local.entity.SupplyFormType.SOLID -> listOf("Other")
+                            DropdownMenu(expanded = showFormTypePicker, onDismissRequest = { showFormTypePicker = false }) {
+                                SupplyFormType.entries.forEach { type ->
+                                    DropdownMenuItem(text = { Text(type.displayName) }, onClick = { viewModel.updateFormType(type); showFormTypePicker = false })
                                 }
-                                availableCodes.forEach { code ->
-                                    DropdownMenuItem(text = { Text(code) }, onClick = { viewModel.updateFormulationCode(code); showFormulationPicker = false })
+                            }
+                        }
+
+                        if (!isDiy && category != SupplyCategory.OTHER) {
+                            var showFormulationPicker by remember { mutableStateOf(false) }
+                            Box(modifier = Modifier.weight(1f)) {
+                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Text(
+                                        text = "Form. Code",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = SlateTextSecondary.copy(alpha = 0.9f),
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(start = 2.dp)
+                                    )
+                                    OutlinedTextField(
+                                        value = formulationCode ?: "N/A",
+                                        onValueChange = {},
+                                        readOnly = true,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        trailingIcon = {
+                                            IconButton(onClick = { showFormulationPicker = true }) {
+                                                Icon(Icons.Default.ArrowDropDown, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            }
+                                        },
+                                        colors = textFieldColors(isImportant = false)
+                                    )
+                                }
+                                DropdownMenu(expanded = showFormulationPicker, onDismissRequest = { showFormulationPicker = false }) {
+                                    val availableCodes = when (formType) {
+                                        com.mail2dev.planfora.data.local.entity.SupplyFormType.LIQUID -> listOf("SL", "SC", "EC", "Other")
+                                        com.mail2dev.planfora.data.local.entity.SupplyFormType.POWDER -> listOf("WP", "SP", "Other")
+                                        com.mail2dev.planfora.data.local.entity.SupplyFormType.GRANULAR -> listOf("WG", "GR", "Other")
+                                        com.mail2dev.planfora.data.local.entity.SupplyFormType.SOLID -> listOf("Other")
+                                    }
+                                    availableCodes.forEach { code ->
+                                        DropdownMenuItem(text = { Text(code) }, onClick = { viewModel.updateFormulationCode(code); showFormulationPicker = false })
+                                    }
                                 }
                             }
                         }
