@@ -158,35 +158,17 @@ fun AddAssetScreen(
                         value = name,
                         onValueChange = viewModel::updateName,
                         modifier = Modifier.fillMaxWidth(),
-                        colors = textFieldColors(isImportant = true)
-                    )
-                }
-
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                        text = "Total Plants / Population",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = SlateTextSecondary.copy(alpha = 0.9f),
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(start = 2.dp)
-                    )
-                    OutlinedTextField(
-                        value = viewModel.totalPlants.collectAsState().value,
-                        onValueChange = viewModel::updateTotalPlants,
-                        modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("e.g. 500") },
-                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
-                        colors = textFieldColors(isImportant = false),
+                        colors = textFieldColors(isImportant = true),
                         singleLine = true
                     )
                 }
-
                 CategorySelector(selectedCategory, viewModel::updateCategory)
             }
 
-            // Location & Tags
-            PlanForaSurfaceCard(title = "Location & Tags", isImportant = false) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            // Placement & Population
+            PlanForaSurfaceCard(title = "Placement & Population", isImportant = false) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    // Row 1: Location & Block
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         ReadonlyTriggerField(
                             label = "Location",
@@ -214,14 +196,37 @@ fun AddAssetScreen(
                             )
                         }
                     }
-                    ReadonlyTriggerField(
-                        label = "Tags",
-                        value = if (selectedTags.isEmpty()) "Select" else "${selectedTags.size} tags",
-                        icon = Icons.Default.Tag,
-                        onClick = { showTagSheet = true },
-                        modifier = Modifier.fillMaxWidth(),
-                        isImportant = false
-                    )
+
+                    // Row 2: Population & Tags
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(
+                                text = "Population",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = SlateTextSecondary.copy(alpha = 0.9f),
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(start = 2.dp)
+                            )
+                            OutlinedTextField(
+                                value = viewModel.totalPlants.collectAsState().value,
+                                onValueChange = viewModel::updateTotalPlants,
+                                modifier = Modifier.fillMaxWidth(),
+                                placeholder = { Text("e.g. 500") },
+                                leadingIcon = { Icon(Icons.Default.Numbers, null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant) },
+                                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                                colors = textFieldColors(isImportant = false),
+                                singleLine = true
+                            )
+                        }
+                        ReadonlyTriggerField(
+                            label = "Tags",
+                            value = if (selectedTags.isEmpty()) "Select" else "${selectedTags.size} tags",
+                            icon = Icons.Default.Tag,
+                            onClick = { showTagSheet = true },
+                            modifier = Modifier.weight(1f),
+                            isImportant = false
+                        )
+                    }
                 }
             }
 
@@ -248,9 +253,9 @@ fun AddAssetScreen(
                         value = notes,
                         onValueChange = viewModel::updateNotes,
                         placeholder = { Text("Remark for asset or asset detail...") },
-                        modifier = Modifier.fillMaxWidth().height(80.dp),
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 60.dp),
                         colors = textFieldColors(isImportant = false),
-                        maxLines = 3
+                        maxLines = 5
                     )
                 }
             }
