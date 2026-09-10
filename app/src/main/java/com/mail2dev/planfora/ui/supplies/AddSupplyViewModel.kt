@@ -87,7 +87,64 @@ class AddSupplyViewModel(
         .map { list -> list.map { it.name } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun updateName(v: String) { _name.value = v }
+    fun updateName(v: String) { 
+        _name.value = v 
+        
+        // Smart Formulation Detection from Product Name
+        val uppercaseName = v.uppercase()
+        
+        // Check Liquids
+        val liquidCodes = listOf("SL", "SC", "EC")
+        val matchedLiquidCode = liquidCodes.find { uppercaseName.contains(it) || uppercaseName.contains("\\b$it\\b".toRegex()) }
+        val hasLiquidText = uppercaseName.contains("LIQUID") || uppercaseName.contains("FLOWABLE")
+        
+        // Check Powders/Granules/Solids
+        val powderCodes = listOf("WP", "SP")
+        val granularCodes = listOf("WG", "GR")
+        val matchedPowderCode = powderCodes.find { uppercaseName.contains(it) || uppercaseName.contains("\\b$it\\b".toRegex()) }
+        val matchedGranularCode = granularCodes.find { uppercaseName.contains(it) || uppercaseName.contains("\\b$it\\b".toRegex()) }
+        val hasPowderText = uppercaseName.contains("POWDER")
+        val hasGranularText = uppercaseName.contains("GRANULAR")
+        val hasSolidText = uppercaseName.contains("SOLID")
+
+        when {
+            matchedLiquidCode != null -> {
+                _formType.value = com.mail2dev.planfora.data.local.entity.SupplyFormType.LIQUID
+                _formulationCode.value = matchedLiquidCode
+                updateStockUnit("L")
+            }
+            hasLiquidText -> {
+                _formType.value = com.mail2dev.planfora.data.local.entity.SupplyFormType.LIQUID
+                _formulationCode.value = "Other"
+                updateStockUnit("L")
+            }
+            matchedPowderCode != null -> {
+                _formType.value = com.mail2dev.planfora.data.local.entity.SupplyFormType.POWDER
+                _formulationCode.value = matchedPowderCode
+                updateStockUnit("kg")
+            }
+            hasPowderText -> {
+                _formType.value = com.mail2dev.planfora.data.local.entity.SupplyFormType.POWDER
+                _formulationCode.value = "Other"
+                updateStockUnit("kg")
+            }
+            matchedGranularCode != null -> {
+                _formType.value = com.mail2dev.planfora.data.local.entity.SupplyFormType.GRANULAR
+                _formulationCode.value = matchedGranularCode
+                updateStockUnit("kg")
+            }
+            hasGranularText -> {
+                _formType.value = com.mail2dev.planfora.data.local.entity.SupplyFormType.GRANULAR
+                _formulationCode.value = "Other"
+                updateStockUnit("kg")
+            }
+            hasSolidText -> {
+                _formType.value = com.mail2dev.planfora.data.local.entity.SupplyFormType.SOLID
+                _formulationCode.value = "Other"
+                updateStockUnit("kg")
+            }
+        }
+    }
     fun updateCategory(v: SupplyCategory) { _category.value = v }
     fun updateFormType(v: com.mail2dev.planfora.data.local.entity.SupplyFormType) { 
         _formType.value = v 

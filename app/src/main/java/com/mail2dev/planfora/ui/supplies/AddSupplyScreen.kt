@@ -242,7 +242,7 @@ fun AddSupplyScreen(
                                 }
                             },
                             colors = textFieldColors(isImportant = true),
-                            placeholder = { Text("e.g. Neem Oil") }
+                            placeholder = { Text("azoxystrobin") }
                         )
                     }
 
@@ -433,7 +433,7 @@ fun AddSupplyScreen(
                 OutlinedTextField(
                     value = notes,
                     onValueChange = viewModel::updateNotes,
-                    placeholder = { Text("e.g. 1 capful = 10mL, Store in cool dark place") },
+                    placeholder = { Text("e.g. \"2mL/L or 5g/10L\"") },
                     modifier = Modifier.fillMaxWidth().height(80.dp),
                     colors = textFieldColors(isImportant = false),
                     maxLines = 3
@@ -595,9 +595,9 @@ fun OptionalSupplyPalette(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             val presets = when (category) {
-                SupplyCategory.FERTILIZER -> listOf(OptionalSupplyField.NPK, OptionalSupplyField.DILUTION)
+                SupplyCategory.FERTILIZER -> listOf(OptionalSupplyField.NPK)
                 SupplyCategory.OTHER -> emptyList()
-                else -> listOf(OptionalSupplyField.TARGET_PESTS, OptionalSupplyField.REI, OptionalSupplyField.DILUTION)
+                else -> listOf(OptionalSupplyField.TARGET_PESTS)
             }
 
             presets.forEach { field ->
