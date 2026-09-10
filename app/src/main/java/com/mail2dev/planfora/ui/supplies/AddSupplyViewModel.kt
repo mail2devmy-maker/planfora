@@ -99,14 +99,20 @@ class AddSupplyViewModel(
         
         // Check Liquids
         val liquidCodes = listOf("SL", "SC", "EC")
-        val matchedLiquidCode = liquidCodes.find { uppercaseName.contains(it) || uppercaseName.contains("\\b$it\\b".toRegex()) }
+        val matchedLiquidCode = liquidCodes.find { code ->
+            uppercaseName.contains(code) || uppercaseName.contains("\\b$code\\b".toRegex()) || uppercaseName.contains("[0-9]$code".toRegex())
+        }
         val hasLiquidText = uppercaseName.contains("LIQUID") || uppercaseName.contains("FLOWABLE")
         
         // Check Powders/Granules/Solids
         val powderCodes = listOf("WP", "SP")
         val granularCodes = listOf("WG", "GR")
-        val matchedPowderCode = powderCodes.find { uppercaseName.contains(it) || uppercaseName.contains("\\b$it\\b".toRegex()) }
-        val matchedGranularCode = granularCodes.find { uppercaseName.contains(it) || uppercaseName.contains("\\b$it\\b".toRegex()) }
+        val matchedPowderCode = powderCodes.find { code ->
+            uppercaseName.contains(code) || uppercaseName.contains("\\b$code\\b".toRegex()) || uppercaseName.contains("[0-9]$code".toRegex())
+        }
+        val matchedGranularCode = granularCodes.find { code ->
+            uppercaseName.contains(code) || uppercaseName.contains("\\b$code\\b".toRegex()) || uppercaseName.contains("[0-9]$code".toRegex())
+        }
         val hasPowderText = uppercaseName.contains("POWDER")
         val hasGranularText = uppercaseName.contains("GRANULAR")
         val hasSolidText = uppercaseName.contains("SOLID")
@@ -115,37 +121,37 @@ class AddSupplyViewModel(
             matchedLiquidCode != null -> {
                 _formType.value = com.mail2dev.planfora.data.local.entity.SupplyFormType.LIQUID
                 _formulationCode.value = matchedLiquidCode
-                updateStockUnit("L")
+                _stockUnit.value = "L"
             }
             hasLiquidText -> {
                 _formType.value = com.mail2dev.planfora.data.local.entity.SupplyFormType.LIQUID
                 _formulationCode.value = "Other"
-                updateStockUnit("L")
+                _stockUnit.value = "L"
             }
             matchedPowderCode != null -> {
                 _formType.value = com.mail2dev.planfora.data.local.entity.SupplyFormType.POWDER
                 _formulationCode.value = matchedPowderCode
-                updateStockUnit("kg")
+                _stockUnit.value = "kg"
             }
             hasPowderText -> {
                 _formType.value = com.mail2dev.planfora.data.local.entity.SupplyFormType.POWDER
                 _formulationCode.value = "Other"
-                updateStockUnit("kg")
+                _stockUnit.value = "kg"
             }
             matchedGranularCode != null -> {
                 _formType.value = com.mail2dev.planfora.data.local.entity.SupplyFormType.GRANULAR
                 _formulationCode.value = matchedGranularCode
-                updateStockUnit("kg")
+                _stockUnit.value = "kg"
             }
             hasGranularText -> {
                 _formType.value = com.mail2dev.planfora.data.local.entity.SupplyFormType.GRANULAR
                 _formulationCode.value = "Other"
-                updateStockUnit("kg")
+                _stockUnit.value = "kg"
             }
             hasSolidText -> {
                 _formType.value = com.mail2dev.planfora.data.local.entity.SupplyFormType.SOLID
                 _formulationCode.value = "Other"
-                updateStockUnit("kg")
+                _stockUnit.value = "kg"
             }
         }
     }
