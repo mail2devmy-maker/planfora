@@ -65,7 +65,6 @@ fun AddSupplyScreen(
     val location by viewModel.location.collectAsState()
     val selectedTags by viewModel.selectedTags.collectAsState()
     val imageUris by viewModel.imageUris.collectAsState()
-    val visibleOptionalFields by viewModel.visibleOptionalFields.collectAsState()
     val customFieldDefinitions by viewModel.customFieldDefinitions.collectAsState()
     val customFieldValues by viewModel.customFieldValues.collectAsState()
     val editingSupplyId by viewModel.editingSupplyId.collectAsState()
@@ -449,16 +448,28 @@ fun AddSupplyScreen(
                 onAudioRemove = { viewModel.setAudioPath(null) }
             )
 
-            // Optional Field Palette & Custom Field Creator
-            OptionalSupplyPalette(
-                category = category,
-                visibleFields = visibleOptionalFields,
-                onToggleField = viewModel::toggleOptionalField,
-                onAddCustomField = { showCustomFieldDialog = true }
-            )
+            // Metrics Section (Unified Optional Fields)
+            PlanForaSurfaceCard(title = "Metrics", isImportant = false) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    AssistChip(
+                        onClick = { showCustomFieldDialog = true },
+                        label = { Text("Optional Fields", fontSize = 11.sp) },
+                        leadingIcon = { Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp)) },
+                        colors = AssistChipDefaults.assistChipColors(
+                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+                        ),
+                        border = BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.3f))
+                    )
+                }
 
-            // Dynamic Custom Fields Renderer
-            DynamicSupplyFieldRenderer(viewModel, visibleOptionalFields, customFieldDefinitions, customFieldValues)
+                DynamicSupplyFieldRenderer(viewModel, customFieldDefinitions, customFieldValues)
+            }
 
             Button(
                 onClick = {
@@ -577,69 +588,10 @@ fun ReadonlyTriggerField(label: String, value: String, icon: ImageVector, onClic
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-fun OptionalSupplyPalette(
-    category: SupplyCategory,
-    visibleFields: Set<OptionalSupplyField>,
-    onToggleField: (OptionalSupplyField) -> Unit,
-    onAddCustomField: () -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text("Optional Fields", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.SemiBold)
-        
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            val presets = when (category) {
-                SupplyCategory.FERTILIZER -> listOf(OptionalSupplyField.NPK)
-                SupplyCategory.OTHER -> emptyList()
-                else -> listOf(OptionalSupplyField.TARGET_PESTS)
-            }
-
-            presets.forEach { field ->
-                val isVisible = visibleFields.contains(field)
-                FilterChip(
-                    selected = isVisible,
-                    onClick = { onToggleField(field) },
-                    label = { Text("+ ${field.displayName}", fontSize = 11.sp) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primary,
-                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
-                        labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                    ),
-                    border = FilterChipDefaults.filterChipBorder(
-                        enabled = true,
-                        selected = isVisible,
-                        borderColor = Color.Gray.copy(alpha = 0.2f),
-                        selectedBorderColor = Color.Transparent
-                    )
-                )
-            }
-
-            AssistChip(
-                onClick = onAddCustomField,
-                label = { Text("Custom", fontSize = 11.sp) },
-                leadingIcon = { Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp)) },
-                colors = AssistChipDefaults.assistChipColors(
-                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
-                ),
-                border = BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.3f))
-            )
-        }
-    }
-}
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DynamicSupplyFieldRenderer(
     viewModel: AddSupplyViewModel,
-    visibleFields: Set<OptionalSupplyField>,
     customFields: List<com.mail2dev.planfora.data.local.entity.CustomFieldDefinitionEntity>,
     customValues: Map<Long, String>
 ) {
@@ -647,33 +599,41 @@ fun DynamicSupplyFieldRenderer(
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        visibleFields.forEach { field ->
-            MementoLedgerRow(
-                label = field.displayName,
-                onRemove = { viewModel.toggleOptionalField(field) }
-            ) {
-                SimpleTextFieldCompact("") {}
-            }
-        }
-
         customFields.forEach { def ->
-            MementoLedgerRow(
-                label = def.fieldName,
-                onRemove = { viewModel.archiveCustomFieldDefinition(def.id) },
-                modifier = Modifier.combinedClickable(
+            Surface(
+                color = Color(0xFF1E2120),
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, Color.Gray.copy(alpha = 0.1f)),
+                modifier = Modifier.fillMaxWidth().combinedClickable(
                     onClick = {},
                     onLongClick = {
-                        haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         fieldToManage = def
                     }
                 )
             ) {
-                Box(modifier = Modifier.weight(2f)) {
-                    DynamicCustomFieldInput(
-                        definition = def,
-                        value = customValues[def.id] ?: "",
-                        onValueChange = { viewModel.updateCustomFieldValue(def.id, it) }
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Text(
+                        text = def.fieldName,
+                        modifier = Modifier.weight(1f),
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
                     )
+                    Box(modifier = Modifier.weight(2f)) {
+                        DynamicCustomFieldInput(
+                            definition = def,
+                            value = customValues[def.id] ?: "",
+                            onValueChange = { viewModel.updateCustomFieldValue(def.id, it) }
+                        )
+                    }
+                    IconButton(onClick = { viewModel.archiveCustomFieldDefinition(def.id) }, modifier = Modifier.size(32.dp)) {
+                        Icon(Icons.Default.Close, null, tint = Color.Gray, modifier = Modifier.size(20.dp))
+                    }
                 }
             }
         }
@@ -720,7 +680,7 @@ fun MementoLedgerRow(
             )
             content()
             IconButton(onClick = onRemove, modifier = Modifier.size(32.dp)) {
-                Icon(Icons.Default.Close, null, tint = Color.Gray, modifier = Modifier.size(16.dp))
+                Icon(Icons.Default.Close, null, tint = Color.Gray, modifier = Modifier.size(20.dp))
             }
         }
     }
