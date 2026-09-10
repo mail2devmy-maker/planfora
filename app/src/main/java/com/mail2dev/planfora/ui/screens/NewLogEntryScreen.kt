@@ -41,6 +41,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.res.painterResource
 import coil.compose.AsyncImage
 import com.mail2dev.planfora.data.local.entity.DiySupplyEntity
 import com.mail2dev.planfora.data.local.entity.JournalLogEntity
@@ -59,6 +60,7 @@ import com.mail2dev.planfora.ui.components.TagPickerSheet
 import com.mail2dev.planfora.ui.components.planForaTextFieldColors
 import com.mail2dev.planfora.data.local.entity.FieldTargetType
 import com.mail2dev.planfora.ui.logs.LogsViewModel
+import com.mail2dev.planfora.ui.theme.*
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import java.io.File
@@ -499,11 +501,22 @@ fun NewLogEntryScreen(
                     ) {
                         selectedAssetIds.forEach { id ->
                             val asset = assets.find { it.id == id }
-                            val category = AssetCategory.entries.find { it.displayName == asset?.category }
+                            val category = AssetCategory.fromDatabase(asset?.category)
                             AssistChip(
                                 onClick = { /* Could remove individual if desired */ },
                                 label = { Text(asset?.name ?: "Unknown") },
-                                leadingIcon = { Text(category?.icon ?: "🌿") },
+                                leadingIcon = { 
+                                    if (category?.iconRes != null) {
+                                        Icon(
+                                            painter = painterResource(id = category.iconRes),
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp),
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                    } else {
+                                        Text(category?.icon ?: "🌿") 
+                                    }
+                                },
                                 trailingIcon = {
                                     if (parentLogId == null) {
                                         IconButton(onClick = { selectedAssetIds = selectedAssetIds - id }, modifier = Modifier.size(16.dp)) {
@@ -563,16 +576,24 @@ fun NewLogEntryScreen(
                 }
                 if (showCustomActivityInput) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = customActivity,
-                        onValueChange = { customActivity = it },
-                        placeholder = { Text("Specify Activity") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        maxLines = 1,
-                        shape = RoundedCornerShape(8.dp),
-                        colors = planForaTextFieldColors(isImportant = true)
-                    )
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            text = "Specify Activity",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = SlateTextPrimary.copy(alpha = 0.9f),
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(start = 2.dp)
+                        )
+                        OutlinedTextField(
+                            value = customActivity,
+                            onValueChange = { customActivity = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            maxLines = 1,
+                            shape = RoundedCornerShape(8.dp),
+                            colors = planForaTextFieldColors(isImportant = true)
+                        )
+                    }
                 }
             }
 
@@ -636,27 +657,35 @@ fun NewLogEntryScreen(
             }
 
             // 4. Observation Notes
-            OutlinedTextField(
-                value = note,
-                onValueChange = { note = it },
-                label = { Text("Observation Notes") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 120.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f),
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.LightGray,
-                    cursorColor = MaterialTheme.colorScheme.primary,
-                    focusedLabelColor = MaterialTheme.colorScheme.primary,
-                    unfocusedLabelColor = Color.Gray
-                ),
-                placeholder = { Text("Describe your observations...", color = Color.Gray.copy(alpha = 0.6f), fontSize = 14.sp) }
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = "Observation Notes",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = SlateTextSecondary.copy(alpha = 0.9f),
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 2.dp)
+                )
+                OutlinedTextField(
+                    value = note,
+                    onValueChange = { note = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 120.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f),
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.LightGray,
+                        cursorColor = MaterialTheme.colorScheme.primary,
+                        focusedLabelColor = MaterialTheme.colorScheme.primary,
+                        unfocusedLabelColor = Color.Gray
+                    ),
+                    placeholder = { Text("Describe your observations...", color = Color.Gray.copy(alpha = 0.6f), fontSize = 14.sp) }
+                )
+            }
 
             // 5. Streamlined Attachments & Tags
             PlanForaSurfaceCard(title = "Attachments & Metadata", isImportant = false) {
@@ -1007,6 +1036,13 @@ fun TreatmentDetailsCard(
         }
 
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                text = "Product / Input",
+                style = MaterialTheme.typography.labelSmall,
+                color = SlateTextPrimary.copy(alpha = 0.9f),
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(start = 2.dp)
+            )
             OutlinedTextField(
                 value = selectedSupply?.batchCode ?: customInputName.ifBlank { "Select Product" },
                 onValueChange = {},
@@ -1087,8 +1123,14 @@ fun TreatmentDetailsCard(
         }
 
         PlanForaFieldGroup(isImportant = true) {
-            OutlinedTextField(value = dosageAmount, onValueChange = onDosageAmountChange, label = { Text("Amount") }, modifier = Modifier.weight(1f), singleLine = true, colors = planForaTextFieldColors(isImportant = true))
-            OutlinedTextField(value = dosageRatio, onValueChange = onDosageRatioChange, label = { Text("Unit/Ratio") }, modifier = Modifier.weight(1.5f), singleLine = true, colors = planForaTextFieldColors(isImportant = true))
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(text = "Amount", style = MaterialTheme.typography.labelSmall, color = SlateTextPrimary.copy(alpha = 0.9f), fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 2.dp))
+                OutlinedTextField(value = dosageAmount, onValueChange = onDosageAmountChange, modifier = Modifier.fillMaxWidth(), singleLine = true, colors = planForaTextFieldColors(isImportant = true))
+            }
+            Column(modifier = Modifier.weight(1.5f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(text = "Unit/Ratio", style = MaterialTheme.typography.labelSmall, color = SlateTextPrimary.copy(alpha = 0.9f), fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 2.dp))
+                OutlinedTextField(value = dosageRatio, onValueChange = onDosageRatioChange, modifier = Modifier.fillMaxWidth(), singleLine = true, colors = planForaTextFieldColors(isImportant = true))
+            }
         }
     }
 }
@@ -1107,8 +1149,14 @@ fun RepottingCard(substrateMix: String, potSize: String, onSubstrateChange: (Str
             focusedLabelColor = MaterialTheme.colorScheme.primary,
             unfocusedLabelColor = Color.Gray
         )
-        OutlinedTextField(value = substrateMix, onValueChange = onSubstrateChange, label = { Text("Substrate Mix") }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("e.g. Coco/Perlite 70/30") }, colors = fieldColors)
-        OutlinedTextField(value = potSize, onValueChange = onPotSizeChange, label = { Text("Pot Size / Bed ID") }, modifier = Modifier.fillMaxWidth(), colors = fieldColors)
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(text = "Substrate Mix", style = MaterialTheme.typography.labelSmall, color = SlateTextSecondary.copy(alpha = 0.9f), fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 2.dp))
+            OutlinedTextField(value = substrateMix, onValueChange = onSubstrateChange, modifier = Modifier.fillMaxWidth(), placeholder = { Text("e.g. Coco/Perlite 70/30") }, colors = fieldColors)
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(text = "Pot Size / Bed ID", style = MaterialTheme.typography.labelSmall, color = SlateTextSecondary.copy(alpha = 0.9f), fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 2.dp))
+            OutlinedTextField(value = potSize, onValueChange = onPotSizeChange, modifier = Modifier.fillMaxWidth(), colors = fieldColors)
+        }
     }
 }
 
@@ -1148,30 +1196,41 @@ fun WeedingCard(
         if (weedingMethod == "Chemical") {
             val selectedSupply = supplies.find { it.id == selectedSupplyId }
             
-            OutlinedTextField(
-                value = selectedSupply?.batchCode ?: "Select Herbicide",
-                onValueChange = {},
-                readOnly = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onSupplyClick() },
-                enabled = false,
-                leadingIcon = { Icon(Icons.Default.Science, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp)) },
-                trailingIcon = { Icon(Icons.Default.ArrowDropDown, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
-                colors = planForaTextFieldColors(isImportant = true)
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = "Herbicide / Product",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = SlateTextPrimary.copy(alpha = 0.9f),
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 2.dp)
+                )
+                OutlinedTextField(
+                    value = selectedSupply?.batchCode ?: "Select Herbicide",
+                    onValueChange = {},
+                    readOnly = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onSupplyClick() },
+                    enabled = false,
+                    leadingIcon = { Icon(Icons.Default.Science, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp)) },
+                    trailingIcon = { Icon(Icons.Default.ArrowDropDown, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
+                    colors = planForaTextFieldColors(isImportant = true)
+                )
+            }
 
             if (selectedSupply != null) {
                 PlanForaFieldGroup(isImportant = true) {
-                    OutlinedTextField(
-                        value = usedQty,
-                        onValueChange = onQtyChange,
-                        label = { Text("Used Quantity") },
-                        modifier = Modifier.weight(1f),
-                        suffix = { Text(selectedSupply.stockUnit ?: "") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        colors = planForaTextFieldColors(isImportant = true)
-                    )
+                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(text = "Used Quantity", style = MaterialTheme.typography.labelSmall, color = SlateTextPrimary.copy(alpha = 0.9f), fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 2.dp))
+                        OutlinedTextField(
+                            value = usedQty,
+                            onValueChange = onQtyChange,
+                            modifier = Modifier.fillMaxWidth(),
+                            suffix = { Text(selectedSupply.stockUnit ?: "") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            colors = planForaTextFieldColors(isImportant = true)
+                        )
+                    }
                     
                     Column(modifier = Modifier.weight(1f)) {
                         Text("Current Stock", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
@@ -1321,7 +1380,21 @@ fun AssetPickerBottomSheet(
                     FilterChip(
                         selected = selectedCategory == cat,
                         onClick = { selectedCategory = cat },
-                        label = { Text("${cat.icon} ${cat.displayName}", fontSize = 11.sp) },
+                        label = { 
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (cat.iconRes != null) {
+                                    Icon(
+                                        painter = painterResource(id = cat.iconRes),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp).padding(end = 4.dp),
+                                        tint = if (selectedCategory == cat) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary
+                                    )
+                                } else {
+                                    Text(cat.icon, modifier = Modifier.padding(end = 4.dp))
+                                }
+                                Text(cat.displayName, fontSize = 11.sp)
+                            }
+                        },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.primary,
                             selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
@@ -1389,7 +1462,7 @@ fun AssetPickerBottomSheet(
                     }
                 }
                 items(filteredAssets) { asset ->
-                    val catIcon = AssetCategory.entries.find { it.displayName == asset.category }?.icon ?: "🌿"
+                    val category = AssetCategory.fromDatabase(asset.category)
                     Surface(
                         onClick = { onAssetSelected(asset.id) },
                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f),
@@ -1398,7 +1471,18 @@ fun AssetPickerBottomSheet(
                         border = BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.1f))
                     ) {
                         Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Box(modifier = Modifier.size(44.dp).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f), CircleShape), contentAlignment = Alignment.Center) { Text(catIcon, fontSize = 20.sp) }
+                            Box(modifier = Modifier.size(44.dp).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f), CircleShape), contentAlignment = Alignment.Center) { 
+                                if (category?.iconRes != null) {
+                                    Icon(
+                                        painter = painterResource(id = category.iconRes),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(24.dp),
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                } else {
+                                    Text(category?.icon ?: "🌿", fontSize = 20.sp)
+                                }
+                            }
                             Spacer(modifier = Modifier.width(16.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(asset.name, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)

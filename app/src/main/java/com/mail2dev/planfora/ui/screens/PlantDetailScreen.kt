@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.res.painterResource
 import com.mail2dev.planfora.data.local.entity.JournalLogEntity
 import com.mail2dev.planfora.data.local.entity.PlantAssetEntity
 import com.mail2dev.planfora.ui.assets.AssetCategory
@@ -46,7 +47,7 @@ fun PlantDetailScreen(
     val showEditSheet by assetsViewModel.showAddBottomSheet.collectAsState()
     
     val customFieldValues by logsViewModel.getCustomFieldValues(plantId).collectAsState(emptyList())
-    val customFieldDefinitions by logsViewModel.getCustomFieldDefinitions(com.mail2dev.planfora.data.local.entity.FieldTargetType.ASSET_CATEGORY, AssetCategory.entries.find { it.displayName == assets.find { a -> a.id == plantId }?.category }?.displayName ?: "").collectAsState(emptyList())
+    val customFieldDefinitions by logsViewModel.getCustomFieldDefinitions(com.mail2dev.planfora.data.local.entity.FieldTargetType.ASSET_CATEGORY, AssetCategory.fromDatabase(assets.find { a -> a.id == plantId }?.category).displayName).collectAsState(emptyList())
 
     val plant = assets.find { it.id == plantId }
     val plantLogs = allLogs.filter { it.assetId == plantId }.sortedByDescending { it.timestamp }
@@ -272,7 +273,16 @@ fun PlantDetailScreen(
                                 modifier = Modifier.padding(12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(category.icon, fontSize = 20.sp)
+                                if (category.iconRes != null) {
+                                    Icon(
+                                        painter = painterResource(id = category.iconRes),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(20.dp),
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                } else {
+                                    Text(category.icon, fontSize = 20.sp)
+                                }
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Text(category.displayName, color = Color.White, fontWeight = FontWeight.Medium)
                             }
@@ -295,7 +305,7 @@ fun AssetPassportHeader(
     customFieldValues: List<com.mail2dev.planfora.data.local.entity.CustomFieldValueEntity> = emptyList(),
     customFieldDefinitions: List<com.mail2dev.planfora.data.local.entity.CustomFieldDefinitionEntity> = emptyList()
 ) {
-    val category = AssetCategory.entries.find { it.displayName == plant.category } ?: AssetCategory.TREE
+    val category = AssetCategory.fromDatabase(plant.category)
     
     Card(
         colors = CardDefaults.cardColors(containerColor = Color(0xFF1E2120)),
@@ -309,7 +319,16 @@ fun AssetPassportHeader(
                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text(category.icon, fontSize = 28.sp, modifier = Modifier.padding(8.dp))
+                    if (category.iconRes != null) {
+                        Icon(
+                            painter = painterResource(id = category.iconRes),
+                            contentDescription = null,
+                            modifier = Modifier.size(32.dp).padding(8.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    } else {
+                        Text(category.icon, fontSize = 28.sp, modifier = Modifier.padding(8.dp))
+                    }
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 Column {
@@ -457,7 +476,7 @@ fun YieldComplianceCard(
 
 @Composable
 fun MetadataGrid(plant: PlantAssetEntity) {
-    val category = AssetCategory.entries.find { it.displayName == plant.category } ?: AssetCategory.TREE
+    val category = AssetCategory.fromDatabase(plant.category)
     
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         when (category) {
@@ -484,7 +503,7 @@ fun MetadataGrid(plant: PlantAssetEntity) {
                     MetadataItem(Icons.Default.CalendarToday, "Planted Date", plantedDateStr, Modifier.weight(1f))
                 }
             }
-            AssetCategory.CROP_OR_VEGGIE -> {
+            AssetCategory.CROP -> {
                 Row(modifier = Modifier.fillMaxWidth()) {
                     MetadataItem(Icons.Default.GridOn, "Plot / Row ID", plant.tags.split(",").find { it.startsWith("Plot:") }?.substringAfter(":") ?: "N/A", Modifier.weight(1f))
                     MetadataItem(Icons.Default.Event, "Exp. Harvest", plant.tags.split(",").find { it.startsWith("ExpHarv:") }?.substringAfter(":") ?: "N/A", Modifier.weight(1f))

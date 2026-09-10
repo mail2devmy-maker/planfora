@@ -22,6 +22,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
+import androidx.compose.ui.res.painterResource
 import com.mail2dev.planfora.data.local.entity.JournalLogEntity
 import com.mail2dev.planfora.data.local.entity.PlantAssetEntity
 import com.mail2dev.planfora.ui.assets.AddAssetScreen
@@ -250,6 +251,13 @@ fun CategoryFilters(
                                 tint = Color(0xFFFFD54F),
                                 modifier = Modifier.size(16.dp).padding(end = 4.dp)
                             )
+                        } else if (category.iconRes != null) {
+                            Icon(
+                                painter = painterResource(id = category.iconRes),
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp).padding(end = 4.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
                         } else if (category.icon.isNotBlank()) {
                             Text(category.icon, modifier = Modifier.padding(end = 4.dp))
                         }
@@ -283,7 +291,7 @@ fun AssetCard(
     onClick: () -> Unit,
     onLongClick: () -> Unit
 ) {
-    val category = AssetCategory.entries.find { it.displayName == asset.category } ?: AssetCategory.TREE
+    val category = AssetCategory.fromDatabase(asset.category)
     
     val activePhiLog = logs.find { log ->
         val phiExpiry = log.parameters.split("|").find { it.startsWith("phi_expiry:") }?.substringAfter("phi_expiry:")?.toLongOrNull() ?: 0L
@@ -341,7 +349,16 @@ fun AssetCard(
                             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
                             shape = RoundedCornerShape(8.dp)
                         ) {
-                            Text(category.icon, fontSize = 20.sp, modifier = Modifier.padding(6.dp))
+                            if (category.iconRes != null) {
+                                Icon(
+                                    painter = painterResource(id = category.iconRes),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(32.dp).padding(6.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            } else {
+                                Text(category.icon, fontSize = 20.sp, modifier = Modifier.padding(6.dp))
+                            }
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                     }

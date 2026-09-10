@@ -151,13 +151,21 @@ fun AddSupplyScreen(
             }
 
             // Core Name Field
-            OutlinedTextField(
-                value = name,
-                onValueChange = viewModel::updateName,
-                label = { Text("Product Name") },
-                modifier = Modifier.fillMaxWidth(),
-                colors = textFieldColors(isImportant = true)
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = "Product Name",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = SlateTextPrimary.copy(alpha = 0.9f),
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 2.dp)
+                )
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = viewModel::updateName,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = textFieldColors(isImportant = true)
+                )
+            }
 
             // Primary Identification & Storage
             PlanForaSurfaceCard(title = "Identification & Storage", isImportant = true) {
@@ -215,20 +223,28 @@ fun AddSupplyScreen(
                     var showIngredientSheet by remember { mutableStateOf(false) }
                     val activeIngredientValue = viewModel.activeIngredient.collectAsState().value
                     
-                    OutlinedTextField(
-                        value = activeIngredientValue,
-                        onValueChange = viewModel::updateActiveIngredient,
-                        label = { Text("Active Ingredient") },
-                        modifier = Modifier.fillMaxWidth(),
-                        leadingIcon = { Icon(Icons.Default.Tag, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp)) },
-                        trailingIcon = {
-                            IconButton(onClick = { showIngredientSheet = true }) {
-                                Icon(Icons.Default.List, contentDescription = "Select A.I.")
-                            }
-                        },
-                        colors = textFieldColors(isImportant = true),
-                        placeholder = { Text("e.g. Neem Oil") }
-                    )
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            text = "Active Ingredient",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = SlateTextPrimary.copy(alpha = 0.9f),
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(start = 2.dp)
+                        )
+                        OutlinedTextField(
+                            value = activeIngredientValue,
+                            onValueChange = viewModel::updateActiveIngredient,
+                            modifier = Modifier.fillMaxWidth(),
+                            leadingIcon = { Icon(Icons.Default.Tag, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp)) },
+                            trailingIcon = {
+                                IconButton(onClick = { showIngredientSheet = true }) {
+                                    Icon(Icons.Default.List, contentDescription = "Select A.I.")
+                                }
+                            },
+                            colors = textFieldColors(isImportant = true),
+                            placeholder = { Text("e.g. Neem Oil") }
+                        )
+                    }
 
                     if (showIngredientSheet) {
                         val masterIngredients by viewModel.masterIngredients.collectAsState()
@@ -247,49 +263,81 @@ fun AddSupplyScreen(
                     }
 
                     PlanForaFieldGroup(isImportant = true) {
-                        OutlinedTextField(
-                            value = viewModel.phiDays.collectAsState().value,
-                            onValueChange = viewModel::updatePhiDays,
-                            label = { Text("PHI (Days)") },
-                            modifier = Modifier.weight(1f),
-                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
-                            colors = textFieldColors(isImportant = true)
-                        )
+                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(
+                                text = "PHI (Days)",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = SlateTextPrimary.copy(alpha = 0.9f),
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(start = 2.dp)
+                            )
+                            OutlinedTextField(
+                                value = viewModel.phiDays.collectAsState().value,
+                                onValueChange = viewModel::updatePhiDays,
+                                modifier = Modifier.fillMaxWidth(),
+                                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                                colors = textFieldColors(isImportant = true)
+                            )
+                        }
 
-                        OutlinedTextField(
-                            value = viewModel.reiHours.collectAsState().value,
-                            onValueChange = viewModel::updateReiHours,
-                            label = { Text("REI (Hours)") },
-                            modifier = Modifier.weight(1f),
-                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
-                            colors = textFieldColors(isImportant = true)
-                        )
+                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(
+                                text = "REI (Hours)",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = SlateTextPrimary.copy(alpha = 0.9f),
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(start = 2.dp)
+                            )
+                            OutlinedTextField(
+                                value = viewModel.reiHours.collectAsState().value,
+                                onValueChange = viewModel::updateReiHours,
+                                modifier = Modifier.fillMaxWidth(),
+                                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                                colors = textFieldColors(isImportant = true)
+                            )
+                        }
                     }
 
                     PlanForaFieldGroup(isImportant = true) {
-                        OutlinedTextField(
-                            value = viewModel.stockQuantity.collectAsState().value,
-                            onValueChange = viewModel::updateStockQuantity,
-                            label = { Text("Stock Amount") },
-                            modifier = Modifier.weight(1f),
-                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
-                            colors = textFieldColors(isImportant = true)
-                        )
-                        var showUnitPicker by remember { mutableStateOf(false) }
-                        Box(modifier = Modifier.weight(1f)) {
+                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(
+                                text = "Stock Amount",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = SlateTextPrimary.copy(alpha = 0.9f),
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(start = 2.dp)
+                            )
                             OutlinedTextField(
-                                value = viewModel.stockUnit.collectAsState().value,
-                                onValueChange = {},
-                                readOnly = true,
-                                label = { Text("Unit") },
+                                value = viewModel.stockQuantity.collectAsState().value,
+                                onValueChange = viewModel::updateStockQuantity,
                                 modifier = Modifier.fillMaxWidth(),
-                                trailingIcon = {
-                                    IconButton(onClick = { showUnitPicker = true }) {
-                                        Icon(Icons.Default.ArrowDropDown, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    }
-                                },
+                                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
                                 colors = textFieldColors(isImportant = true)
                             )
+                        }
+                        var showUnitPicker by remember { mutableStateOf(false) }
+                        Box(modifier = Modifier.weight(1f)) {
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(
+                                    text = "Unit",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = SlateTextPrimary.copy(alpha = 0.9f),
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(start = 2.dp)
+                                )
+                                OutlinedTextField(
+                                    value = viewModel.stockUnit.collectAsState().value,
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    trailingIcon = {
+                                        IconButton(onClick = { showUnitPicker = true }) {
+                                            Icon(Icons.Default.ArrowDropDown, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        }
+                                    },
+                                    colors = textFieldColors(isImportant = true)
+                                )
+                            }
                             DropdownMenu(expanded = showUnitPicker, onDismissRequest = { showUnitPicker = false }) {
                                 listOf("L", "mL", "kg", "g", "units", "bottles").forEach { unit ->
                                     DropdownMenuItem(text = { Text(unit) }, onClick = { viewModel.updateStockUnit(unit); showUnitPicker = false })
@@ -305,19 +353,27 @@ fun AddSupplyScreen(
                 PlanForaFieldGroup(isImportant = false) {
                     var showFormTypePicker by remember { mutableStateOf(false) }
                     Box(modifier = Modifier.weight(1f)) {
-                        OutlinedTextField(
-                            value = formType.displayName,
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text("Form / Type") },
-                            modifier = Modifier.fillMaxWidth(),
-                            trailingIcon = {
-                                IconButton(onClick = { showFormTypePicker = true }) {
-                                    Icon(Icons.Default.ArrowDropDown, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                                }
-                            },
-                            colors = textFieldColors(isImportant = false)
-                        )
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(
+                                text = "Form / Type",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = SlateTextSecondary.copy(alpha = 0.9f),
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(start = 2.dp)
+                            )
+                            OutlinedTextField(
+                                value = formType.displayName,
+                                onValueChange = {},
+                                readOnly = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                trailingIcon = {
+                                    IconButton(onClick = { showFormTypePicker = true }) {
+                                        Icon(Icons.Default.ArrowDropDown, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                },
+                                colors = textFieldColors(isImportant = false)
+                            )
+                        }
                         DropdownMenu(expanded = showFormTypePicker, onDismissRequest = { showFormTypePicker = false }) {
                             SupplyFormType.entries.forEach { type ->
                                 DropdownMenuItem(text = { Text(type.displayName) }, onClick = { viewModel.updateFormType(type); showFormTypePicker = false })
@@ -328,19 +384,27 @@ fun AddSupplyScreen(
                     if (category != SupplyCategory.HARDWARE && category != SupplyCategory.SUBSTRATE) {
                         var showFormulationPicker by remember { mutableStateOf(false) }
                         Box(modifier = Modifier.weight(1f)) {
-                            OutlinedTextField(
-                                value = formulationCode ?: "N/A",
-                                onValueChange = {},
-                                readOnly = true,
-                                label = { Text("Form. Code") },
-                                modifier = Modifier.fillMaxWidth(),
-                                trailingIcon = {
-                                    IconButton(onClick = { showFormulationPicker = true }) {
-                                        Icon(Icons.Default.ArrowDropDown, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    }
-                                },
-                                colors = textFieldColors(isImportant = false)
-                            )
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(
+                                    text = "Form. Code",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = SlateTextSecondary.copy(alpha = 0.9f),
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(start = 2.dp)
+                                )
+                                OutlinedTextField(
+                                    value = formulationCode ?: "N/A",
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    trailingIcon = {
+                                        IconButton(onClick = { showFormulationPicker = true }) {
+                                            Icon(Icons.Default.ArrowDropDown, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        }
+                                    },
+                                    colors = textFieldColors(isImportant = false)
+                                )
+                            }
                             DropdownMenu(expanded = showFormulationPicker, onDismissRequest = { showFormulationPicker = false }) {
                                 val availableCodes = when (formType) {
                                     com.mail2dev.planfora.data.local.entity.SupplyFormType.LIQUID -> listOf("SL", "SC", "EC", "Other")
@@ -358,15 +422,23 @@ fun AddSupplyScreen(
             }
 
             // Permanent Notes
-            OutlinedTextField(
-                value = notes,
-                onValueChange = viewModel::updateNotes,
-                label = { Text("Instructions / Notes") },
-                placeholder = { Text("e.g. 1 capful = 10mL, Store in cool dark place") },
-                modifier = Modifier.fillMaxWidth().height(80.dp),
-                colors = textFieldColors(isImportant = false),
-                maxLines = 3
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = "Instructions / Notes",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = SlateTextSecondary.copy(alpha = 0.9f),
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 2.dp)
+                )
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = viewModel::updateNotes,
+                    placeholder = { Text("e.g. 1 capful = 10mL, Store in cool dark place") },
+                    modifier = Modifier.fillMaxWidth().height(80.dp),
+                    colors = textFieldColors(isImportant = false),
+                    maxLines = 3
+                )
+            }
 
             MediaAttachmentStrip(
                 imageUris = imageUris,
@@ -453,61 +525,54 @@ fun ReadonlyTriggerField(label: String, value: String, icon: ImageVector, onClic
     val borderColor = if (isImportant) MandatoryBorder else OptionalBorder
     val labelColor = if (isImportant) SlateTextPrimary else SlateTextSecondary
 
-    Box(
-        modifier = modifier
-            .height(56.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color.Transparent)
-            .border(1.dp, borderColor, RoundedCornerShape(8.dp))
-            .clickable { onClick() }
-    ) {
-        // Label (Simulating OutlinedTextField label)
-        Surface(
-            color = if (isImportant) MandatoryFill else OptionalFill,
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = labelColor.copy(alpha = 0.9f),
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(start = 2.dp)
+        )
+        Box(
             modifier = Modifier
-                .padding(start = 8.dp)
-                .offset(y = (-8).dp)
-                .align(Alignment.TopStart)
+                .fillMaxWidth()
+                .height(52.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color.Transparent)
+                .border(1.dp, borderColor.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                .clickable { onClick() }
         ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall,
-                color = labelColor.copy(alpha = 0.8f),
-                modifier = Modifier.padding(horizontal = 4.dp),
-                fontSize = 10.sp
-            )
-        }
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
+                )
 
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(18.dp)
-            )
+                Spacer(modifier = Modifier.width(12.dp))
 
-            Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = value,
+                    color = if (value == "Select") Color.Gray else Color.White,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
 
-            Text(
-                text = value,
-                color = if (value == "Select") Color.Gray else Color.White,
-                style = MaterialTheme.typography.bodyMedium,
-                maxLines = 1,
-                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f)
-            )
-
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = Color.Gray.copy(alpha = 0.5f),
-                modifier = Modifier.size(16.dp)
-            )
+                Icon(
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    tint = Color.Gray.copy(alpha = 0.5f),
+                    modifier = Modifier.size(16.dp)
+                )
+            }
         }
     }
 }
@@ -676,13 +741,22 @@ fun RowScope.SimpleTextFieldCompact(value: String, onValueChange: (String) -> Un
 
 @Composable
 fun SimpleTextField(label: String, value: String, onValueChange: (String) -> Unit, isImportant: Boolean = true) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label) },
-        modifier = Modifier.fillMaxWidth(),
-        colors = textFieldColors(isImportant = isImportant)
-    )
+    val labelColor = if (isImportant) SlateTextPrimary else SlateTextSecondary
+    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = labelColor.copy(alpha = 0.9f),
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(start = 2.dp)
+        )
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = Modifier.fillMaxWidth(),
+            colors = textFieldColors(isImportant = isImportant)
+        )
+    }
 }
 
 @Composable

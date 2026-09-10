@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.painterResource
 import coil.compose.AsyncImage
 import com.mail2dev.planfora.ui.components.CreateCustomFieldDialog
 import com.mail2dev.planfora.ui.components.DynamicCustomFieldInput
@@ -153,13 +154,21 @@ fun AddAssetScreen(
 
             // Asset Identity
             PlanForaSurfaceCard(title = "Asset Identity", isImportant = true) {
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = viewModel::updateName,
-                    label = { Text("Asset Name / Variety") },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = textFieldColors(isImportant = true)
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = "Asset Name / Variety",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = SlateTextPrimary.copy(alpha = 0.9f),
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(start = 2.dp)
+                    )
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = viewModel::updateName,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = textFieldColors(isImportant = true)
+                    )
+                }
                 CategorySelector(selectedCategory, viewModel::updateCategory)
             }
 
@@ -203,15 +212,23 @@ fun AddAssetScreen(
                     onAudioRemove = { viewModel.setAudioPath(null) }
                 )
 
-                OutlinedTextField(
-                    value = notes,
-                    onValueChange = viewModel::updateNotes,
-                    label = { Text("Asset Notes") },
-                    placeholder = { Text("Quick observation or asset details...") },
-                    modifier = Modifier.fillMaxWidth().height(80.dp),
-                    colors = textFieldColors(isImportant = false),
-                    maxLines = 3
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = "Asset Notes",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = SlateTextSecondary.copy(alpha = 0.9f),
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(start = 2.dp)
+                    )
+                    OutlinedTextField(
+                        value = notes,
+                        onValueChange = viewModel::updateNotes,
+                        placeholder = { Text("Quick observation or asset details...") },
+                        modifier = Modifier.fillMaxWidth().height(80.dp),
+                        colors = textFieldColors(isImportant = false),
+                        maxLines = 3
+                    )
+                }
             }
 
             // Optional Field Palette
@@ -300,7 +317,7 @@ fun CategoryCoreFields(category: AssetCategory, viewModel: AddAssetViewModel) {
             AssetCategory.TREE -> {
                 SimpleTextField("Physical ID / Tree #", viewModel.physicalId.collectAsState().value, viewModel::updatePhysicalId)
             }
-            AssetCategory.CROP_OR_VEGGIE -> {
+            AssetCategory.CROP -> {
                 SimpleTextField("Plot / Field ID", viewModel.plotRowId.collectAsState().value, viewModel::updatePlotRowId)
                 SimpleTextField("Logical Zones / Rows (e.g. Row 1, Row 2)", viewModel.zones.collectAsState().value, viewModel::updateZones)
                 DatePickerField("Expected Harvest Date", viewModel.expectedHarvestDate.collectAsState().value, viewModel::updateExpectedHarvestDate)
@@ -339,7 +356,16 @@ fun LivePreviewCard(name: String, category: AssetCategory, location: String, tag
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(category.icon, fontSize = 24.sp)
+                if (category.iconRes != null) {
+                    Icon(
+                        painter = painterResource(id = category.iconRes),
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                } else {
+                    Text(category.icon, fontSize = 24.sp)
+                }
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Text(
@@ -377,12 +403,26 @@ fun CategorySelector(selected: AssetCategory, onSelect: (AssetCategory) -> Unit)
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            AssetCategory.entries.filter { it != AssetCategory.ALL }.forEach { cat ->
-                FilterChip(
-                    selected = selected == cat,
-                    onClick = { onSelect(cat) },
-                    label = { Text("${cat.icon} ${cat.displayName}") },
-                    colors = FilterChipDefaults.filterChipColors(
+                AssetCategory.entries.filter { it != AssetCategory.ALL }.forEach { cat ->
+                    FilterChip(
+                        selected = selected == cat,
+                        onClick = { onSelect(cat) },
+                        label = { 
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (cat.iconRes != null) {
+                                    Icon(
+                                        painter = painterResource(id = cat.iconRes),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp).padding(end = 4.dp),
+                                        tint = if (selected == cat) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary
+                                    )
+                                } else {
+                                    Text(cat.icon, modifier = Modifier.padding(end = 4.dp))
+                                }
+                                Text(cat.displayName)
+                            }
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = MaterialTheme.colorScheme.primary,
                         selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
                         containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
@@ -405,61 +445,54 @@ fun ReadonlyTriggerField(label: String, value: String, icon: ImageVector, onClic
     val borderColor = if (isImportant) MandatoryBorder else OptionalBorder
     val labelColor = if (isImportant) SlateTextPrimary else SlateTextSecondary
 
-    Box(
-        modifier = modifier
-            .height(56.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color.Transparent)
-            .border(1.dp, borderColor, RoundedCornerShape(8.dp))
-            .clickable { onClick() }
-    ) {
-        // Label
-        Surface(
-            color = if (isImportant) MandatoryFill else OptionalFill,
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = labelColor.copy(alpha = 0.9f),
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(start = 2.dp)
+        )
+        Box(
             modifier = Modifier
-                .padding(start = 8.dp)
-                .offset(y = (-8).dp)
-                .align(Alignment.TopStart)
+                .fillMaxWidth()
+                .height(52.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color.Transparent)
+                .border(1.dp, borderColor.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                .clickable { onClick() }
         ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall,
-                color = labelColor.copy(alpha = 0.8f),
-                modifier = Modifier.padding(horizontal = 4.dp),
-                fontSize = 10.sp
-            )
-        }
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
+                )
 
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(18.dp)
-            )
+                Spacer(modifier = Modifier.width(12.dp))
 
-            Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = value,
+                    color = if (value == "Select" || value == "Select") Color.Gray else Color.White,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
 
-            Text(
-                text = value,
-                color = if (value == "Select") Color.Gray else Color.White,
-                style = MaterialTheme.typography.bodyMedium,
-                maxLines = 1,
-                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f)
-            )
-
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = Color.Gray.copy(alpha = 0.5f),
-                modifier = Modifier.size(16.dp)
-            )
+                Icon(
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    tint = Color.Gray.copy(alpha = 0.5f),
+                    modifier = Modifier.size(16.dp)
+                )
+            }
         }
     }
 }
@@ -522,7 +555,7 @@ private fun isRelevant(field: OptionalField, category: AssetCategory): Boolean {
         AssetCategory.SEEDLING -> field != OptionalField.MOTHER_PLANT_LINK && field != OptionalField.PHYSICAL_ID && field != OptionalField.ROOTSTOCK && field != OptionalField.BATCH_TRAY_ID && field != OptionalField.QUANTITY && field != OptionalField.PLOT_ROW_ID && field != OptionalField.EXPECTED_HARVEST_DATE && field != OptionalField.PROPAGATED_DATE
         AssetCategory.CUTTING -> field != OptionalField.PHYSICAL_ID && field != OptionalField.ROOTSTOCK && field != OptionalField.MOTHER_PLANT_LINK && field != OptionalField.PROPAGATED_DATE && field != OptionalField.BATCH_TRAY_ID && field != OptionalField.QUANTITY && field != OptionalField.PLOT_ROW_ID && field != OptionalField.EXPECTED_HARVEST_DATE
         AssetCategory.TREE -> field != OptionalField.BATCH_TRAY_ID && field != OptionalField.QUANTITY && field != OptionalField.PLOT_ROW_ID && field != OptionalField.EXPECTED_HARVEST_DATE && field != OptionalField.PHYSICAL_ID && field != OptionalField.MOTHER_PLANT_LINK && field != OptionalField.PROPAGATED_DATE
-        AssetCategory.CROP_OR_VEGGIE -> field != OptionalField.MOTHER_PLANT_LINK && field != OptionalField.ROOTSTOCK && field != OptionalField.PHYSICAL_ID && field != OptionalField.PLOT_ROW_ID && field != OptionalField.EXPECTED_HARVEST_DATE && field != OptionalField.BATCH_TRAY_ID && field != OptionalField.QUANTITY && field != OptionalField.PROPAGATED_DATE
+        AssetCategory.CROP -> field != OptionalField.MOTHER_PLANT_LINK && field != OptionalField.ROOTSTOCK && field != OptionalField.PHYSICAL_ID && field != OptionalField.PLOT_ROW_ID && field != OptionalField.EXPECTED_HARVEST_DATE && field != OptionalField.BATCH_TRAY_ID && field != OptionalField.QUANTITY && field != OptionalField.PROPAGATED_DATE
         else -> true
     }
 }
@@ -704,18 +737,28 @@ fun MementoLedgerRow(
 
 @Composable
 fun SimpleTextField(label: String, value: String, onValueChange: (String) -> Unit, isImportant: Boolean = true) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label) },
-        modifier = Modifier.fillMaxWidth(),
-        colors = textFieldColors(isImportant = isImportant)
-    )
+    val labelColor = if (isImportant) SlateTextPrimary else SlateTextSecondary
+    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = labelColor.copy(alpha = 0.9f),
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(start = 2.dp)
+        )
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = Modifier.fillMaxWidth(),
+            colors = textFieldColors(isImportant = isImportant)
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DatePickerField(label: String, value: Long?, onDateSelected: (Long?) -> Unit, isImportant: Boolean = true) {
+    val labelColor = if (isImportant) SlateTextPrimary else SlateTextSecondary
     var showPicker by remember { mutableStateOf(false) }
     val configuration = androidx.compose.ui.platform.LocalConfiguration.current
     val locale = configuration.locales[0]
@@ -723,20 +766,29 @@ fun DatePickerField(label: String, value: Long?, onDateSelected: (Long?) -> Unit
         if (value != null) SimpleDateFormat("MMM dd, yyyy", locale).format(Date(value)) else ""
     }
     
-    OutlinedTextField(
-        value = dateDisplay,
-        onValueChange = {},
-        readOnly = true,
-        label = { Text(label) },
-        modifier = Modifier.fillMaxWidth(),
-        trailingIcon = {
-            IconButton(onClick = { showPicker = true }) {
-                Icon(Icons.Default.CalendarToday, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        },
-        colors = textFieldColors(isImportant = isImportant)
-    )
+    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = labelColor.copy(alpha = 0.9f),
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(start = 2.dp)
+        )
+        OutlinedTextField(
+            value = dateDisplay,
+            onValueChange = {},
+            readOnly = true,
+            modifier = Modifier.fillMaxWidth(),
+            trailingIcon = {
+                IconButton(onClick = { showPicker = true }) {
+                    Icon(Icons.Default.CalendarToday, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            },
+            colors = textFieldColors(isImportant = isImportant)
+        )
+    }
     if (showPicker) {
+        // ... (rest of DatePickerField logic)
         val datePickerState = rememberDatePickerState(initialSelectedDateMillis = value ?: System.currentTimeMillis())
         DatePickerDialog(
             onDismissRequest = { showPicker = false },

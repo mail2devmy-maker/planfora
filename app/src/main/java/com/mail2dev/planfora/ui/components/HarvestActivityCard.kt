@@ -89,14 +89,22 @@ fun HarvestActivityCard(
 
         if (availableZones.isEmpty()) {
             // Default fallback if no zones defined
-            OutlinedTextField(
-                value = rowYields["Total"] ?: "",
-                onValueChange = { onRowYieldChange("Total", it) },
-                label = { Text("Total Yield") },
-                modifier = Modifier.fillMaxWidth(),
-                suffix = { Text(yieldUnit) },
-                colors = planForaTextFieldColors(isImportant = isImportant)
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = "Total Yield",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = (if (isImportant) SlateTextPrimary else SlateTextSecondary).copy(alpha = 0.9f),
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 2.dp)
+                )
+                OutlinedTextField(
+                    value = rowYields["Total"] ?: "",
+                    onValueChange = { onRowYieldChange("Total", it) },
+                    modifier = Modifier.fillMaxWidth(),
+                    suffix = { Text(yieldUnit) },
+                    colors = planForaTextFieldColors(isImportant = isImportant)
+                )
+            }
         } else {
             val zonesToRender = if (selectedHarvestZones.isEmpty()) emptyList() else selectedHarvestZones.toList().sorted()
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

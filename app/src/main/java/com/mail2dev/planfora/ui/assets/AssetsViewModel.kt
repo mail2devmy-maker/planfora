@@ -7,12 +7,26 @@ import com.mail2dev.planfora.data.repository.JournalRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
-enum class AssetCategory(val displayName: String, val description: String = "", val icon: String = "") {
+import com.mail2dev.planfora.R
+
+enum class AssetCategory(val displayName: String, val description: String = "", val icon: String = "", val iconRes: Int? = null) {
     ALL("All", "", "📁"),
     TREE("Tree", "For old orchard trees, mature perennials", "🌳"),
-    CROP_OR_VEGGIE("Crop/Veggie", "For short-term produce, vegetable beds, row crops", "🌽"),
+    CROP("Crop", "For short-term produce, vegetable beds, row crops", "", R.drawable.grass_24),
     SEEDLING("Seedling", "For seeds, germination trays, young nursery stock", "🌱"),
-    CUTTING("Cutting", "For marcots, air layers, clones, stem pieces", "✂️")
+    CUTTING("Cutting", "For marcots, air layers, clones, stem pieces", "✂️");
+
+    companion object {
+        fun fromDatabase(name: String?): AssetCategory {
+            return when (name) {
+                "Crop/Veggie", "Crop" -> CROP
+                "Tree" -> TREE
+                "Seedling" -> SEEDLING
+                "Cutting" -> CUTTING
+                else -> TREE
+            }
+        }
+    }
 }
 
 class AssetsViewModel(private val repository: JournalRepository) : ViewModel() {
@@ -34,7 +48,7 @@ class AssetsViewModel(private val repository: JournalRepository) : ViewModel() {
 
     val assets: StateFlow<List<PlantAssetEntity>> = repository.getAllAssets()
         .combine(_selectedCategory) { assets, category ->
-            if (category == AssetCategory.ALL) assets else assets.filter { it.category == category.displayName }
+            if (category == AssetCategory.ALL) assets else assets.filter { AssetCategory.fromDatabase(it.category) == category }
         }
         .combine(_searchQuery) { assets, query ->
             if (query.isBlank()) assets else {
