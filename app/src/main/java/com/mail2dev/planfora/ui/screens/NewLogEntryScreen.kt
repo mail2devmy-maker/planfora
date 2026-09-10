@@ -731,7 +731,7 @@ fun NewLogEntryScreen(
 
                 // Unified Dynamic Custom Fields
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Optional Field".uppercase(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold)
+                    Text("Metrics".uppercase(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold)
                     
                     Row(
                         modifier = Modifier
@@ -741,7 +741,7 @@ fun NewLogEntryScreen(
                     ) {
                         AssistChip(
                             onClick = { showCustomFieldDialog = true },
-                            label = { Text("Add Metric", fontSize = 11.sp) },
+                            label = { Text("Optional Fields", fontSize = 11.sp) },
                             leadingIcon = { Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp)) },
                             colors = AssistChipDefaults.assistChipColors(
                                 labelColor = MaterialTheme.colorScheme.onSurfaceVariant,

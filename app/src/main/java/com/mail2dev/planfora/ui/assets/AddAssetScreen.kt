@@ -217,7 +217,7 @@ fun AddAssetScreen(
             }
 
             // Optional Field Section (EAV style)
-            PlanForaSurfaceCard(title = "Optional Fields", isImportant = false) {
+            PlanForaSurfaceCard(title = "Metrics", isImportant = false) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
