@@ -116,6 +116,7 @@ fun NewLogEntryScreen(
     var activityType by remember { mutableStateOf("Observation") }
     var customActivity by remember { mutableStateOf("") }
     var showCustomActivityInput by remember { mutableStateOf(false) }
+    var isActivityTypeExpanded by remember { mutableStateOf(editingLogId == null) }
     
     var tags by remember { mutableStateOf(setOf<String>()) }
     var parameters by remember { mutableStateOf(mutableMapOf<String, String>()) }
@@ -562,37 +563,83 @@ fun NewLogEntryScreen(
             }
 
             // 2. Activity Type Section
-            PlanForaSurfaceCard(title = "Activity Type", isImportant = true) {
-                androidx.compose.foundation.layout.FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    activityTypes.forEach { type ->
-                        FilterChip(
-                            selected = activityType == type,
-                            onClick = { 
-                                activityType = type
-                                showCustomActivityInput = type == "Other"
-                            },
-                            label = { Text(type, style = MaterialTheme.typography.bodySmall) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                                labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
-                            ),
-                            border = FilterChipDefaults.filterChipBorder(
-                                enabled = true,
+            PlanForaSurfaceCard(
+                title = "Activity Type", 
+                isImportant = true
+            ) {
+                if (isActivityTypeExpanded) {
+                    androidx.compose.foundation.layout.FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        activityTypes.forEach { type ->
+                            FilterChip(
                                 selected = activityType == type,
-                                borderColor = Color.Gray.copy(alpha = 0.2f),
-                                selectedBorderColor = Color.Transparent
-                            ),
-                            shape = RoundedCornerShape(8.dp)
+                                onClick = { 
+                                    activityType = type
+                                    showCustomActivityInput = type == "Other"
+                                    isActivityTypeExpanded = false
+                                },
+                                label = { Text(type, style = MaterialTheme.typography.bodySmall) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                    labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+                                ),
+                                border = FilterChipDefaults.filterChipBorder(
+                                    enabled = true,
+                                    selected = activityType == type,
+                                    borderColor = Color.Gray.copy(alpha = 0.2f),
+                                    selectedBorderColor = Color.Transparent
+                                ),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                        }
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { isActivityTypeExpanded = true },
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                            shape = RoundedCornerShape(8.dp),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "[$prefix] ",
+                                    color = MaterialTheme.colorScheme.primary,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = if (activityType == "Other" && customActivity.isNotBlank()) customActivity else activityType,
+                                    color = Color.White,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                        
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Change Activity",
+                            tint = Color.Gray.copy(alpha = 0.6f),
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }
-                if (showCustomActivityInput) {
+
+                if (showCustomActivityInput && isActivityTypeExpanded) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(
