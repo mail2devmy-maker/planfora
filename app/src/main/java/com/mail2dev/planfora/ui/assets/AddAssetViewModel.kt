@@ -27,6 +27,9 @@ class AddAssetViewModel(private val repository: JournalRepository) : ViewModel()
     private val _location = MutableStateFlow("")
     val location = _location.asStateFlow()
 
+    private val _subLocation = MutableStateFlow("")
+    val subLocation = _subLocation.asStateFlow()
+
     private val _selectedTags = MutableStateFlow(setOf<String>())
     val selectedTags = _selectedTags.asStateFlow()
 
@@ -77,6 +80,7 @@ class AddAssetViewModel(private val repository: JournalRepository) : ViewModel()
     fun updateNotes(newNotes: String) { _notes.value = newNotes }
     fun updateCategory(category: AssetCategory) { _selectedCategory.value = category }
     fun updateLocation(newLocation: String) { _location.value = newLocation }
+    fun updateSubLocation(v: String) { _subLocation.value = v }
     
     fun toggleTag(tag: String) {
         _selectedTags.update { tags ->
@@ -175,6 +179,7 @@ class AddAssetViewModel(private val repository: JournalRepository) : ViewModel()
                 lastActionDate = System.currentTimeMillis(),
                 tags = combinedTags.joinToString(","),
                 locationNote = _location.value,
+                subLocation = _subLocation.value,
                 acquisitionDate = _acquisitionDate.value,
                 notes = _notes.value,
                 zones = _zones.value,
@@ -206,6 +211,7 @@ class AddAssetViewModel(private val repository: JournalRepository) : ViewModel()
                 _name.value = asset.name
                 _selectedCategory.value = AssetCategory.entries.find { it.displayName == asset.category } ?: AssetCategory.TREE
                 _location.value = asset.locationNote
+                _subLocation.value = asset.subLocation
                 _notes.value = asset.notes
                 _zones.value = asset.zones
                 _plantedDate.value = if ((asset.plantedDate ?: 0L) > 0L) asset.plantedDate else null
@@ -229,6 +235,7 @@ class AddAssetViewModel(private val repository: JournalRepository) : ViewModel()
         _name.value = ""
         _notes.value = ""
         _location.value = ""
+        _subLocation.value = ""
         _selectedTags.value = emptySet()
         _plantedDate.value = null
         _acquisitionDate.value = null

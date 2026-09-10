@@ -68,8 +68,13 @@ class AssetsViewModel(private val repository: JournalRepository) : ViewModel() {
     val allLogs: StateFlow<List<com.mail2dev.planfora.data.local.entity.JournalLogEntity>> = repository.getAllLogs()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val groupedAssets: StateFlow<Map<String, List<PlantAssetEntity>>> = assets
-        .map { list -> list.groupBy { it.locationNote.ifBlank { "Unassigned" } } }
+    val hierarchicalAssets: StateFlow<Map<String, Map<String, List<PlantAssetEntity>>>> = assets
+        .map { list -> 
+            list.groupBy { it.locationNote.ifBlank { "Unassigned" } }
+                .mapValues { entry -> 
+                    entry.value.groupBy { it.subLocation.ifBlank { "General Zone" } }
+                }
+        }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
     fun setCategory(category: AssetCategory) {

@@ -166,21 +166,40 @@ fun AddAssetScreen(
 
             // Location & Tags
             PlanForaSurfaceCard(title = "Location & Tags", isImportant = false) {
-                PlanForaFieldGroup(isImportant = false) {
-                    ReadonlyTriggerField(
-                        label = "Location",
-                        value = location.ifBlank { "Select" },
-                        icon = Icons.Default.LocationOn,
-                        onClick = { showLocationSheet = true },
-                        modifier = Modifier.weight(1f),
-                        isImportant = false
-                    )
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ReadonlyTriggerField(
+                            label = "Location",
+                            value = location.ifBlank { "Select" },
+                            icon = Icons.Default.LocationOn,
+                            onClick = { showLocationSheet = true },
+                            modifier = Modifier.weight(1f),
+                            isImportant = false
+                        )
+                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(
+                                text = "Block / Zone",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = SlateTextSecondary.copy(alpha = 0.9f),
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(start = 2.dp)
+                            )
+                            OutlinedTextField(
+                                value = viewModel.subLocation.collectAsState().value,
+                                onValueChange = viewModel::updateSubLocation,
+                                modifier = Modifier.fillMaxWidth(),
+                                placeholder = { Text("e.g. Block A") },
+                                colors = textFieldColors(isImportant = false),
+                                singleLine = true
+                            )
+                        }
+                    }
                     ReadonlyTriggerField(
                         label = "Tags",
                         value = if (selectedTags.isEmpty()) "Select" else "${selectedTags.size} tags",
                         icon = Icons.Default.Tag,
                         onClick = { showTagSheet = true },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.fillMaxWidth(),
                         isImportant = false
                     )
                 }

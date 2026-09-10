@@ -39,13 +39,15 @@ fun AssetsScreen(
     viewModel: AssetsViewModel,
     addAssetViewModel: AddAssetViewModel
 ) {
-    val groupedAssets by viewModel.groupedAssets.collectAsState()
+    val hierarchicalAssets by viewModel.hierarchicalAssets.collectAsState()
     val allLogs by viewModel.allLogs.collectAsState()
     val selectedCategory by viewModel.selectedCategory.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val showAddSheet by viewModel.showAddBottomSheet.collectAsState()
     val isMultiSelectMode by viewModel.isMultiSelectMode.collectAsState()
     val selectedAssetIds by viewModel.selectedAssetIds.collectAsState()
+
+    var collapsedBlocks by remember { mutableStateOf(setOf<String>()) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -127,10 +129,10 @@ fun AssetsScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
                 contentPadding = PaddingValues(bottom = if (isMultiSelectMode) 100.dp else 80.dp)
             ) {
-                if (groupedAssets.isEmpty()) {
+                if (hierarchicalAssets.isEmpty()) {
                     item {
                         Box(
                             modifier = Modifier
@@ -161,29 +163,62 @@ fun AssetsScreen(
                     }
                 }
 
-                groupedAssets.forEach { (location, assets) ->
+                hierarchicalAssets.forEach { (location, blocks) ->
                     item {
-                        LocationHeader(
-                            location = location,
-                            onSelectAll = { viewModel.selectAllInZone(assets) }
-                        )
+                        LocationHeader(location = location)
                     }
-                    items(assets) { plantAsset ->
-                        val assetLogs = allLogs.filter { it.assetId == plantAsset.id }
-                        AssetCard(
-                            asset = plantAsset,
-                            logs = assetLogs,
-                            isSelected = selectedAssetIds.contains(plantAsset.id),
-                            isMultiSelectMode = isMultiSelectMode,
-                            onLongClick = { viewModel.toggleAssetSelection(plantAsset.id) },
-                            onClick = {
-                                if (isMultiSelectMode) {
-                                    viewModel.toggleAssetSelection(plantAsset.id)
-                                } else {
-                                    navController.navigate(Screen.PlantDetail.createRoute(plantAsset.id))
+                    
+                    blocks.forEach { (blockName, assets) ->
+                        val blockKey = "$location-$blockName"
+                        val isCollapsed = collapsedBlocks.contains(blockKey)
+
+                        item {
+                            BlockHeader(
+                                blockName = blockName,
+                                assetCount = assets.size,
+                                isCollapsed = isCollapsed,
+                                onCollapseToggle = {
+                                    collapsedBlocks = if (isCollapsed) collapsedBlocks - blockKey else collapsedBlocks + blockKey
+                                },
+                                onSelectAll = { viewModel.selectAllInZone(assets) }
+                            )
+                        }
+
+                        if (!isCollapsed) {
+                            items(assets) { plantAsset ->
+                                Row(
+                                    modifier = Modifier
+                                        .padding(start = 12.dp)
+                                        .height(IntrinsicSize.Min)
+                                ) {
+                                    // Hierarchy Line (SageGreen)
+                                    Box(
+                                        modifier = Modifier
+                                            .width(2.dp)
+                                            .fillMaxHeight()
+                                            .background(com.mail2dev.planfora.ui.theme.SageGreen.copy(alpha = 0.3f))
+                                    )
+                                    
+                                    val assetLogs = allLogs.filter { it.assetId == plantAsset.id }
+                                    Box(modifier = Modifier.padding(start = 12.dp, bottom = 4.dp)) {
+                                        AssetCard(
+                                            asset = plantAsset,
+                                            logs = assetLogs,
+                                            isSelected = selectedAssetIds.contains(plantAsset.id),
+                                            isMultiSelectMode = isMultiSelectMode,
+                                            onLongClick = { viewModel.toggleAssetSelection(plantAsset.id) },
+                                            onClick = {
+                                                if (isMultiSelectMode) {
+                                                    viewModel.toggleAssetSelection(plantAsset.id)
+                                                } else {
+                                                    navController.navigate(Screen.PlantDetail.createRoute(plantAsset.id))
+                                                }
+                                            }
+                                        )
+                                    }
                                 }
                             }
-                        )
+                        }
                     }
                 }
             }
@@ -199,29 +234,77 @@ fun AssetsScreen(
 }
 
 @Composable
-fun LocationHeader(location: String, onSelectAll: () -> Unit) {
+fun LocationHeader(location: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 8.dp),
+            .padding(top = 12.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
             Icons.Rounded.LocationOn, 
             contentDescription = null, 
-            tint = Color.White, 
-            modifier = Modifier.size(16.dp)
+            tint = Color.White.copy(alpha = 0.6f), 
+            modifier = Modifier.size(14.dp)
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(
-            text = location,
-            style = MaterialTheme.typography.labelLarge,
-            color = Color.White,
+            text = location.uppercase(),
+            style = MaterialTheme.typography.labelSmall,
+            color = Color.White.copy(alpha = 0.6f),
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.weight(1f)
+            letterSpacing = 1.sp
         )
-        TextButton(onClick = onSelectAll) {
-            Text("Select Zone", color = MaterialTheme.colorScheme.primary, fontSize = 12.sp)
+    }
+}
+
+@Composable
+fun BlockHeader(
+    blockName: String, 
+    assetCount: Int, 
+    isCollapsed: Boolean,
+    onCollapseToggle: () -> Unit,
+    onSelectAll: () -> Unit
+) {
+    Surface(
+        color = Color.White.copy(alpha = 0.05f),
+        shape = RoundedCornerShape(8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onCollapseToggle() }
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = if (isCollapsed) Icons.Rounded.ChevronRight else Icons.Rounded.ExpandMore,
+                contentDescription = null,
+                tint = com.mail2dev.planfora.ui.theme.SageGreen,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = blockName,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "$assetCount units inside",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.Gray
+                )
+            }
+            TextButton(
+                onClick = { 
+                    onSelectAll()
+                },
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+            ) {
+                Text("Select Block", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            }
         }
     }
 }
