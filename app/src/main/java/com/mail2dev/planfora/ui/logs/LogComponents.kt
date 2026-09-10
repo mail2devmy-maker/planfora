@@ -422,20 +422,78 @@ fun FollowUpLogCard(
 }
 
 @Composable
+fun CompactActivityThread(
+    parentLog: JournalLogEntity,
+    followUps: List<JournalLogEntity>,
+    assetName: String,
+    use24Hour: Boolean,
+    onDeleteLog: (JournalLogEntity) -> Unit,
+    onEditLog: (JournalLogEntity) -> Unit,
+    onClick: (JournalLogEntity) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFF1E2120), RoundedCornerShape(12.dp))
+            .padding(4.dp)
+    ) {
+        CompactLogItem(
+            log = parentLog,
+            assetName = assetName,
+            use24Hour = use24Hour,
+            onDeleteClick = { onDeleteLog(parentLog) },
+            onEditClick = { onEditLog(parentLog) },
+            onClick = { onClick(parentLog) },
+            elevation = 0.dp,
+            backgroundColor = Color.Transparent
+        )
+
+        followUps.forEach { childLog ->
+            Row(
+                modifier = Modifier
+                    .padding(start = 24.dp)
+                    .height(IntrinsicSize.Min)
+            ) {
+                // Visual Connector for List View
+                Box(
+                    modifier = Modifier
+                        .width(1.5.dp)
+                        .fillMaxHeight()
+                        .background(SageGreen.copy(alpha = 0.2f))
+                )
+                
+                CompactLogItem(
+                    log = childLog,
+                    assetName = "↳ Follow-up",
+                    use24Hour = use24Hour,
+                    onDeleteClick = { onDeleteLog(childLog) },
+                    onEditClick = { onEditLog(childLog) },
+                    onClick = { onClick(childLog) },
+                    elevation = 0.dp,
+                    backgroundColor = Color.Transparent
+                )
+            }
+        }
+    }
+}
+
+@Composable
 fun CompactLogItem(
     log: JournalLogEntity, 
     assetName: String, 
     use24Hour: Boolean,
     onDeleteClick: (() -> Unit)? = null,
     onEditClick: (() -> Unit)? = null,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
+    elevation: androidx.compose.ui.unit.Dp = 0.dp,
+    backgroundColor: Color = Color(0xFF1E2120)
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color(0xFF1E2120), RoundedCornerShape(8.dp))
+            .background(backgroundColor, RoundedCornerShape(8.dp))
             .clickable { onClick() }
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically

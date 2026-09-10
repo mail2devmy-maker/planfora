@@ -220,24 +220,17 @@ fun LogsScreen(
                                 }
                             )
                         } else {
-                            com.mail2dev.planfora.ui.logs.CompactLogItem(
-                                log = rootLog, 
-                                assetName = assetName, 
+                            com.mail2dev.planfora.ui.logs.CompactActivityThread(
+                                parentLog = rootLog,
+                                followUps = followUps,
+                                assetName = assetName,
                                 use24Hour = use24HourFormat,
-                                onDeleteClick = { logToDelete = rootLog },
-                                onEditClick = { navController.navigate(Screen.NewLog.createRoute(editingLogId = rootLog.id)) },
-                                onClick = { selectedLogForDetail = rootLog }
+                                onDeleteLog = { logToDelete = it },
+                                onEditLog = { log ->
+                                    navController.navigate(Screen.NewLog.createRoute(editingLogId = log.id))
+                                },
+                                onClick = { selectedLogForDetail = it }
                             )
-                            followUps.forEach { childLog ->
-                                com.mail2dev.planfora.ui.logs.CompactLogItem(
-                                    log = childLog, 
-                                    assetName = "↳ Follow-up", 
-                                    use24Hour = use24HourFormat,
-                                    onDeleteClick = { logToDelete = childLog },
-                                    onEditClick = { navController.navigate(Screen.NewLog.createRoute(editingLogId = childLog.id)) },
-                                    onClick = { selectedLogForDetail = childLog }
-                                )
-                            }
                         }
                     }
                     item { Spacer(modifier = Modifier.height(80.dp)) }
@@ -248,9 +241,12 @@ fun LogsScreen(
 
     if (selectedLogForDetail != null) {
         val assetName = assets.find { it.id == selectedLogForDetail!!.assetId }?.name ?: "General Log"
+        val followUps = logs.filter { it.parentLogId == selectedLogForDetail!!.id }.sortedBy { it.timestamp }
+        
         LogDetailSheet(
             log = selectedLogForDetail!!,
             assetName = assetName,
+            followUps = followUps,
             supplies = supplies,
             use24Hour = use24HourFormat,
             viewModel = viewModel,
@@ -274,6 +270,7 @@ fun LogsScreen(
 fun LogDetailSheet(
     log: JournalLogEntity,
     assetName: String,
+    followUps: List<JournalLogEntity> = emptyList(),
     supplies: List<com.mail2dev.planfora.data.local.entity.DiySupplyEntity>,
     use24Hour: Boolean,
     viewModel: LogsViewModel,
@@ -302,12 +299,29 @@ fun LogDetailSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = log.activityType.uppercase(),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (log.displayId.isNotBlank()) {
+                            Surface(
+                                color = Color.White.copy(alpha = 0.1f),
+                                shape = RoundedCornerShape(4.dp)
+                            ) {
+                                Text(
+                                    text = log.displayId,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                        }
+                        Text(
+                            text = log.activityType.uppercase(),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                     Text(
                         text = log.title,
                         style = MaterialTheme.typography.headlineSmall,
@@ -353,6 +367,7 @@ fun LogDetailSheet(
             }
 
             com.mail2dev.planfora.ui.logs.PhiBadge(log)
+            com.mail2dev.planfora.ui.logs.ReiBadge(log)
 
             if (log.note.isNotBlank()) {
                 Surface(
@@ -424,9 +439,9 @@ fun LogDetailSheet(
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         log.parameters.split("|").forEach { param ->
                             val parts = param.split(":")
-                            if (parts.size == 2 && parts[0] != "phi_expiry") {
+                            if (parts.size == 2 && parts[0] != "phi_expiry" && parts[0] != "rei_expiry") {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(text = "${parts[0]}: ", color = Color.Gray, fontSize = 14.sp)
+                                    Text(text = "${parts[0].replace("_", " ").uppercase()}: ", color = Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                     Text(text = parts[1], color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                                 }
                             }
@@ -439,8 +454,47 @@ fun LogDetailSheet(
                         val def = customFieldDefinitions.find { it.id == value.fieldDefId }
                         if (def != null && value.value.isNotBlank()) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(text = "${def.fieldName}: ", color = Color.Gray, fontSize = 14.sp)
+                                Text(text = "${def.fieldName.uppercase()}: ", color = Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                 Text(text = value.value, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (followUps.isNotEmpty()) {
+                HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
+                Text("ACTIVITY HISTORY / FOLLOW-UPS", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    followUps.forEach { child ->
+                        Surface(
+                            color = Color.White.copy(alpha = 0.03f),
+                            shape = RoundedCornerShape(8.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.05f)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                if (child.displayId.isNotBlank()) {
+                                    Text(
+                                        text = child.displayId,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(end = 12.dp)
+                                    )
+                                }
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(text = child.title, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                    Text(
+                                        text = com.mail2dev.planfora.util.TimeFormatter.formatDateTime(child.timestamp, use24Hour),
+                                        color = Color.Gray,
+                                        fontSize = 11.sp
+                                    )
+                                }
                             }
                         }
                     }
