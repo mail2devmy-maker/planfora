@@ -74,6 +74,8 @@ fun AddSupplyScreen(
     val editingSupplyId by viewModel.editingSupplyId.collectAsState()
     val isLabMode by viewModel.isLabMode.collectAsState()
     val isProductionUpdate by viewModel.isProductionUpdate.collectAsState()
+    val historicalMaterialCount by viewModel.historicalMaterialCount.collectAsState()
+    val customTimestamp by viewModel.customTimestamp.collectAsState()
 
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
@@ -81,6 +83,8 @@ fun AddSupplyScreen(
     var showCustomFieldDialog by remember { mutableStateOf(false) }
     var showLocationSheet by remember { mutableStateOf(false) }
     var showDiscardDialog by remember { mutableStateOf(false) }
+    var showDatePicker by remember { mutableStateOf(false) }
+    var showTimePicker by remember { mutableStateOf(false) }
 
     val diyTypes = listOf("FPJ", "FFJ", "JMS", "JWA", "FAA", "OHN", "LAB", "WCA", "Other")
 
@@ -115,6 +119,50 @@ fun AddSupplyScreen(
     }
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    if (showDatePicker) {
+        val cal = java.util.Calendar.getInstance().apply { timeInMillis = customTimestamp }
+        DisposableEffect(Unit) {
+            val datePicker = android.app.DatePickerDialog(
+                context,
+                { _, year, month, dayOfMonth ->
+                    cal.set(java.util.Calendar.YEAR, year)
+                    cal.set(java.util.Calendar.MONTH, month)
+                    cal.set(java.util.Calendar.DAY_OF_MONTH, dayOfMonth)
+                    viewModel.updateCustomTimestamp(cal.timeInMillis)
+                    showDatePicker = false
+                    showTimePicker = true // Chain to time picker
+                },
+                cal.get(java.util.Calendar.YEAR),
+                cal.get(java.util.Calendar.MONTH),
+                cal.get(java.util.Calendar.DAY_OF_MONTH)
+            )
+            datePicker.setOnCancelListener { showDatePicker = false }
+            datePicker.show()
+            onDispose { datePicker.dismiss() }
+        }
+    }
+
+    if (showTimePicker) {
+        val cal = java.util.Calendar.getInstance().apply { timeInMillis = customTimestamp }
+        DisposableEffect(Unit) {
+            val timePicker = android.app.TimePickerDialog(
+                context,
+                { _, hourOfDay, minute ->
+                    cal.set(java.util.Calendar.HOUR_OF_DAY, hourOfDay)
+                    cal.set(java.util.Calendar.MINUTE, minute)
+                    viewModel.updateCustomTimestamp(cal.timeInMillis)
+                    showTimePicker = false
+                },
+                cal.get(java.util.Calendar.HOUR_OF_DAY),
+                cal.get(java.util.Calendar.MINUTE),
+                false
+            )
+            timePicker.setOnCancelListener { showTimePicker = false }
+            timePicker.show()
+            onDispose { timePicker.dismiss() }
+        }
+    }
 
     ModalBottomSheet(
         onDismissRequest = {
@@ -159,6 +207,46 @@ fun AddSupplyScreen(
                     }
                 }) {
                     Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.Gray)
+                }
+            }
+
+            // Date & Time Picker (Mandatory for DIY Lab updates/creations)
+            if (isLabMode) {
+                val dateText = remember(customTimestamp) {
+                    java.text.SimpleDateFormat("MMM d, yyyy", java.util.Locale.getDefault()).format(java.util.Date(customTimestamp))
+                }
+                val timeText = remember(customTimestamp) {
+                    java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date(customTimestamp))
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    AssistChip(
+                        onClick = { showDatePicker = true },
+                        label = { Text(dateText, fontSize = 12.sp) },
+                        leadingIcon = { Icon(Icons.Default.DateRange, null, modifier = Modifier.size(16.dp)) },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(24.dp),
+                        colors = AssistChipDefaults.assistChipColors(
+                            labelColor = Color.White,
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+                        ),
+                        border = AssistChipDefaults.assistChipBorder(borderColor = Color.Gray.copy(alpha = 0.3f), enabled = true)
+                    )
+                    AssistChip(
+                        onClick = { showTimePicker = true },
+                        label = { Text(timeText, fontSize = 12.sp) },
+                        leadingIcon = { Icon(Icons.Default.Schedule, null, modifier = Modifier.size(16.dp)) },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(24.dp),
+                        colors = AssistChipDefaults.assistChipColors(
+                            labelColor = Color.White,
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+                        ),
+                        border = AssistChipDefaults.assistChipBorder(borderColor = Color.Gray.copy(alpha = 0.3f), enabled = true)
+                    )
                 }
             }
 
@@ -307,29 +395,56 @@ fun AddSupplyScreen(
                                     }
 
                                     materialLedger.forEachIndexed { index, pair ->
+                                        val isHistorical = index < historicalMaterialCount
                                         Row(
-                                            modifier = Modifier.fillMaxWidth(),
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(vertical = 2.dp)
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .background(
+                                                    if (isHistorical) Color.White.copy(alpha = 0.03f) else Color.Transparent
+                                                )
+                                                .padding(horizontal = 4.dp),
                                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             OutlinedTextField(
                                                 value = pair.first,
-                                                onValueChange = { viewModel.updateMaterialInLedger(index, it, pair.second) },
+                                                onValueChange = { if (!isHistorical) viewModel.updateMaterialInLedger(index, it, pair.second) },
                                                 modifier = Modifier.weight(2f),
                                                 placeholder = { Text("Ingredient", fontSize = 12.sp) },
+                                                readOnly = isHistorical,
                                                 colors = textFieldColors(isImportant = false),
-                                                singleLine = true
+                                                singleLine = true,
+                                                textStyle = androidx.compose.ui.text.TextStyle(
+                                                    color = if (isHistorical) Color.Gray else Color.White,
+                                                    fontSize = 13.sp
+                                                )
                                             )
                                             OutlinedTextField(
                                                 value = pair.second,
-                                                onValueChange = { viewModel.updateMaterialInLedger(index, pair.first, it) },
+                                                onValueChange = { if (!isHistorical) viewModel.updateMaterialInLedger(index, pair.first, it) },
                                                 modifier = Modifier.weight(1f),
                                                 placeholder = { Text("Qty", fontSize = 12.sp) },
+                                                readOnly = isHistorical,
                                                 colors = textFieldColors(isImportant = false),
-                                                singleLine = true
+                                                singleLine = true,
+                                                textStyle = androidx.compose.ui.text.TextStyle(
+                                                    color = if (isHistorical) Color.Gray else Color.White,
+                                                    fontSize = 13.sp
+                                                )
                                             )
-                                            IconButton(onClick = { viewModel.removeMaterialFromLedger(index) }, modifier = Modifier.size(24.dp)) {
-                                                Icon(Icons.Default.Close, null, tint = Color.Gray, modifier = Modifier.size(16.dp))
+                                            if (!isHistorical) {
+                                                IconButton(onClick = { viewModel.removeMaterialFromLedger(index) }, modifier = Modifier.size(24.dp)) {
+                                                    Icon(Icons.Default.Close, null, tint = Color.Gray, modifier = Modifier.size(16.dp))
+                                                }
+                                            } else {
+                                                Icon(
+                                                    Icons.Default.Lock, 
+                                                    null, 
+                                                    tint = Color.Gray.copy(alpha = 0.3f), 
+                                                    modifier = Modifier.size(14.dp).padding(4.dp)
+                                                )
                                             }
                                         }
                                     }

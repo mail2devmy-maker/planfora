@@ -29,7 +29,7 @@ import kotlinx.coroutines.launch
         CustomFieldDefinitionEntity::class,
         CustomFieldValueEntity::class
     ],
-    version = 25,
+    version = 26,
     exportSchema = true
 )
 @TypeConverters(RoomTypeConverters::class)
@@ -43,6 +43,49 @@ abstract class AppDatabase : RoomDatabase() {
     companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null
+
+        val MIGRATION_25_26 = object : Migration(25, 26) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Recreate journal_logs to make assetId nullable
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `journal_logs_new` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                        `assetId` INTEGER, 
+                        `title` TEXT NOT NULL, 
+                        `note` TEXT NOT NULL, 
+                        `timestamp` INTEGER NOT NULL, 
+                        `photoPath` TEXT, 
+                        `audioFilePath` TEXT, 
+                        `ecValue` REAL, 
+                        `phValue` REAL, 
+                        `tags` TEXT NOT NULL DEFAULT '', 
+                        `parameters` TEXT NOT NULL DEFAULT '', 
+                        `imageUris` TEXT NOT NULL DEFAULT '', 
+                        `activityType` TEXT NOT NULL DEFAULT 'Observation', 
+                        `parentLogId` INTEGER, 
+                        `supplyId` INTEGER, 
+                        `customInputName` TEXT, 
+                        `batchGroupId` TEXT, 
+                        `targetZones` TEXT, 
+                        `displayId` TEXT NOT NULL DEFAULT '', 
+                        FOREIGN KEY(`assetId`) REFERENCES `plant_assets`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL, 
+                        FOREIGN KEY(`parentLogId`) REFERENCES `journal_logs`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL, 
+                        FOREIGN KEY(`supplyId`) REFERENCES `diy_supplies`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL 
+                    )
+                """.trimIndent())
+
+                db.execSQL("""
+                    INSERT INTO journal_logs_new (id, assetId, title, note, timestamp, photoPath, audioFilePath, ecValue, phValue, tags, parameters, imageUris, activityType, parentLogId, supplyId, customInputName, batchGroupId, targetZones, displayId)
+                    SELECT id, assetId, title, note, timestamp, photoPath, audioFilePath, ecValue, phValue, tags, parameters, imageUris, activityType, parentLogId, supplyId, customInputName, batchGroupId, targetZones, displayId FROM journal_logs
+                """.trimIndent())
+
+                db.execSQL("DROP TABLE journal_logs")
+                db.execSQL("ALTER TABLE journal_logs_new RENAME TO journal_logs")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_journal_logs_assetId` ON `journal_logs` (`assetId`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_journal_logs_parentLogId` ON `journal_logs` (`parentLogId`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_journal_logs_supplyId` ON `journal_logs` (`supplyId`)")
+            }
+        }
 
         val MIGRATION_24_25 = object : Migration(24, 25) {
             override fun migrate(db: SupportSQLiteDatabase) {
@@ -335,7 +378,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "planfora_database"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26)
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance

@@ -97,6 +97,16 @@ class AddSupplyViewModel(
     private val _isProductionUpdate = MutableStateFlow(false)
     val isProductionUpdate = _isProductionUpdate.asStateFlow()
 
+    private val _historicalMaterialCount = MutableStateFlow(0)
+    val historicalMaterialCount = _historicalMaterialCount.asStateFlow()
+
+    private val _customTimestamp = MutableStateFlow(System.currentTimeMillis())
+    val customTimestamp = _customTimestamp.asStateFlow()
+
+    fun updateCustomTimestamp(v: Long) {
+        _customTimestamp.value = v
+    }
+
     val masterTags: StateFlow<List<String>> = journalRepository.getTagsByScope("SUPPLY")
         .map { list -> list.map { it.name } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -301,6 +311,8 @@ class AddSupplyViewModel(
     fun startNewSupply(defaultCategory: SupplyCategory = SupplyCategory.INSECTICIDE, isLab: Boolean = false) {
         _editingSupplyId.value = null
         _isProductionUpdate.value = false
+        _historicalMaterialCount.value = 0
+        _customTimestamp.value = System.currentTimeMillis()
         reset()
         _category.value = defaultCategory
         _isLabMode.value = isLab
@@ -345,10 +357,14 @@ class AddSupplyViewModel(
     fun updateStockUnit(v: String) { _stockUnit.value = v }
 
     fun loadSupply(supplyId: Long, isProductionUpdate: Boolean = false) {
+        // Reset state synchronously to avoid "state leakage" from previous sessions
+        reset()
+        _isProductionUpdate.value = isProductionUpdate
+        _editingSupplyId.value = supplyId
+        _customTimestamp.value = System.currentTimeMillis()
+
         viewModelScope.launch {
             repository.getAllSupplies().firstOrNull()?.find { it.id == supplyId }?.let { supply ->
-                _editingSupplyId.value = supplyId
-                _isProductionUpdate.value = isProductionUpdate
                 _name.value = supply.name
                 _category.value = SupplyCategory.entries.find { it.displayName == supply.category } ?: SupplyCategory.DIY
                 _subCategory.value = supply.subCategory ?: ""
@@ -356,10 +372,12 @@ class AddSupplyViewModel(
                 _targetBenefit.value = supply.targetBenefit ?: ""
                 
                 // Parse material list into ledger
-                _materialLedger.value = supply.materialList.split("|").filter { it.contains(":") }.map { 
+                val materials = supply.materialList.split("|").filter { it.contains(":") }.map { 
                     val parts = it.split(":")
                     parts[0] to parts[1]
                 }
+                _materialLedger.value = materials
+                _historicalMaterialCount.value = if (isProductionUpdate) materials.size else 0
 
                 if (supply.targetMaturityDate > supply.startDate) {
                     val days = (supply.targetMaturityDate - supply.startDate) / (24L * 60 * 60 * 1000)
@@ -369,14 +387,19 @@ class AddSupplyViewModel(
                 }
                 _formType.value = com.mail2dev.planfora.data.local.entity.SupplyFormType.entries.find { it.name == supply.formType } ?: com.mail2dev.planfora.data.local.entity.SupplyFormType.LIQUID
                 _formulationCode.value = supply.formulationCode
-                _notes.value = supply.notes
+                _notes.value = "" // Fresh notes for the update entry
                 _activeIngredient.value = supply.activeIngredient ?: ""
                 _phiDays.value = supply.phiDays?.toString() ?: ""
                 _reiHours.value = supply.reiHours?.toString() ?: ""
                 _stockQuantity.value = supply.stockQuantity?.toString() ?: ""
                 _stockUnit.value = supply.stockUnit ?: "L"
-                _audioPath.value = supply.audioPath
-                _imageUris.value = supply.imageUris.split(",").filter { it.isNotBlank() }.map { Uri.parse(it) }
+                
+                // Media is only loaded for "Edit Profile", not for "Update Progress" (Research Diary style)
+                if (!isProductionUpdate) {
+                    _audioPath.value = supply.audioPath
+                    _imageUris.value = supply.imageUris.split(",").filter { it.isNotBlank() }.map { Uri.parse(it) }
+                }
+
                 _location.value = supply.locationNote
                 _selectedTags.value = supply.tags.split(",").filter { it.isNotBlank() }.toSet()
                 _isLabMode.value = (supply.category == "DIY" && !supply.isArchived)
@@ -417,8 +440,9 @@ class AddSupplyViewModel(
 
     fun saveSupply() {
         viewModelScope.launch {
+            val chosenTime = _customTimestamp.value
             val days = _maturityDays.value.toLongOrNull() ?: 0L
-            val targetMaturity = if (days > 0) System.currentTimeMillis() + (days * 24 * 60 * 60 * 1000) else 0L
+            val targetMaturity = if (days > 0) chosenTime + (days * 24 * 60 * 60 * 1000) else 0L
             
             val newMaterialList = _materialLedger.value.joinToString("|") { "${it.first}:${it.second}" }
             
@@ -435,17 +459,17 @@ class AddSupplyViewModel(
                 targetBenefit = _targetBenefit.value,
                 formType = _formType.value.name,
                 formulationCode = _formulationCode.value,
-                notes = _notes.value,
+                notes = if (_isProductionUpdate.value) (previousSupply?.notes ?: "") else _notes.value,
                 activeIngredient = _activeIngredient.value.ifBlank { null },
                 phiDays = _phiDays.value.toIntOrNull(),
                 reiHours = _reiHours.value.toIntOrNull(),
                 stockQuantity = _stockQuantity.value.toFloatOrNull(),
                 stockUnit = _stockUnit.value,
                 batchCode = if (_editingSupplyId.value == null) "" else _name.value,
-                startDate = previousSupply?.startDate ?: System.currentTimeMillis(),
+                startDate = previousSupply?.startDate ?: chosenTime,
                 targetMaturityDate = if (_editingSupplyId.value == null) targetMaturity else previousSupply?.targetMaturityDate ?: 0L,
-                imageUris = _imageUris.value.joinToString(",") { it.toString() },
-                audioPath = _audioPath.value,
+                imageUris = if (_isProductionUpdate.value) (previousSupply?.imageUris ?: "") else _imageUris.value.joinToString(",") { it.toString() },
+                audioPath = if (_isProductionUpdate.value) (previousSupply?.audioPath) else _audioPath.value,
                 locationNote = _location.value,
                 tags = _selectedTags.value.joinToString(",")
             )
@@ -486,11 +510,11 @@ class AddSupplyViewModel(
 
             journalRepository.insertLog(
                 com.mail2dev.planfora.data.local.entity.JournalLogEntity(
-                    assetId = 0,
+                    assetId = null,
                     supplyId = supplyId,
                     title = logTitle,
                     note = logNoteBuilder.toString(),
-                    timestamp = System.currentTimeMillis(),
+                    timestamp = chosenTime,
                     imageUris = _imageUris.value.joinToString(",") { it.toString() },
                     audioFilePath = _audioPath.value,
                     activityType = "PRODUCTION",

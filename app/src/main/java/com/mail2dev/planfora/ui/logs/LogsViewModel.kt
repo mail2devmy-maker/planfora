@@ -227,7 +227,7 @@ class LogsViewModel(
     }
 
     fun addJournalLog(
-        assetId: Long,
+        assetId: Long?,
         title: String,
         note: String,
         photoPath: String?,

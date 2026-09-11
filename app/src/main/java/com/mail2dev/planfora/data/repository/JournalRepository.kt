@@ -59,13 +59,15 @@ class JournalRepository(
 
         val logId = journalLogDao.insertLog(log.copy(displayId = generatedDisplayId))
         // Update log count for the asset
-        plantAssetDao.getAssetById(log.assetId)?.let { asset ->
-            plantAssetDao.updateAsset(
-                asset.copy(
-                    totalLogsCount = asset.totalLogsCount + 1,
-                    lastActionDate = log.timestamp
+        log.assetId?.let { assetId ->
+            plantAssetDao.getAssetById(assetId)?.let { asset ->
+                plantAssetDao.updateAsset(
+                    asset.copy(
+                        totalLogsCount = asset.totalLogsCount + 1,
+                        lastActionDate = log.timestamp
+                    )
                 )
-            )
+            }
         }
         return logId
     }
@@ -77,12 +79,14 @@ class JournalRepository(
     suspend fun deleteLog(log: JournalLogEntity) {
         journalLogDao.deleteLog(log)
         // Update log count for the asset
-        plantAssetDao.getAssetById(log.assetId)?.let { asset ->
-            plantAssetDao.updateAsset(
-                asset.copy(
-                    totalLogsCount = (asset.totalLogsCount - 1).coerceAtLeast(0)
+        log.assetId?.let { assetId ->
+            plantAssetDao.getAssetById(assetId)?.let { asset ->
+                plantAssetDao.updateAsset(
+                    asset.copy(
+                        totalLogsCount = (asset.totalLogsCount - 1).coerceAtLeast(0)
+                    )
                 )
-            )
+            }
         }
     }
 

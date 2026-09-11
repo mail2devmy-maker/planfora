@@ -203,7 +203,7 @@ fun NewLogEntryScreen(
                 note = log.note
                 activityType = if (activityTypes.contains(log.activityType)) log.activityType else "Other"
                 if (activityType == "Other") customActivity = log.activityType
-                selectedAssetIds = setOf(log.assetId)
+                selectedAssetIds = log.assetId?.let { setOf(it) } ?: emptySet()
                 selectedSupplyId = log.supplyId
                 customInputName = log.customInputName ?: ""
                 tags = log.tags.split(",").filter { it.isNotBlank() }.toSet()
@@ -323,7 +323,7 @@ fun NewLogEntryScreen(
         parentLogId?.let {
             parentLog = viewModel.getLogById(it)
             parentLog?.let { parent ->
-                selectedAssetIds = setOf(parent.assetId)
+                selectedAssetIds = parent.assetId?.let { setOf(it) } ?: emptySet()
                 title = "Follow-up: ${parent.title}"
                 userEditedTitle = true
             }
@@ -950,9 +950,32 @@ fun NewLogEntryScreen(
                                     imageUris = if (imagesString.isNotBlank()) imagesString else editingLog!!.imageUris,
                                     activityType = if (activityType == "Other") customActivity else activityType,
                                     supplyId = selectedSupplyId,
+                                    assetId = selectedAssetIds.firstOrNull(),
                                     customInputName = if (selectedSupplyId == null) customInputName else null,
                                     targetZones = if (selectedZones.isNotEmpty()) selectedZones.joinToString(",") else null
                                 ),
+                                customFieldValues = customFieldValues
+                            )
+                        } else if (selectedAssetIds.isEmpty()) {
+                            // General Log (No Asset)
+                            viewModel.addJournalLog(
+                                assetId = null,
+                                title = title,
+                                note = note,
+                                photoPath = null,
+                                audioFilePath = audioPath,
+                                ecValue = null,
+                                phValue = null,
+                                tags = tagsString,
+                                parameters = paramsString,
+                                imageUris = imagesString,
+                                activityType = if (activityType == "Other") customActivity else activityType,
+                                parentLogId = parentLogId,
+                                timestamp = selectedTimestamp,
+                                supplyId = selectedSupplyId,
+                                customInputName = if (selectedSupplyId == null) customInputName else null,
+                                batchGroupId = batchGroupId,
+                                targetZones = if (selectedZones.isNotEmpty()) selectedZones.joinToString(",") else null,
                                 customFieldValues = customFieldValues
                             )
                         } else {
@@ -984,7 +1007,7 @@ fun NewLogEntryScreen(
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp).padding(bottom = 24.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                enabled = title.isNotBlank() && selectedAssetIds.isNotEmpty(),
+                enabled = title.isNotBlank(),
                 shape = MaterialTheme.shapes.medium
             ) {
                 Text(if (editingLogId == null) "Save Activity Log" else "Update Activity Log", fontSize = 16.sp, fontWeight = FontWeight.Bold)
