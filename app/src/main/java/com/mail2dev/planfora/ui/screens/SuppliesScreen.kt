@@ -327,11 +327,33 @@ fun FormulationCard(
             
             Spacer(modifier = Modifier.height(8.dp))
             
-            Text(
-                text = "${formulation.currentVolume} ${formulation.unit}",
-                color = MaterialTheme.colorScheme.primary,
-                fontSize = 14.sp
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "${formulation.currentVolume} ${formulation.unit}",
+                    color = MaterialTheme.colorScheme.primary,
+                    fontSize = 14.sp
+                )
+                
+                Surface(
+                    onClick = onLongClick,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(8.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
+                    modifier = Modifier.height(32.dp)
+                ) {
+                    Text(
+                        "Update",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                    )
+                }
+            }
         }
     }
 }

@@ -405,14 +405,6 @@ fun ProductionDashboard(supply: DiySupplyEntity) {
                 }
             }
 
-            if (!supply.targetBenefit.isNullOrBlank()) {
-                Spacer(modifier = Modifier.height(12.dp))
-                Column {
-                    Text("Target Benefit", color = Color.Gray, fontSize = 10.sp)
-                    Text(supply.targetBenefit, color = com.mail2dev.planfora.ui.theme.SageGreen, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                }
-            }
-            
             Spacer(modifier = Modifier.height(16.dp))
             
             if (supply.materialList.isNotBlank()) {

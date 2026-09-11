@@ -1,6 +1,5 @@
 package com.mail2dev.planfora.ui.supplies
 
-import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -21,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -61,7 +61,6 @@ fun AddSupplyScreen(
     val name by viewModel.name.collectAsState()
     val category by viewModel.category.collectAsState()
     val subCategory by viewModel.subCategory.collectAsState()
-    val targetBenefit by viewModel.targetBenefit.collectAsState()
     val materialLedger by viewModel.materialLedger.collectAsState()
     val formType by viewModel.formType.collectAsState()
     val formulationCode by viewModel.formulationCode.collectAsState()
@@ -78,7 +77,6 @@ fun AddSupplyScreen(
     val customTimestamp by viewModel.customTimestamp.collectAsState()
 
     val context = LocalContext.current
-    val haptic = LocalHapticFeedback.current
     var showTagSheet by remember { mutableStateOf(false) }
     var showCustomFieldDialog by remember { mutableStateOf(false) }
     var showLocationSheet by remember { mutableStateOf(false) }
@@ -301,6 +299,30 @@ fun AddSupplyScreen(
                         }
                     }
 
+                    // Location & Tags (Globally moved up for all categories, but for DIY it will be below Specification)
+                    if (category != SupplyCategory.DIY) {
+                        PlanForaFieldGroup(isImportant = true) {
+                            ReadonlyTriggerField(
+                                label = "Location",
+                                value = location.ifBlank { "Select" },
+                                icon = Icons.Default.LocationOn,
+                                onClick = { showLocationSheet = true },
+                                modifier = Modifier.weight(1f),
+                                isImportant = true
+                            )
+                            if (!isProductionUpdate) {
+                                ReadonlyTriggerField(
+                                    label = "Tags",
+                                    value = if (selectedTags.isEmpty()) "Select" else "${selectedTags.size} tags",
+                                    icon = Icons.Default.Tag,
+                                    onClick = { showTagSheet = true },
+                                    modifier = Modifier.weight(1f),
+                                    isImportant = true
+                                )
+                            }
+                        }
+                    }
+
                     if (category == SupplyCategory.DIY) {
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             if (!isProductionUpdate && isLabMode) {
@@ -333,50 +355,63 @@ fun AddSupplyScreen(
                                 }
                             }
 
-                            if (isLabMode) {
-                                // Row 1: Maturity & Vessel (DIY Production Only)
-                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    if (!isProductionUpdate) {
-                                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                            Text("Maturity (Days)", style = MaterialTheme.typography.labelSmall, color = SlateTextSecondary.copy(alpha = 0.9f), fontWeight = FontWeight.Bold)
-                                            OutlinedTextField(
-                                                value = viewModel.maturityDays.collectAsState().value,
-                                                onValueChange = viewModel::updateMaturityDays,
-                                                modifier = Modifier.fillMaxWidth(),
-                                                placeholder = { Text("e.g. 30") },
-                                                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
-                                                colors = textFieldColors(isImportant = false),
-                                                singleLine = true
-                                            )
-                                        }
-                                    }
-                                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                        Text("Vessel / Jar ID", style = MaterialTheme.typography.labelSmall, color = SlateTextSecondary.copy(alpha = 0.9f), fontWeight = FontWeight.Bold)
-                                        OutlinedTextField(
-                                            value = viewModel.containerId.collectAsState().value,
-                                            onValueChange = viewModel::updateContainerId,
-                                            modifier = Modifier.fillMaxWidth(),
-                                            placeholder = { Text("Jar A-01") },
-                                            colors = textFieldColors(isImportant = false),
-                                            singleLine = true
-                                        )
-                                    }
-                                }
-                            }
-
-                            if (!isProductionUpdate) {
-                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    Text("Target Benefit", style = MaterialTheme.typography.labelSmall, color = SlateTextSecondary.copy(alpha = 0.9f), fontWeight = FontWeight.Bold)
+                            // Location & Vessel ID (Moved next to each other as requested)
+                            PlanForaFieldGroup(isImportant = true) {
+                                ReadonlyTriggerField(
+                                    label = "Location",
+                                    value = location.ifBlank { "Select" },
+                                    icon = Icons.Default.LocationOn,
+                                    onClick = { showLocationSheet = true },
+                                    modifier = Modifier.weight(1f),
+                                    isImportant = true
+                                )
+                                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Text(
+                                        text = "Vessel / Jar ID",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = SlateTextSecondary.copy(alpha = 0.9f),
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(start = 2.dp)
+                                    )
                                     OutlinedTextField(
-                                        value = targetBenefit,
-                                        onValueChange = viewModel::updateTargetBenefit,
-                                        modifier = Modifier.fillMaxWidth(),
-                                        placeholder = { Text("e.g. Growth Stimulant") },
+                                        value = viewModel.containerId.collectAsState().value,
+                                        onValueChange = viewModel::updateContainerId,
+                                        modifier = Modifier.fillMaxWidth().height(52.dp),
+                                        placeholder = { Text("e.g. Jar A-01", fontSize = 12.sp) },
                                         colors = textFieldColors(isImportant = false),
-                                        singleLine = true
+                                        singleLine = true,
+                                        textStyle = androidx.compose.ui.text.TextStyle(fontSize = 13.sp)
                                     )
                                 }
                             }
+
+                            if (isLabMode && !isProductionUpdate) {
+                                // Maturity and Tags row
+                                PlanForaFieldGroup(isImportant = false) {
+                                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Text("Maturity (Days)", style = MaterialTheme.typography.labelSmall, color = SlateTextSecondary.copy(alpha = 0.9f), fontWeight = FontWeight.Bold)
+                                        OutlinedTextField(
+                                            value = viewModel.maturityDays.collectAsState().value,
+                                            onValueChange = viewModel::updateMaturityDays,
+                                            modifier = Modifier.fillMaxWidth().height(52.dp),
+                                            placeholder = { Text("e.g. 30", fontSize = 12.sp) },
+                                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                                            colors = textFieldColors(isImportant = false),
+                                            singleLine = true,
+                                            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 13.sp)
+                                        )
+                                    }
+                                    ReadonlyTriggerField(
+                                        label = "Tags",
+                                        value = if (selectedTags.isEmpty()) "Select" else "${selectedTags.size} tags",
+                                        icon = Icons.Default.Tag,
+                                        onClick = { showTagSheet = true },
+                                        modifier = Modifier.weight(1f),
+                                        isImportant = false
+                                    )
+                                }
+                            }
+
 
                             if (isLabMode) {
                                 // Material Ledger (DIY Production Only)
@@ -453,26 +488,6 @@ fun AddSupplyScreen(
                         }
                     }
 
-                    PlanForaFieldGroup(isImportant = true) {
-                        ReadonlyTriggerField(
-                            label = "Location",
-                            value = location.ifBlank { "Select" },
-                            icon = Icons.Default.LocationOn,
-                            onClick = { showLocationSheet = true },
-                            modifier = Modifier.weight(1f),
-                            isImportant = true
-                        )
-                        if (!isProductionUpdate) {
-                            ReadonlyTriggerField(
-                                label = "Tags",
-                                value = if (selectedTags.isEmpty()) "Select" else "${selectedTags.size} tags",
-                                icon = Icons.Default.Tag,
-                                onClick = { showTagSheet = true },
-                                modifier = Modifier.weight(1f),
-                                isImportant = true
-                            )
-                        }
-                    }
                 }
             }
 
@@ -501,7 +516,7 @@ fun AddSupplyScreen(
                                     leadingIcon = { Icon(Icons.Default.Tag, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp)) },
                                     trailingIcon = {
                                         IconButton(onClick = { showIngredientSheet = true }) {
-                                            Icon(Icons.Default.List, contentDescription = "Select A.I.")
+                                            Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Select A.I.")
                                         }
                                     },
                                     colors = textFieldColors(isImportant = true),
@@ -707,14 +722,16 @@ fun AddSupplyScreen(
                 )
             }
 
-            MediaAttachmentStrip(
-                imageUris = imageUris,
-                audioPath = viewModel.audioPath.collectAsState().value,
-                onImagesAdd = { uris -> uris.forEach { viewModel.addImageUri(it) } },
-                onImageRemove = { viewModel.removeImageUri(it) },
-                onAudioCaptured = { viewModel.setAudioPath(it) },
-                onAudioRemove = { viewModel.setAudioPath(null) }
-            )
+            PlanForaSurfaceCard(title = "Attachments", isImportant = false) {
+                MediaAttachmentStrip(
+                    imageUris = imageUris,
+                    audioPath = viewModel.audioPath.collectAsState().value,
+                    onImagesAdd = { uris -> uris.forEach { viewModel.addImageUri(it) } },
+                    onImageRemove = { viewModel.removeImageUri(it) },
+                    onAudioCaptured = { viewModel.setAudioPath(it) },
+                    onAudioRemove = { viewModel.setAudioPath(null) }
+                )
+            }
 
             // Metrics Section (Unified Optional Fields)
             PlanForaSurfaceCard(title = "Metrics", isImportant = false) {
@@ -921,26 +938,6 @@ fun DynamicSupplyFieldRenderer(
             onArchive = {
                 viewModel.archiveCustomFieldDefinition(def.id)
             }
-        )
-    }
-}
-
-@Composable
-fun SimpleTextField(label: String, value: String, onValueChange: (String) -> Unit, isImportant: Boolean = true) {
-    val labelColor = if (isImportant) SlateTextPrimary else SlateTextSecondary
-    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = labelColor.copy(alpha = 0.9f),
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(start = 2.dp)
-        )
-        OutlinedTextField(
-            value = value,
-            onValueChange = onValueChange,
-            modifier = Modifier.fillMaxWidth(),
-            colors = textFieldColors(isImportant = isImportant)
         )
     }
 }

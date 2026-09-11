@@ -33,9 +33,6 @@ class AddSupplyViewModel(
     private val _containerId = MutableStateFlow("")
     val containerId = _containerId.asStateFlow()
 
-    private val _targetBenefit = MutableStateFlow("")
-    val targetBenefit = _targetBenefit.asStateFlow()
-
     private val _materialLedger = MutableStateFlow<List<Pair<String, String>>>(emptyList())
     val materialLedger = _materialLedger.asStateFlow()
 
@@ -187,7 +184,6 @@ class AddSupplyViewModel(
     fun updateSubCategory(v: String) { _subCategory.value = v }
     fun updateMaturityDays(v: String) { _maturityDays.value = v }
     fun updateContainerId(v: String) { _containerId.value = v }
-    fun updateTargetBenefit(v: String) { _targetBenefit.value = v }
 
     fun addMaterialToLedger() {
         _materialLedger.update { it + ("" to "") }
@@ -369,7 +365,6 @@ class AddSupplyViewModel(
                 _category.value = SupplyCategory.entries.find { it.displayName == supply.category } ?: SupplyCategory.DIY
                 _subCategory.value = supply.subCategory ?: ""
                 _containerId.value = supply.containerId
-                _targetBenefit.value = supply.targetBenefit ?: ""
                 
                 // Parse material list into ledger
                 val materials = supply.materialList.split("|").filter { it.contains(":") }.map { 
@@ -456,7 +451,6 @@ class AddSupplyViewModel(
                 subCategory = if (_category.value == SupplyCategory.DIY) _subCategory.value else null,
                 containerId = _containerId.value,
                 materialList = newMaterialList,
-                targetBenefit = _targetBenefit.value,
                 formType = _formType.value.name,
                 formulationCode = _formulationCode.value,
                 notes = if (_isProductionUpdate.value) (previousSupply?.notes ?: "") else _notes.value,
@@ -540,7 +534,6 @@ class AddSupplyViewModel(
         _subCategory.value = ""
         _maturityDays.value = ""
         _containerId.value = ""
-        _targetBenefit.value = ""
         _materialLedger.value = emptyList()
         _notes.value = ""
         _activeIngredient.value = ""

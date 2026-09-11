@@ -35,8 +35,7 @@ data class DiySupplyEntity(
     val subCategory: String? = null,
     val containerId: String = "", // Added in v24 for Vessel/Jar ID
     val materialList: String = "", // Added in v24 for Recipe/BOM
-    val displayId: String = "", // Added in v25 for FPJ01, JMS02 style
-    val targetBenefit: String? = null // Added in v25: Growth Stimulant, Pest Repellent, etc.
+    val displayId: String = "" // Added in v25 for FPJ01, JMS02 style
 )
 
 enum class SupplyCategory(val displayName: String) {
