@@ -161,12 +161,21 @@ fun SupplyDetailScreen(
                                     showFinalizeDialog = true
                                 }
                             )
+                            DropdownMenuItem(
+                                text = { Text("Update Progress", color = com.mail2dev.planfora.ui.theme.SageGreen) },
+                                leadingIcon = { Icon(Icons.Default.PendingActions, null, tint = com.mail2dev.planfora.ui.theme.SageGreen) },
+                                onClick = { 
+                                    showMenu = false
+                                    addSupplyViewModel.loadSupply(supplyId, isProductionUpdate = true)
+                                    viewModel.setShowAddBottomSheet(true)
+                                }
+                            )
                         }
                         DropdownMenuItem(
-                            text = { Text("Edit", color = Color.White) },
+                            text = { Text("Edit Profile", color = Color.White) },
                             onClick = { 
                                 showMenu = false
-                                addSupplyViewModel.loadSupply(supplyId)
+                                addSupplyViewModel.loadSupply(supplyId, isProductionUpdate = false)
                                 viewModel.setShowAddBottomSheet(true)
                             }
                         )
@@ -231,7 +240,7 @@ fun SupplyDetailScreen(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(
-                                "No applications logged yet for this product.",
+                                "No research notes recorded yet.",
                                 color = Color.Gray,
                                 fontSize = 13.sp,
                                 modifier = Modifier.padding(24.dp)
@@ -239,13 +248,13 @@ fun SupplyDetailScreen(
                         }
                     }
                 } else {
-                    items(supplyLogs) { log ->
-                        com.mail2dev.planfora.ui.logs.CompactLogItem(
+                    items(supplyLogs.reversed()) { log ->
+                        ResearchNoteEntry(
                             log = log,
-                            assetName = logsViewModel.assets.collectAsState().value.find { it.id == log.assetId }?.name ?: "General",
-                            use24Hour = false,
-                            onDeleteClick = { logToDelete = log },
-                            onEditClick = { navController.navigate(Screen.NewLog.createRoute(editingLogId = log.id)) }
+                            startDate = supply.startDate,
+                            use24Hour = false, // Hardcoded for build fix
+                            onDelete = { logToDelete = log },
+                            onEdit = { navController.navigate(Screen.NewLog.createRoute(editingLogId = log.id)) }
                         )
                     }
                 }
@@ -260,6 +269,118 @@ fun SupplyDetailScreen(
         )
     }
 }
+
+@Composable
+fun ResearchNoteEntry(
+    log: com.mail2dev.planfora.data.local.entity.JournalLogEntity,
+    startDate: Long,
+    use24Hour: Boolean,
+    onDelete: () -> Unit,
+    onEdit: () -> Unit
+) {
+    val dayNumber = ((log.timestamp - startDate) / (24L * 60 * 60 * 1000)).coerceAtLeast(0) + 1
+    val timeStr = com.mail2dev.planfora.util.TimeFormatter.formatTime(log.timestamp, use24Hour)
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(IntrinsicSize.Min)
+    ) {
+        // Timeline Column
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.width(56.dp)
+        ) {
+            Surface(
+                color = if (dayNumber == 1L) com.mail2dev.planfora.ui.theme.ForestGreen else Color.DarkGray,
+                shape = RoundedCornerShape(4.dp)
+            ) {
+                Text(
+                    text = "D${dayNumber.toString().padStart(2, '0')}",
+                    color = Color.White,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .width(1.dp)
+                    .fillMaxHeight()
+                    .background(Color.Gray.copy(alpha = 0.3f))
+            )
+        }
+
+        // Content Card
+        Card(
+            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.03f)),
+            shape = RoundedCornerShape(8.dp),
+            border = androidx.compose.foundation.BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.1f)),
+            modifier = Modifier
+                .weight(1f)
+                .padding(bottom = 12.dp)
+        ) {
+            Column(modifier = Modifier.padding(10.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = timeStr,
+                        color = com.mail2dev.planfora.ui.theme.SageGreen,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    
+                    var showMenu by remember { mutableStateOf(false) }
+                    Box {
+                        IconButton(onClick = { showMenu = true }, modifier = Modifier.size(20.dp)) {
+                            Icon(Icons.Default.MoreVert, null, tint = Color.Gray, modifier = Modifier.size(14.dp))
+                        }
+                        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }, modifier = Modifier.background(Color(0xFF1E2120))) {
+                            DropdownMenuItem(text = { Text("Edit Note", fontSize = 12.sp) }, onClick = { showMenu = false; onEdit() })
+                            DropdownMenuItem(text = { Text("Delete", color = Color.Red, fontSize = 12.sp) }, onClick = { showMenu = false; onDelete() })
+                        }
+                    }
+                }
+
+                Text(
+                    text = log.title,
+                    color = Color.White,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+
+                if (log.note.isNotBlank()) {
+                    Text(
+                        text = log.note,
+                        color = Color.LightGray,
+                        fontSize = 12.sp,
+                        lineHeight = 16.sp,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+
+                if (log.imageUris.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        items(log.imageUris.split(",")) { path ->
+                            AsyncImage(
+                                model = File(path),
+                                contentDescription = null,
+                                modifier = Modifier.size(60.dp).clip(RoundedCornerShape(4.dp)),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 @Composable
 fun ProductionDashboard(supply: DiySupplyEntity) {

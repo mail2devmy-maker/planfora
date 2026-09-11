@@ -73,6 +73,7 @@ fun AddSupplyScreen(
     val customFieldValues by viewModel.customFieldValues.collectAsState()
     val editingSupplyId by viewModel.editingSupplyId.collectAsState()
     val isLabMode by viewModel.isLabMode.collectAsState()
+    val isProductionUpdate by viewModel.isProductionUpdate.collectAsState()
 
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
@@ -141,7 +142,11 @@ fun AddSupplyScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    if (editingSupplyId == null) "New Product / Supply" else "Edit Product / Supply",
+                    when {
+                        isProductionUpdate -> "Update Progress: $name"
+                        editingSupplyId == null -> "New Product / Supply"
+                        else -> "Edit Product / Supply"
+                    },
                     style = MaterialTheme.typography.headlineSmall,
                     color = Color.White,
                     fontWeight = FontWeight.Bold
@@ -158,26 +163,28 @@ fun AddSupplyScreen(
             }
 
             // Core Name Field
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    text = "Product Name",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = SlateTextPrimary.copy(alpha = 0.9f),
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(start = 2.dp)
-                )
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = viewModel::updateName,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = textFieldColors(isImportant = true)
-                )
+            if (!isProductionUpdate) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = "Product Name",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = SlateTextPrimary.copy(alpha = 0.9f),
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(start = 2.dp)
+                    )
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = viewModel::updateName,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = textFieldColors(isImportant = true)
+                    )
+                }
             }
 
             // Primary Identification & Storage
             PlanForaSurfaceCard(title = "Identification & Storage", isImportant = true) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    if (!isLabMode || editingSupplyId != null) {
+                    if (!isProductionUpdate && (!isLabMode || editingSupplyId != null)) {
                         Text("Category", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         FlowRow(
                             modifier = Modifier.fillMaxWidth(),
@@ -208,7 +215,7 @@ fun AddSupplyScreen(
 
                     if (category == SupplyCategory.DIY) {
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            if (isLabMode) {
+                            if (!isProductionUpdate && isLabMode) {
                                 Text("DIY Specification", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 
                                 FlowRow(
@@ -236,20 +243,24 @@ fun AddSupplyScreen(
                                         )
                                     }
                                 }
+                            }
 
+                            if (isLabMode) {
                                 // Row 1: Maturity & Vessel (DIY Production Only)
                                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                        Text("Maturity (Days)", style = MaterialTheme.typography.labelSmall, color = SlateTextSecondary.copy(alpha = 0.9f), fontWeight = FontWeight.Bold)
-                                        OutlinedTextField(
-                                            value = viewModel.maturityDays.collectAsState().value,
-                                            onValueChange = viewModel::updateMaturityDays,
-                                            modifier = Modifier.fillMaxWidth(),
-                                            placeholder = { Text("e.g. 30") },
-                                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
-                                            colors = textFieldColors(isImportant = false),
-                                            singleLine = true
-                                        )
+                                    if (!isProductionUpdate) {
+                                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            Text("Maturity (Days)", style = MaterialTheme.typography.labelSmall, color = SlateTextSecondary.copy(alpha = 0.9f), fontWeight = FontWeight.Bold)
+                                            OutlinedTextField(
+                                                value = viewModel.maturityDays.collectAsState().value,
+                                                onValueChange = viewModel::updateMaturityDays,
+                                                modifier = Modifier.fillMaxWidth(),
+                                                placeholder = { Text("e.g. 30") },
+                                                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                                                colors = textFieldColors(isImportant = false),
+                                                singleLine = true
+                                            )
+                                        }
                                     }
                                     Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                         Text("Vessel / Jar ID", style = MaterialTheme.typography.labelSmall, color = SlateTextSecondary.copy(alpha = 0.9f), fontWeight = FontWeight.Bold)
@@ -265,16 +276,18 @@ fun AddSupplyScreen(
                                 }
                             }
 
-                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text("Target Benefit", style = MaterialTheme.typography.labelSmall, color = SlateTextSecondary.copy(alpha = 0.9f), fontWeight = FontWeight.Bold)
-                                OutlinedTextField(
-                                    value = targetBenefit,
-                                    onValueChange = viewModel::updateTargetBenefit,
-                                    modifier = Modifier.fillMaxWidth(),
-                                    placeholder = { Text("e.g. Growth Stimulant") },
-                                    colors = textFieldColors(isImportant = false),
-                                    singleLine = true
-                                )
+                            if (!isProductionUpdate) {
+                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Text("Target Benefit", style = MaterialTheme.typography.labelSmall, color = SlateTextSecondary.copy(alpha = 0.9f), fontWeight = FontWeight.Bold)
+                                    OutlinedTextField(
+                                        value = targetBenefit,
+                                        onValueChange = viewModel::updateTargetBenefit,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        placeholder = { Text("e.g. Growth Stimulant") },
+                                        colors = textFieldColors(isImportant = false),
+                                        singleLine = true
+                                    )
+                                }
                             }
 
                             if (isLabMode) {
@@ -334,147 +347,150 @@ fun AddSupplyScreen(
                             modifier = Modifier.weight(1f),
                             isImportant = true
                         )
-                        ReadonlyTriggerField(
-                            label = "Tags",
-                            value = if (selectedTags.isEmpty()) "Select" else "${selectedTags.size} tags",
-                            icon = Icons.Default.Tag,
-                            onClick = { showTagSheet = true },
-                            modifier = Modifier.weight(1f),
-                            isImportant = true
-                        )
+                        if (!isProductionUpdate) {
+                            ReadonlyTriggerField(
+                                label = "Tags",
+                                value = if (selectedTags.isEmpty()) "Select" else "${selectedTags.size} tags",
+                                icon = Icons.Default.Tag,
+                                onClick = { showTagSheet = true },
+                                modifier = Modifier.weight(1f),
+                                isImportant = true
+                            )
+                        }
                     }
                 }
             }
 
             // High-Speed Safety/Stock Fields
-            val isDiy = category == SupplyCategory.DIY
             val isHardware = category == SupplyCategory.SUPPLIES_TOOLS
 
-            PlanForaSurfaceCard(title = "Stock & Safety", isImportant = true) {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    if (!isDiy && !isHardware) {
-                        var showIngredientSheet by remember { mutableStateOf(false) }
-                        val activeIngredientValue = viewModel.activeIngredient.collectAsState().value
-                        
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(
-                                text = "Active Ingredient",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = SlateTextPrimary.copy(alpha = 0.9f),
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(start = 2.dp)
-                            )
-                            OutlinedTextField(
-                                value = activeIngredientValue,
-                                onValueChange = viewModel::updateActiveIngredient,
-                                modifier = Modifier.fillMaxWidth(),
-                                leadingIcon = { Icon(Icons.Default.Tag, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp)) },
-                                trailingIcon = {
-                                    IconButton(onClick = { showIngredientSheet = true }) {
-                                        Icon(Icons.Default.List, contentDescription = "Select A.I.")
-                                    }
-                                },
-                                colors = textFieldColors(isImportant = true),
-                                placeholder = { Text("azoxystrobin") }
-                            )
-                        }
+            if (!isProductionUpdate || isLabMode) {
+                PlanForaSurfaceCard(title = "Stock & Safety", isImportant = true) {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        if (!isProductionUpdate && category != SupplyCategory.DIY && !isHardware) {
+                            var showIngredientSheet by remember { mutableStateOf(false) }
+                            val activeIngredientValue = viewModel.activeIngredient.collectAsState().value
+                            
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(
+                                    text = "Active Ingredient",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = SlateTextPrimary.copy(alpha = 0.9f),
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(start = 2.dp)
+                                )
+                                OutlinedTextField(
+                                    value = activeIngredientValue,
+                                    onValueChange = viewModel::updateActiveIngredient,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    leadingIcon = { Icon(Icons.Default.Tag, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp)) },
+                                    trailingIcon = {
+                                        IconButton(onClick = { showIngredientSheet = true }) {
+                                            Icon(Icons.Default.List, contentDescription = "Select A.I.")
+                                        }
+                                    },
+                                    colors = textFieldColors(isImportant = true),
+                                    placeholder = { Text("azoxystrobin") }
+                                )
+                            }
 
-                        if (showIngredientSheet) {
-                            val masterIngredients by viewModel.masterIngredients.collectAsState()
-                            StringPickerSheet(
-                                title = "Active Ingredient",
-                                selectedValue = activeIngredientValue,
-                                items = masterIngredients,
-                                onItemSelected = viewModel::updateActiveIngredient,
-                                onItemCreated = viewModel::addMasterIngredient,
-                                onItemRenamed = viewModel::updateMasterIngredient,
-                                onItemDeleted = viewModel::deleteMasterIngredient,
-                                onDismiss = { showIngredientSheet = false },
-                                placeholder = "Search or type chemical...",
-                                addLabel = "Add"
-                            )
+                            if (showIngredientSheet) {
+                                val masterIngredients by viewModel.masterIngredients.collectAsState()
+                                StringPickerSheet(
+                                    title = "Active Ingredient",
+                                    selectedValue = activeIngredientValue,
+                                    items = masterIngredients,
+                                    onItemSelected = viewModel::updateActiveIngredient,
+                                    onItemCreated = viewModel::addMasterIngredient,
+                                    onItemRenamed = viewModel::updateMasterIngredient,
+                                    onItemDeleted = viewModel::deleteMasterIngredient,
+                                    onDismiss = { showIngredientSheet = false },
+                                    placeholder = "Search or type chemical...",
+                                    addLabel = "Add"
+                                )
+                            }
+
+                            PlanForaFieldGroup(isImportant = true) {
+                                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Text(
+                                        text = "PHI (Days)",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = SlateTextPrimary.copy(alpha = 0.9f),
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(start = 2.dp)
+                                    )
+                                    OutlinedTextField(
+                                        value = viewModel.phiDays.collectAsState().value,
+                                        onValueChange = viewModel::updatePhiDays,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                                        colors = textFieldColors(isImportant = true)
+                                    )
+                                }
+
+                                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Text(
+                                        text = "REI (Hours)",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = SlateTextPrimary.copy(alpha = 0.9f),
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(start = 2.dp)
+                                    )
+                                    OutlinedTextField(
+                                        value = viewModel.reiHours.collectAsState().value,
+                                        onValueChange = viewModel::updateReiHours,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                                        colors = textFieldColors(isImportant = true)
+                                    )
+                                }
+                            }
                         }
 
                         PlanForaFieldGroup(isImportant = true) {
                             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 Text(
-                                    text = "PHI (Days)",
+                                    text = if (isLabMode) "Current Volume" else "Stock Amount",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = SlateTextPrimary.copy(alpha = 0.9f),
                                     fontWeight = FontWeight.Bold,
                                     modifier = Modifier.padding(start = 2.dp)
                                 )
                                 OutlinedTextField(
-                                    value = viewModel.phiDays.collectAsState().value,
-                                    onValueChange = viewModel::updatePhiDays,
+                                    value = viewModel.stockQuantity.collectAsState().value,
+                                    onValueChange = viewModel::updateStockQuantity,
                                     modifier = Modifier.fillMaxWidth(),
                                     keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
                                     colors = textFieldColors(isImportant = true)
                                 )
                             }
-
-                            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text(
-                                    text = "REI (Hours)",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = SlateTextPrimary.copy(alpha = 0.9f),
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(start = 2.dp)
-                                )
-                                OutlinedTextField(
-                                    value = viewModel.reiHours.collectAsState().value,
-                                    onValueChange = viewModel::updateReiHours,
-                                    modifier = Modifier.fillMaxWidth(),
-                                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
-                                    colors = textFieldColors(isImportant = true)
-                                )
-                            }
-                        }
-                    }
-
-                    PlanForaFieldGroup(isImportant = true) {
-                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(
-                                text = "Stock Amount",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = SlateTextPrimary.copy(alpha = 0.9f),
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(start = 2.dp)
-                            )
-                            OutlinedTextField(
-                                value = viewModel.stockQuantity.collectAsState().value,
-                                onValueChange = viewModel::updateStockQuantity,
-                                modifier = Modifier.fillMaxWidth(),
-                                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
-                                colors = textFieldColors(isImportant = true)
-                            )
-                        }
-                        var showUnitPicker by remember { mutableStateOf(false) }
-                        Box(modifier = Modifier.weight(1f)) {
-                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text(
-                                    text = "Unit",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = SlateTextPrimary.copy(alpha = 0.9f),
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(start = 2.dp)
-                                )
-                                OutlinedTextField(
-                                    value = viewModel.stockUnit.collectAsState().value,
-                                    onValueChange = {},
-                                    readOnly = true,
-                                    modifier = Modifier.fillMaxWidth(),
-                                    trailingIcon = {
-                                        IconButton(onClick = { showUnitPicker = true }) {
-                                            Icon(Icons.Default.ArrowDropDown, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        }
-                                    },
-                                    colors = textFieldColors(isImportant = true)
-                                )
-                            }
-                            DropdownMenu(expanded = showUnitPicker, onDismissRequest = { showUnitPicker = false }) {
-                                listOf("L", "mL", "kg", "g", "units", "bottles").forEach { unit ->
-                                    DropdownMenuItem(text = { Text(unit) }, onClick = { viewModel.updateStockUnit(unit); showUnitPicker = false })
+                            var showUnitPicker by remember { mutableStateOf(false) }
+                            Box(modifier = Modifier.weight(1f)) {
+                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Text(
+                                        text = "Unit",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = SlateTextPrimary.copy(alpha = 0.9f),
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(start = 2.dp)
+                                    )
+                                    OutlinedTextField(
+                                        value = viewModel.stockUnit.collectAsState().value,
+                                        onValueChange = {},
+                                        readOnly = true,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        trailingIcon = {
+                                            IconButton(onClick = { showUnitPicker = true }) {
+                                                Icon(Icons.Default.ArrowDropDown, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            }
+                                        },
+                                        colors = textFieldColors(isImportant = true)
+                                    )
+                                }
+                                DropdownMenu(expanded = showUnitPicker, onDismissRequest = { showUnitPicker = false }) {
+                                    listOf("L", "mL", "kg", "g", "units", "bottles").forEach { unit ->
+                                        DropdownMenuItem(text = { Text(unit) }, onClick = { viewModel.updateStockUnit(unit); showUnitPicker = false })
+                                    }
                                 }
                             }
                         }
@@ -483,7 +499,7 @@ fun AddSupplyScreen(
             }
 
             // Product Formulation Row
-            if (!isHardware) {
+            if (!isHardware && !isProductionUpdate) {
                 PlanForaSurfaceCard(title = "Product Formulation", isImportant = false) {
                     PlanForaFieldGroup(isImportant = false) {
                         var showFormTypePicker by remember { mutableStateOf(false) }
@@ -516,7 +532,7 @@ fun AddSupplyScreen(
                             }
                         }
 
-                        if (!isDiy) {
+                        if (!isLabMode) {
                             var showFormulationPicker by remember { mutableStateOf(false) }
                             Box(modifier = Modifier.weight(1f)) {
                                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -560,7 +576,7 @@ fun AddSupplyScreen(
             // Permanent Notes
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    text = "Instructions / Notes",
+                    text = if (isProductionUpdate) "Progress Notes (e.g. Smell, Bubbling, Mixing)" else "Instructions / Notes",
                     style = MaterialTheme.typography.labelSmall,
                     color = SlateTextSecondary.copy(alpha = 0.9f),
                     fontWeight = FontWeight.Bold,
@@ -569,7 +585,7 @@ fun AddSupplyScreen(
                 OutlinedTextField(
                     value = notes,
                     onValueChange = viewModel::updateNotes,
-                    placeholder = { Text("e.g. \"2mL/L or 5g/10L\"") },
+                    placeholder = { Text(if (isProductionUpdate) "Stirred today, smell is sweet..." else "e.g. \"2mL/L or 5g/10L\"") },
                     modifier = Modifier.fillMaxWidth().height(80.dp),
                     colors = textFieldColors(isImportant = false),
                     maxLines = 3
@@ -619,7 +635,11 @@ fun AddSupplyScreen(
                 shape = MaterialTheme.shapes.medium
             ) {
                 Text(
-                    if (editingSupplyId == null) "Create Product Profile" else "Update Product Profile",
+                    when {
+                        isProductionUpdate -> "Record Production Update"
+                        editingSupplyId == null -> "Create Product Profile"
+                        else -> "Update Product Profile"
+                    },
                     fontWeight = FontWeight.Bold
                 )
             }

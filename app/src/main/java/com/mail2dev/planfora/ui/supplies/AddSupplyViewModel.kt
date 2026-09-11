@@ -94,6 +94,9 @@ class AddSupplyViewModel(
     private val _isLabMode = MutableStateFlow(false)
     val isLabMode = _isLabMode.asStateFlow()
 
+    private val _isProductionUpdate = MutableStateFlow(false)
+    val isProductionUpdate = _isProductionUpdate.asStateFlow()
+
     val masterTags: StateFlow<List<String>> = journalRepository.getTagsByScope("SUPPLY")
         .map { list -> list.map { it.name } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -297,6 +300,7 @@ class AddSupplyViewModel(
 
     fun startNewSupply(defaultCategory: SupplyCategory = SupplyCategory.INSECTICIDE, isLab: Boolean = false) {
         _editingSupplyId.value = null
+        _isProductionUpdate.value = false
         reset()
         _category.value = defaultCategory
         _isLabMode.value = isLab
@@ -340,10 +344,11 @@ class AddSupplyViewModel(
     fun updateStockQuantity(v: String) { _stockQuantity.value = v }
     fun updateStockUnit(v: String) { _stockUnit.value = v }
 
-    fun loadSupply(supplyId: Long) {
+    fun loadSupply(supplyId: Long, isProductionUpdate: Boolean = false) {
         viewModelScope.launch {
             repository.getAllSupplies().firstOrNull()?.find { it.id == supplyId }?.let { supply ->
                 _editingSupplyId.value = supplyId
+                _isProductionUpdate.value = isProductionUpdate
                 _name.value = supply.name
                 _category.value = SupplyCategory.entries.find { it.displayName == supply.category } ?: SupplyCategory.DIY
                 _subCategory.value = supply.subCategory ?: ""
@@ -414,6 +419,11 @@ class AddSupplyViewModel(
         viewModelScope.launch {
             val days = _maturityDays.value.toLongOrNull() ?: 0L
             val targetMaturity = if (days > 0) System.currentTimeMillis() + (days * 24 * 60 * 60 * 1000) else 0L
+            
+            val newMaterialList = _materialLedger.value.joinToString("|") { "${it.first}:${it.second}" }
+            
+            // Fetch previous state for logging
+            val previousSupply = _editingSupplyId.value?.let { repository.getAllSupplies().firstOrNull()?.find { s -> s.id == it } }
 
             val entity = DiySupplyEntity(
                 id = _editingSupplyId.value ?: 0,
@@ -421,7 +431,7 @@ class AddSupplyViewModel(
                 category = _category.value.displayName,
                 subCategory = if (_category.value == SupplyCategory.DIY) _subCategory.value else null,
                 containerId = _containerId.value,
-                materialList = _materialLedger.value.joinToString("|") { "${it.first}:${it.second}" },
+                materialList = newMaterialList,
                 targetBenefit = _targetBenefit.value,
                 formType = _formType.value.name,
                 formulationCode = _formulationCode.value,
@@ -431,9 +441,9 @@ class AddSupplyViewModel(
                 reiHours = _reiHours.value.toIntOrNull(),
                 stockQuantity = _stockQuantity.value.toFloatOrNull(),
                 stockUnit = _stockUnit.value,
-                batchCode = if (_editingSupplyId.value == null) "" else _name.value, // repository will generate if empty
-                startDate = System.currentTimeMillis(),
-                targetMaturityDate = targetMaturity,
+                batchCode = if (_editingSupplyId.value == null) "" else _name.value,
+                startDate = previousSupply?.startDate ?: System.currentTimeMillis(),
+                targetMaturityDate = if (_editingSupplyId.value == null) targetMaturity else previousSupply?.targetMaturityDate ?: 0L,
                 imageUris = _imageUris.value.joinToString(",") { it.toString() },
                 audioPath = _audioPath.value,
                 locationNote = _location.value,
@@ -446,6 +456,49 @@ class AddSupplyViewModel(
                 repository.updateSupply(entity)
                 _editingSupplyId.value!!
             }
+
+            // --- RESEARCH LOGGING LOGIC ---
+            val isNewProject = _editingSupplyId.value == null
+            val logTitle = if (isNewProject) "Project Started: ${_subCategory.value ?: "DIY"}" else "Production Update"
+            
+            // Build log notes based on what changed/was added
+            val logNoteBuilder = StringBuilder()
+            if (isNewProject) {
+                logNoteBuilder.append("Started batch with: \n")
+                _materialLedger.value.forEach { logNoteBuilder.append("• ${it.first}: ${it.second}\n") }
+            } else {
+                // Find new materials added in this update
+                val oldMaterials = previousSupply?.materialList?.split("|")?.toSet() ?: emptySet()
+                val newlyAdded = _materialLedger.value.filter { "${it.first}:${it.second}" !in oldMaterials }
+                if (newlyAdded.isNotEmpty()) {
+                    logNoteBuilder.append("Added materials: \n")
+                    newlyAdded.forEach { logNoteBuilder.append("• ${it.first}: ${it.second}\n") }
+                }
+                
+                if (previousSupply?.containerId != _containerId.value) {
+                    logNoteBuilder.append("Moved to vessel: ${_containerId.value}\n")
+                }
+            }
+            
+            if (_notes.value.isNotBlank()) {
+                logNoteBuilder.append("\nNote: ${_notes.value}")
+            }
+
+            journalRepository.insertLog(
+                com.mail2dev.planfora.data.local.entity.JournalLogEntity(
+                    assetId = 0,
+                    supplyId = supplyId,
+                    title = logTitle,
+                    note = logNoteBuilder.toString(),
+                    timestamp = System.currentTimeMillis(),
+                    imageUris = _imageUris.value.joinToString(",") { it.toString() },
+                    audioFilePath = _audioPath.value,
+                    activityType = "PRODUCTION",
+                    photoPath = null,
+                    ecValue = null,
+                    phValue = null
+                )
+            )
 
             // Save custom field values
             journalRepository.deleteCustomFieldValues(supplyId)

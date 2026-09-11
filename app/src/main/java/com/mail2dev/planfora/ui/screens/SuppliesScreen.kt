@@ -1,7 +1,9 @@
 package com.mail2dev.planfora.ui.screens
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -27,7 +29,7 @@ import com.mail2dev.planfora.ui.theme.DarkBackground
 import com.mail2dev.planfora.ui.theme.ForestGreen
 import java.util.concurrent.TimeUnit
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun SuppliesScreen(
     navController: androidx.navigation.NavController,
@@ -38,6 +40,8 @@ fun SuppliesScreen(
     val selectedTab by viewModel.selectedTab.collectAsState()
     val selectedCategory by viewModel.selectedCategory.collectAsState()
     val showAddSheet by viewModel.showAddBottomSheet.collectAsState()
+    
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
 
     Scaffold(
         containerColor = DarkBackground,
@@ -173,7 +177,15 @@ fun SuppliesScreen(
                 items(supplies) { supply ->
                     val onClick = { navController.navigate(Screen.SupplyDetail.createRoute(supply.id)) }
                     if (selectedTab == com.mail2dev.planfora.ui.supplies.SupplyTab.DIY_LAB) {
-                        FormulationCard(supply, onClick)
+                        FormulationCard(
+                            formulation = supply, 
+                            onClick = onClick,
+                            onLongClick = {
+                                haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                                addSupplyViewModel.loadSupply(supply.id, isProductionUpdate = true)
+                                viewModel.setShowAddBottomSheet(true)
+                            }
+                        )
                     } else {
                         StoreSupplyCard(supply, onClick)
                     }
@@ -280,15 +292,25 @@ fun StoreSupplyCard(supply: DiySupplyEntity, onClick: () -> Unit) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun FormulationCard(formulation: DiySupplyEntity, onClick: () -> Unit) {
+fun FormulationCard(
+    formulation: DiySupplyEntity, 
+    onClick: () -> Unit,
+    onLongClick: () -> Unit
+) {
     val currentTime = System.currentTimeMillis()
     val isMature = currentTime >= formulation.targetMaturityDate
     
     Card(
         colors = CardDefaults.cardColors(containerColor = Color(0xFF1E2120)),
         shape = RoundedCornerShape(12.dp),
-        modifier = Modifier.fillMaxWidth().clickable { onClick() }
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            )
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
