@@ -41,26 +41,46 @@ fun SuppliesScreen(
     val selectedCategory by viewModel.selectedCategory.collectAsState()
     val showAddSheet by viewModel.showAddBottomSheet.collectAsState()
     
+    val hasDraft by addSupplyViewModel.hasDraftData.collectAsState()
+    val isUpdateDraft by addSupplyViewModel.isProductionUpdate.collectAsState()
+    
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
 
     Scaffold(
         containerColor = DarkBackground,
         floatingActionButton = {
             if (!showAddSheet) {
-                FloatingActionButton(
-                    onClick = { 
-                        val isLab = selectedTab == com.mail2dev.planfora.ui.supplies.SupplyTab.DIY_LAB
-                        val defaultCat = if (isLab) 
-                            com.mail2dev.planfora.data.local.entity.SupplyCategory.DIY 
-                        else 
-                            com.mail2dev.planfora.data.local.entity.SupplyCategory.INSECTICIDE
-                        addSupplyViewModel.startNewSupply(defaultCat, isLab)
-                        viewModel.setShowAddBottomSheet(true) 
-                    },
-                    containerColor = ForestGreen,
-                    contentColor = Color.White
-                ) {
-                    Icon(Icons.Rounded.Add, contentDescription = "Add Formulation")
+                Column(horizontalAlignment = Alignment.End) {
+                    if (hasDraft) {
+                        SmallFloatingActionButton(
+                            onClick = { viewModel.setShowAddBottomSheet(true) },
+                            containerColor = Color(0xFFE53935),
+                            contentColor = Color.White,
+                            modifier = Modifier.padding(bottom = 12.dp)
+                        ) {
+                            Icon(
+                                if (isUpdateDraft) Icons.Rounded.PendingActions else Icons.Rounded.EditNote,
+                                contentDescription = "Resume Draft",
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+                    
+                    FloatingActionButton(
+                        onClick = { 
+                            val isLab = selectedTab == com.mail2dev.planfora.ui.supplies.SupplyTab.DIY_LAB
+                            val defaultCat = if (isLab) 
+                                com.mail2dev.planfora.data.local.entity.SupplyCategory.DIY 
+                            else 
+                                com.mail2dev.planfora.data.local.entity.SupplyCategory.INSECTICIDE
+                            addSupplyViewModel.startNewSupply(defaultCat, isLab)
+                            viewModel.setShowAddBottomSheet(true) 
+                        },
+                        containerColor = ForestGreen,
+                        contentColor = Color.White
+                    ) {
+                        Icon(Icons.Rounded.Add, contentDescription = "Add Formulation")
+                    }
                 }
             }
         }

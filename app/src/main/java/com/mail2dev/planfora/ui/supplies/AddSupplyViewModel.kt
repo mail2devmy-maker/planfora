@@ -100,6 +100,15 @@ class AddSupplyViewModel(
     private val _customTimestamp = MutableStateFlow(System.currentTimeMillis())
     val customTimestamp = _customTimestamp.asStateFlow()
 
+    val hasDraftData = combine(
+        _name, _notes, _materialLedger, _imageUris, _location
+    ) { name, notes, ledger, uris, loc ->
+        name.isNotBlank() || notes.isNotBlank() || ledger.isNotEmpty() ||
+                uris.isNotEmpty() || loc.isNotBlank()
+    }.combine(_selectedTags) { hasBaseDraft, tags ->
+        hasBaseDraft || tags.isNotEmpty()
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     fun updateCustomTimestamp(v: Long) {
         _customTimestamp.value = v
     }
@@ -527,6 +536,12 @@ class AddSupplyViewModel(
 
             reset()
         }
+    }
+
+    fun discardDraft() {
+        reset()
+        _editingSupplyId.value = null
+        _isProductionUpdate.value = false
     }
 
     private fun reset() {
