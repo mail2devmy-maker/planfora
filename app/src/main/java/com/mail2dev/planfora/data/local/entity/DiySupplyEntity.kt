@@ -32,7 +32,11 @@ data class DiySupplyEntity(
     val audioPath: String? = null,
     val locationNote: String = "",
     val tags: String = "",
-    val subCategory: String? = null
+    val subCategory: String? = null,
+    val containerId: String = "", // Added in v24 for Vessel/Jar ID
+    val materialList: String = "", // Added in v24 for Recipe/BOM
+    val displayId: String = "", // Added in v25 for FPJ01, JMS02 style
+    val targetBenefit: String? = null // Added in v25: Growth Stimulant, Pest Repellent, etc.
 )
 
 enum class SupplyCategory(val displayName: String) {

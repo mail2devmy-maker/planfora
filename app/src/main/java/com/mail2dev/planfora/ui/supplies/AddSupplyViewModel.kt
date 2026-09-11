@@ -27,6 +27,18 @@ class AddSupplyViewModel(
     private val _subCategory = MutableStateFlow("")
     val subCategory = _subCategory.asStateFlow()
 
+    private val _maturityDays = MutableStateFlow("")
+    val maturityDays = _maturityDays.asStateFlow()
+
+    private val _containerId = MutableStateFlow("")
+    val containerId = _containerId.asStateFlow()
+
+    private val _targetBenefit = MutableStateFlow("")
+    val targetBenefit = _targetBenefit.asStateFlow()
+
+    private val _materialLedger = MutableStateFlow<List<Pair<String, String>>>(emptyList())
+    val materialLedger = _materialLedger.asStateFlow()
+
     private val _formType = MutableStateFlow(com.mail2dev.planfora.data.local.entity.SupplyFormType.LIQUID)
     val formType = _formType.asStateFlow()
 
@@ -78,6 +90,9 @@ class AddSupplyViewModel(
 
     private val _editingSupplyId = MutableStateFlow<Long?>(null)
     val editingSupplyId = _editingSupplyId.asStateFlow()
+
+    private val _isLabMode = MutableStateFlow(false)
+    val isLabMode = _isLabMode.asStateFlow()
 
     val masterTags: StateFlow<List<String>> = journalRepository.getTagsByScope("SUPPLY")
         .map { list -> list.map { it.name } }
@@ -157,30 +172,52 @@ class AddSupplyViewModel(
     }
     fun updateCategory(v: SupplyCategory) { _category.value = v }
     fun updateSubCategory(v: String) { _subCategory.value = v }
+    fun updateMaturityDays(v: String) { _maturityDays.value = v }
+    fun updateContainerId(v: String) { _containerId.value = v }
+    fun updateTargetBenefit(v: String) { _targetBenefit.value = v }
+
+    fun addMaterialToLedger() {
+        _materialLedger.update { it + ("" to "") }
+    }
+
+    fun updateMaterialInLedger(index: Int, name: String, amount: String) {
+        _materialLedger.update { list ->
+            list.toMutableList().apply {
+                this[index] = name to amount
+            }
+        }
+    }
+
+    fun removeMaterialFromLedger(index: Int) {
+        _materialLedger.update { list ->
+            list.toMutableList().apply { removeAt(index) }
+        }
+    }
+
     fun updateFormType(v: com.mail2dev.planfora.data.local.entity.SupplyFormType) { 
         _formType.value = v 
         // Smart unit defaults based on form type
         when (v) {
             com.mail2dev.planfora.data.local.entity.SupplyFormType.LIQUID -> {
-                updateStockUnit("L")
+                _stockUnit.value = "L"
                 if (_formulationCode.value !in listOf("SL", "SC", "EC", "Other")) {
                     _formulationCode.value = null
                 }
             }
             com.mail2dev.planfora.data.local.entity.SupplyFormType.POWDER -> {
-                updateStockUnit("kg")
+                _stockUnit.value = "kg"
                 if (_formulationCode.value !in listOf("WP", "SP", "Other")) {
                     _formulationCode.value = null
                 }
             }
             com.mail2dev.planfora.data.local.entity.SupplyFormType.GRANULAR -> {
-                updateStockUnit("kg")
+                _stockUnit.value = "kg"
                 if (_formulationCode.value !in listOf("WG", "GR", "Other")) {
                     _formulationCode.value = null
                 }
             }
             com.mail2dev.planfora.data.local.entity.SupplyFormType.SOLID -> {
-                updateStockUnit("kg")
+                _stockUnit.value = "kg"
                 if (_formulationCode.value != "Other") {
                     _formulationCode.value = null
                 }
@@ -258,9 +295,11 @@ class AddSupplyViewModel(
         }
     }
 
-    fun startNewSupply() {
+    fun startNewSupply(defaultCategory: SupplyCategory = SupplyCategory.INSECTICIDE, isLab: Boolean = false) {
         _editingSupplyId.value = null
         reset()
+        _category.value = defaultCategory
+        _isLabMode.value = isLab
     }
 
     fun addImageUri(uri: Uri) { _imageUris.update { it + uri } }
@@ -308,6 +347,21 @@ class AddSupplyViewModel(
                 _name.value = supply.name
                 _category.value = SupplyCategory.entries.find { it.displayName == supply.category } ?: SupplyCategory.DIY
                 _subCategory.value = supply.subCategory ?: ""
+                _containerId.value = supply.containerId
+                _targetBenefit.value = supply.targetBenefit ?: ""
+                
+                // Parse material list into ledger
+                _materialLedger.value = supply.materialList.split("|").filter { it.contains(":") }.map { 
+                    val parts = it.split(":")
+                    parts[0] to parts[1]
+                }
+
+                if (supply.targetMaturityDate > supply.startDate) {
+                    val days = (supply.targetMaturityDate - supply.startDate) / (24L * 60 * 60 * 1000)
+                    _maturityDays.value = days.toString()
+                } else {
+                    _maturityDays.value = ""
+                }
                 _formType.value = com.mail2dev.planfora.data.local.entity.SupplyFormType.entries.find { it.name == supply.formType } ?: com.mail2dev.planfora.data.local.entity.SupplyFormType.LIQUID
                 _formulationCode.value = supply.formulationCode
                 _notes.value = supply.notes
@@ -320,6 +374,7 @@ class AddSupplyViewModel(
                 _imageUris.value = supply.imageUris.split(",").filter { it.isNotBlank() }.map { Uri.parse(it) }
                 _location.value = supply.locationNote
                 _selectedTags.value = supply.tags.split(",").filter { it.isNotBlank() }.toSet()
+                _isLabMode.value = (supply.category == "DIY" && !supply.isArchived)
                 
                 // Load custom field values
                 journalRepository.getCustomFieldValues(supplyId).firstOrNull()?.let { values ->
@@ -357,11 +412,17 @@ class AddSupplyViewModel(
 
     fun saveSupply() {
         viewModelScope.launch {
+            val days = _maturityDays.value.toLongOrNull() ?: 0L
+            val targetMaturity = if (days > 0) System.currentTimeMillis() + (days * 24 * 60 * 60 * 1000) else 0L
+
             val entity = DiySupplyEntity(
                 id = _editingSupplyId.value ?: 0,
                 name = _name.value,
                 category = _category.value.displayName,
                 subCategory = if (_category.value == SupplyCategory.DIY) _subCategory.value else null,
+                containerId = _containerId.value,
+                materialList = _materialLedger.value.joinToString("|") { "${it.first}:${it.second}" },
+                targetBenefit = _targetBenefit.value,
                 formType = _formType.value.name,
                 formulationCode = _formulationCode.value,
                 notes = _notes.value,
@@ -370,7 +431,9 @@ class AddSupplyViewModel(
                 reiHours = _reiHours.value.toIntOrNull(),
                 stockQuantity = _stockQuantity.value.toFloatOrNull(),
                 stockUnit = _stockUnit.value,
-                batchCode = _name.value,
+                batchCode = if (_editingSupplyId.value == null) "" else _name.value, // repository will generate if empty
+                startDate = System.currentTimeMillis(),
+                targetMaturityDate = targetMaturity,
                 imageUris = _imageUris.value.joinToString(",") { it.toString() },
                 audioPath = _audioPath.value,
                 locationNote = _location.value,
@@ -398,6 +461,10 @@ class AddSupplyViewModel(
     private fun reset() {
         _name.value = ""
         _subCategory.value = ""
+        _maturityDays.value = ""
+        _containerId.value = ""
+        _targetBenefit.value = ""
+        _materialLedger.value = emptyList()
         _notes.value = ""
         _activeIngredient.value = ""
         _phiDays.value = ""

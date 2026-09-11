@@ -52,7 +52,7 @@ import com.mail2dev.planfora.ui.components.planForaTextFieldColors
 import com.mail2dev.planfora.data.local.entity.FieldTargetType
 import com.mail2dev.planfora.ui.theme.*
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun AddSupplyScreen(
     viewModel: AddSupplyViewModel,
@@ -61,6 +61,8 @@ fun AddSupplyScreen(
     val name by viewModel.name.collectAsState()
     val category by viewModel.category.collectAsState()
     val subCategory by viewModel.subCategory.collectAsState()
+    val targetBenefit by viewModel.targetBenefit.collectAsState()
+    val materialLedger by viewModel.materialLedger.collectAsState()
     val formType by viewModel.formType.collectAsState()
     val formulationCode by viewModel.formulationCode.collectAsState()
     val notes by viewModel.notes.collectAsState()
@@ -70,15 +72,19 @@ fun AddSupplyScreen(
     val customFieldDefinitions by viewModel.customFieldDefinitions.collectAsState()
     val customFieldValues by viewModel.customFieldValues.collectAsState()
     val editingSupplyId by viewModel.editingSupplyId.collectAsState()
+    val isLabMode by viewModel.isLabMode.collectAsState()
 
     val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
     var showTagSheet by remember { mutableStateOf(false) }
     var showCustomFieldDialog by remember { mutableStateOf(false) }
     var showLocationSheet by remember { mutableStateOf(false) }
     var showDiscardDialog by remember { mutableStateOf(false) }
 
-    val hasUnsavedChanges = remember(name, formulationCode, notes, location, selectedTags, imageUris) {
-        name.isNotBlank() || formulationCode != null || notes.isNotBlank() || location.isNotBlank() || selectedTags.isNotEmpty() || imageUris.isNotEmpty()
+    val diyTypes = listOf("FPJ", "FFJ", "JMS", "JWA", "FAA", "OHN", "LAB", "WCA", "Other")
+
+    val hasUnsavedChanges = remember(name, formulationCode, notes, location, selectedTags, imageUris, materialLedger) {
+        name.isNotBlank() || formulationCode != null || notes.isNotBlank() || location.isNotBlank() || selectedTags.isNotEmpty() || imageUris.isNotEmpty() || materialLedger.isNotEmpty()
     }
 
     BackHandler(enabled = hasUnsavedChanges && editingSupplyId == null) {
@@ -171,49 +177,151 @@ fun AddSupplyScreen(
             // Primary Identification & Storage
             PlanForaSurfaceCard(title = "Identification & Storage", isImportant = true) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("Category", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        SupplyCategory.entries.forEach { cat ->
-                            FilterChip(
-                                selected = category == cat,
-                                onClick = { viewModel.updateCategory(cat) },
-                                label = { Text(cat.displayName) },
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
-                                    labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                                ),
-                                border = FilterChipDefaults.filterChipBorder(
-                                    enabled = true,
+                    if (!isLabMode || editingSupplyId != null) {
+                        Text("Category", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            SupplyCategory.entries.forEach { cat ->
+                                FilterChip(
                                     selected = category == cat,
-                                    borderColor = Color.Gray.copy(alpha = 0.2f),
-                                    selectedBorderColor = Color.Transparent
+                                    onClick = { viewModel.updateCategory(cat) },
+                                    label = { Text(cat.displayName) },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                                        labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                    ),
+                                    border = FilterChipDefaults.filterChipBorder(
+                                        enabled = true,
+                                        selected = category == cat,
+                                        borderColor = Color.Gray.copy(alpha = 0.2f),
+                                        selectedBorderColor = Color.Transparent
+                                    )
                                 )
-                            )
+                            }
                         }
                     }
 
                     if (category == SupplyCategory.DIY) {
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(
-                                text = "Sub-Category (e.g. FFJ, FAA, FPJ)",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = SlateTextPrimary.copy(alpha = 0.9f),
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(start = 2.dp)
-                            )
-                            OutlinedTextField(
-                                value = subCategory,
-                                onValueChange = viewModel::updateSubCategory,
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                                colors = textFieldColors(isImportant = true)
-                            )
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            if (isLabMode) {
+                                Text("DIY Specification", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                
+                                FlowRow(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    diyTypes.forEach { type ->
+                                        FilterChip(
+                                            selected = subCategory == type,
+                                            onClick = { viewModel.updateSubCategory(type) },
+                                            label = { Text(type, fontSize = 11.sp) },
+                                            colors = FilterChipDefaults.filterChipColors(
+                                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                                                labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                            ),
+                                            border = FilterChipDefaults.filterChipBorder(
+                                                enabled = true,
+                                                selected = subCategory == type,
+                                                borderColor = Color.Gray.copy(alpha = 0.2f),
+                                                selectedBorderColor = Color.Transparent
+                                            )
+                                        )
+                                    }
+                                }
+
+                                // Row 1: Maturity & Vessel (DIY Production Only)
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Text("Maturity (Days)", style = MaterialTheme.typography.labelSmall, color = SlateTextSecondary.copy(alpha = 0.9f), fontWeight = FontWeight.Bold)
+                                        OutlinedTextField(
+                                            value = viewModel.maturityDays.collectAsState().value,
+                                            onValueChange = viewModel::updateMaturityDays,
+                                            modifier = Modifier.fillMaxWidth(),
+                                            placeholder = { Text("e.g. 30") },
+                                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                                            colors = textFieldColors(isImportant = false),
+                                            singleLine = true
+                                        )
+                                    }
+                                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Text("Vessel / Jar ID", style = MaterialTheme.typography.labelSmall, color = SlateTextSecondary.copy(alpha = 0.9f), fontWeight = FontWeight.Bold)
+                                        OutlinedTextField(
+                                            value = viewModel.containerId.collectAsState().value,
+                                            onValueChange = viewModel::updateContainerId,
+                                            modifier = Modifier.fillMaxWidth(),
+                                            placeholder = { Text("Jar A-01") },
+                                            colors = textFieldColors(isImportant = false),
+                                            singleLine = true
+                                        )
+                                    }
+                                }
+                            }
+
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text("Target Benefit", style = MaterialTheme.typography.labelSmall, color = SlateTextSecondary.copy(alpha = 0.9f), fontWeight = FontWeight.Bold)
+                                OutlinedTextField(
+                                    value = targetBenefit,
+                                    onValueChange = viewModel::updateTargetBenefit,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    placeholder = { Text("e.g. Growth Stimulant") },
+                                    colors = textFieldColors(isImportant = false),
+                                    singleLine = true
+                                )
+                            }
+
+                            if (isLabMode) {
+                                // Material Ledger (DIY Production Only)
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text("MATERIAL LIST", style = MaterialTheme.typography.labelSmall, color = Color.Gray, fontWeight = FontWeight.Bold)
+                                        TextButton(onClick = { viewModel.addMaterialToLedger() }) {
+                                            Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp))
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text("Add Item", fontSize = 11.sp)
+                                        }
+                                    }
+
+                                    materialLedger.forEachIndexed { index, pair ->
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            OutlinedTextField(
+                                                value = pair.first,
+                                                onValueChange = { viewModel.updateMaterialInLedger(index, it, pair.second) },
+                                                modifier = Modifier.weight(2f),
+                                                placeholder = { Text("Ingredient", fontSize = 12.sp) },
+                                                colors = textFieldColors(isImportant = false),
+                                                singleLine = true
+                                            )
+                                            OutlinedTextField(
+                                                value = pair.second,
+                                                onValueChange = { viewModel.updateMaterialInLedger(index, pair.first, it) },
+                                                modifier = Modifier.weight(1f),
+                                                placeholder = { Text("Qty", fontSize = 12.sp) },
+                                                colors = textFieldColors(isImportant = false),
+                                                singleLine = true
+                                            )
+                                            IconButton(onClick = { viewModel.removeMaterialFromLedger(index) }, modifier = Modifier.size(24.dp)) {
+                                                Icon(Icons.Default.Close, null, tint = Color.Gray, modifier = Modifier.size(16.dp))
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
 

@@ -201,6 +201,12 @@ fun SupplyDetailScreen(
                     ProductHeaderCard(supply, customFieldValues, customFieldDefinitions)
                 }
 
+                if (supply.category == "DIY" && !supply.isArchived) {
+                    item {
+                        ProductionDashboard(supply)
+                    }
+                }
+
                 if ((supply.phiDays ?: 0) > 0) {
                     item {
                         SafetyAlertBanner(supply.phiDays!!)
@@ -252,6 +258,61 @@ fun SupplyDetailScreen(
             viewModel = addSupplyViewModel,
             onDismiss = { viewModel.setShowAddBottomSheet(false) }
         )
+    }
+}
+
+@Composable
+fun ProductionDashboard(supply: DiySupplyEntity) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.05f)),
+        shape = RoundedCornerShape(16.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("PRODUCTION DASHBOARD", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Vessel / Jar ID", color = Color.Gray, fontSize = 10.sp)
+                    Text(supply.containerId.ifBlank { "Unassigned" }, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Current Volume", color = Color.Gray, fontSize = 10.sp)
+                    Text("${supply.currentVolume} ${supply.unit}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                }
+            }
+
+            if (!supply.targetBenefit.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Column {
+                    Text("Target Benefit", color = Color.Gray, fontSize = 10.sp)
+                    Text(supply.targetBenefit, color = com.mail2dev.planfora.ui.theme.SageGreen, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            if (supply.materialList.isNotBlank()) {
+                Text("MATERIAL LIST / RECIPE", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                Surface(
+                    color = Color.Black.copy(alpha = 0.2f),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        supply.materialList.split("|").filter { it.contains(":") }.forEach { item ->
+                            val parts = item.split(":")
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text(parts[0], color = Color.LightGray, fontSize = 13.sp)
+                                Text(parts[1], color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

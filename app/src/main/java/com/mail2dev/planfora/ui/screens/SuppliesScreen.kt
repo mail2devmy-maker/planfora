@@ -45,7 +45,12 @@ fun SuppliesScreen(
             if (!showAddSheet) {
                 FloatingActionButton(
                     onClick = { 
-                        addSupplyViewModel.startNewSupply()
+                        val isLab = selectedTab == com.mail2dev.planfora.ui.supplies.SupplyTab.DIY_LAB
+                        val defaultCat = if (isLab) 
+                            com.mail2dev.planfora.data.local.entity.SupplyCategory.DIY 
+                        else 
+                            com.mail2dev.planfora.data.local.entity.SupplyCategory.INSECTICIDE
+                        addSupplyViewModel.startNewSupply(defaultCat, isLab)
                         viewModel.setShowAddBottomSheet(true) 
                     },
                     containerColor = ForestGreen,
