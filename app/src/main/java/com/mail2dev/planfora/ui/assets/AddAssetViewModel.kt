@@ -71,6 +71,20 @@ class AddAssetViewModel(private val repository: JournalRepository) : ViewModel()
     private val _editingAssetId = MutableStateFlow<Long?>(null)
     val editingAssetId = _editingAssetId.asStateFlow()
 
+    val hasDraftData = combine(
+        _name, _notes, _location, _imageUris, _audioPath, _selectedTags
+    ) { args ->
+        val name = args[0] as String
+        val notes = args[1] as String
+        val loc = args[2] as String
+        val uris = args[3] as List<*>
+        val audio = args[4] as String?
+        val tags = args[5] as Set<*>
+
+        name.isNotBlank() || notes.isNotBlank() || loc.isNotBlank() ||
+                uris.isNotEmpty() || audio != null || tags.isNotEmpty()
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     val masterLocations: StateFlow<List<String>> = repository.getLocationsByScope("ASSET")
         .map { list -> list.map { it.name } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -139,6 +153,11 @@ class AddAssetViewModel(private val repository: JournalRepository) : ViewModel()
     fun startNewAsset() {
         _editingAssetId.value = null
         reset()
+    }
+
+    fun discardDraft() {
+        reset()
+        _editingAssetId.value = null
     }
 
     fun addImageUri(uri: Uri) { _imageUris.update { it + uri } }

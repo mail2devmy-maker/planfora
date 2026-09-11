@@ -82,6 +82,7 @@ fun AddAssetScreen(
             text = { Text("You have unsaved changes. Are you sure you want to discard them?", color = Color.LightGray) },
             confirmButton = {
                 TextButton(onClick = { 
+                    viewModel.discardDraft()
                     showDiscardDialog = false
                     onDismiss() 
                 }) {
@@ -100,13 +101,7 @@ fun AddAssetScreen(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     ModalBottomSheet(
-        onDismissRequest = {
-            if (hasUnsavedChanges && editingAssetId == null) {
-                showDiscardDialog = true
-            } else {
-                onDismiss()
-            }
-        },
+        onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = MaterialTheme.colorScheme.background,
         tonalElevation = 0.dp
@@ -131,7 +126,7 @@ fun AddAssetScreen(
                     fontWeight = FontWeight.Bold
                 )
                 IconButton(onClick = {
-                    if (hasUnsavedChanges && editingAssetId == null) {
+                    if (hasUnsavedChanges) {
                         showDiscardDialog = true
                     } else {
                         onDismiss()

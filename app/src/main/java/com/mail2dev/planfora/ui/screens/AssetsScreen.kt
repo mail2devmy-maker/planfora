@@ -47,6 +47,8 @@ fun AssetsScreen(
     val isMultiSelectMode by viewModel.isMultiSelectMode.collectAsState()
     val selectedAssetIds by viewModel.selectedAssetIds.collectAsState()
 
+    val hasDraft by addAssetViewModel.hasDraftData.collectAsState()
+
     var collapsedLocations by remember { mutableStateOf(setOf<String>()) }
     var collapsedBlocks by remember { mutableStateOf(setOf<String>()) }
 
@@ -54,15 +56,32 @@ fun AssetsScreen(
         containerColor = MaterialTheme.colorScheme.background,
         floatingActionButton = {
             if (!isMultiSelectMode) {
-                FloatingActionButton(
-                    onClick = { 
-                        addAssetViewModel.startNewAsset()
-                        viewModel.setShowAddBottomSheet(true) 
-                    },
-                    containerColor = com.mail2dev.planfora.ui.theme.ForestGreen,
-                    contentColor = Color.White
-                ) {
-                    Icon(Icons.Rounded.Add, contentDescription = "New Asset")
+                Column(horizontalAlignment = Alignment.End) {
+                    if (hasDraft && !showAddSheet) {
+                        SmallFloatingActionButton(
+                            onClick = { viewModel.setShowAddBottomSheet(true) },
+                            containerColor = Color(0xFFE53935), // Pure Red
+                            contentColor = Color.White,
+                            modifier = Modifier.padding(bottom = 12.dp)
+                        ) {
+                            Icon(
+                                Icons.Rounded.Spa,
+                                contentDescription = "Resume Draft",
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+
+                    FloatingActionButton(
+                        onClick = {
+                            addAssetViewModel.startNewAsset()
+                            viewModel.setShowAddBottomSheet(true)
+                        },
+                        containerColor = com.mail2dev.planfora.ui.theme.ForestGreen,
+                        contentColor = Color.White
+                    ) {
+                        Icon(Icons.Rounded.Add, contentDescription = "New Asset")
+                    }
                 }
             }
         },
