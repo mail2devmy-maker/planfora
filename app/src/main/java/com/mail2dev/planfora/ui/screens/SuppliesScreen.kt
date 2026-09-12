@@ -44,7 +44,31 @@ fun SuppliesScreen(
     val hasDraft by addSupplyViewModel.hasDraftData.collectAsState()
     val isUpdateDraft by addSupplyViewModel.isProductionUpdate.collectAsState()
     
+    var showDraftConflictDialog by remember { mutableStateOf<DiySupplyEntity?>(null) }
+    
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+
+    if (showDraftConflictDialog != null) {
+        AlertDialog(
+            onDismissRequest = { showDraftConflictDialog = null },
+            title = { Text("Discard current draft?", color = Color.White) },
+            text = { Text("You have an active draft for a new product. Starting an update will discard it. Continue?", color = Color.LightGray) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        addSupplyViewModel.loadSupply(showDraftConflictDialog!!.id, isProductionUpdate = true)
+                        viewModel.setShowAddBottomSheet(true)
+                        showDraftConflictDialog = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                ) { Text("Discard & Update") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDraftConflictDialog = null }) { Text("Cancel", color = Color.White) }
+            },
+            containerColor = Color(0xFF1E2120)
+        )
+    }
 
     Scaffold(
         containerColor = DarkBackground,
@@ -68,13 +92,18 @@ fun SuppliesScreen(
                     
                     FloatingActionButton(
                         onClick = { 
-                            val isLab = selectedTab == com.mail2dev.planfora.ui.supplies.SupplyTab.DIY_LAB
-                            val defaultCat = if (isLab) 
-                                com.mail2dev.planfora.data.local.entity.SupplyCategory.DIY 
-                            else 
-                                com.mail2dev.planfora.data.local.entity.SupplyCategory.INSECTICIDE
-                            addSupplyViewModel.startNewSupply(defaultCat, isLab)
-                            viewModel.setShowAddBottomSheet(true) 
+                            if (hasDraft) {
+                                // If draft exists, just reopen it
+                                viewModel.setShowAddBottomSheet(true)
+                            } else {
+                                val isLab = selectedTab == com.mail2dev.planfora.ui.supplies.SupplyTab.DIY_LAB
+                                val defaultCat = if (isLab) 
+                                    com.mail2dev.planfora.data.local.entity.SupplyCategory.DIY 
+                                else 
+                                    com.mail2dev.planfora.data.local.entity.SupplyCategory.INSECTICIDE
+                                addSupplyViewModel.startNewSupply(defaultCat, isLab)
+                                viewModel.setShowAddBottomSheet(true) 
+                            }
                         },
                         containerColor = ForestGreen,
                         contentColor = Color.White
@@ -202,8 +231,12 @@ fun SuppliesScreen(
                             onClick = onClick,
                             onLongClick = {
                                 haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
-                                addSupplyViewModel.loadSupply(supply.id, isProductionUpdate = true)
-                                viewModel.setShowAddBottomSheet(true)
+                                if (hasDraft && !isUpdateDraft) {
+                                    showDraftConflictDialog = supply
+                                } else {
+                                    addSupplyViewModel.loadSupply(supply.id, isProductionUpdate = true)
+                                    viewModel.setShowAddBottomSheet(true)
+                                }
                             }
                         )
                     } else {

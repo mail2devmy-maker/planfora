@@ -72,17 +72,20 @@ class AddAssetViewModel(private val repository: JournalRepository) : ViewModel()
     val editingAssetId = _editingAssetId.asStateFlow()
 
     val hasDraftData = combine(
-        _name, _notes, _location, _imageUris, _audioPath, _selectedTags
+        _name, _notes, _location, _imageUris, _audioPath, _editingAssetId
     ) { args ->
         val name = args[0] as String
         val notes = args[1] as String
         val loc = args[2] as String
         val uris = args[3] as List<*>
         val audio = args[4] as String?
-        val tags = args[5] as Set<*>
+        val editingId = args[5] as Long?
 
-        name.isNotBlank() || notes.isNotBlank() || loc.isNotBlank() ||
-                uris.isNotEmpty() || audio != null || tags.isNotEmpty()
+        // Only show as a draft for NEW assets, not for editing existing ones
+        editingId == null && (name.isNotBlank() || notes.isNotBlank() || loc.isNotBlank() ||
+                uris.isNotEmpty() || audio != null)
+    }.combine(_selectedTags) { hasBaseDraft, tags ->
+        hasBaseDraft || tags.isNotEmpty()
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     val masterLocations: StateFlow<List<String>> = repository.getLocationsByScope("ASSET")
@@ -276,5 +279,8 @@ class AddAssetViewModel(private val repository: JournalRepository) : ViewModel()
         _imageUris.value = emptyList()
         _audioPath.value = null
         _customFieldValues.value = mutableMapOf()
+        _selectedCategory.value = AssetCategory.TREE
+        _costValue.value = ""
+        _motherPlantLink.value = ""
     }
 }

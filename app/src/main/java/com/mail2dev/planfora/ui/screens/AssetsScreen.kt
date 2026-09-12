@@ -48,9 +48,33 @@ fun AssetsScreen(
     val selectedAssetIds by viewModel.selectedAssetIds.collectAsState()
 
     val hasDraft by addAssetViewModel.hasDraftData.collectAsState()
+    
+    var showDraftConflictDialog by remember { mutableStateOf<com.mail2dev.planfora.data.local.entity.PlantAssetEntity?>(null) }
 
     var collapsedLocations by remember { mutableStateOf(setOf<String>()) }
     var collapsedBlocks by remember { mutableStateOf(setOf<String>()) }
+    
+    if (showDraftConflictDialog != null) {
+        AlertDialog(
+            onDismissRequest = { showDraftConflictDialog = null },
+            title = { Text("Discard current draft?", color = Color.White) },
+            text = { Text("You have an active draft for a new plant. Starting an edit will discard it. Continue?", color = Color.LightGray) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        addAssetViewModel.loadAsset(showDraftConflictDialog!!.id)
+                        viewModel.setShowAddBottomSheet(true)
+                        showDraftConflictDialog = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                ) { Text("Discard & Edit") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDraftConflictDialog = null }) { Text("Cancel", color = Color.White) }
+            },
+            containerColor = Color(0xFF1E2120)
+        )
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -74,8 +98,12 @@ fun AssetsScreen(
 
                     FloatingActionButton(
                         onClick = {
-                            addAssetViewModel.startNewAsset()
-                            viewModel.setShowAddBottomSheet(true)
+                            if (hasDraft) {
+                                viewModel.setShowAddBottomSheet(true)
+                            } else {
+                                addAssetViewModel.startNewAsset()
+                                viewModel.setShowAddBottomSheet(true)
+                            }
                         },
                         containerColor = com.mail2dev.planfora.ui.theme.ForestGreen,
                         contentColor = Color.White
@@ -244,6 +272,7 @@ fun AssetsScreen(
                                                     if (isMultiSelectMode) {
                                                         viewModel.toggleAssetSelection(plantAsset.id)
                                                     } else {
+                                                        // Note: detail screen also allows editing, but for the "Add" sheet conflict:
                                                         navController.navigate(Screen.PlantDetail.createRoute(plantAsset.id))
                                                     }
                                                 }

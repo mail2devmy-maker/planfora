@@ -88,8 +88,9 @@ class AddSupplyViewModel(
     private val _editingSupplyId = MutableStateFlow<Long?>(null)
     val editingSupplyId = _editingSupplyId.asStateFlow()
 
-    private val _isLabMode = MutableStateFlow(false)
-    val isLabMode = _isLabMode.asStateFlow()
+    private val _isLabMode = _category.map { it == SupplyCategory.DIY }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    val isLabMode = _isLabMode
 
     private val _isProductionUpdate = MutableStateFlow(false)
     val isProductionUpdate = _isProductionUpdate.asStateFlow()
@@ -101,10 +102,18 @@ class AddSupplyViewModel(
     val customTimestamp = _customTimestamp.asStateFlow()
 
     val hasDraftData = combine(
-        _name, _notes, _materialLedger, _imageUris, _location
-    ) { name, notes, ledger, uris, loc ->
-        name.isNotBlank() || notes.isNotBlank() || ledger.isNotEmpty() ||
-                uris.isNotEmpty() || loc.isNotBlank()
+        _name, _notes, _materialLedger, _imageUris, _location, _editingSupplyId
+    ) { args ->
+        val name = args[0] as String
+        val notes = args[1] as String
+        val ledger = args[2] as List<*>
+        val uris = args[3] as List<*>
+        val loc = args[4] as String
+        val editingId = args[5] as Long?
+        
+        // Only show as a draft if we are creating a NEW supply, not editing an existing one
+        editingId == null && (name.isNotBlank() || notes.isNotBlank() || ledger.isNotEmpty() ||
+                uris.isNotEmpty() || loc.isNotBlank())
     }.combine(_selectedTags) { hasBaseDraft, tags ->
         hasBaseDraft || tags.isNotEmpty()
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
@@ -319,8 +328,7 @@ class AddSupplyViewModel(
         _historicalMaterialCount.value = 0
         _customTimestamp.value = System.currentTimeMillis()
         reset()
-        _category.value = defaultCategory
-        _isLabMode.value = isLab
+        _category.value = if (isLab) SupplyCategory.DIY else defaultCategory
     }
 
     fun addImageUri(uri: Uri) { _imageUris.update { it + uri } }
@@ -406,7 +414,6 @@ class AddSupplyViewModel(
 
                 _location.value = supply.locationNote
                 _selectedTags.value = supply.tags.split(",").filter { it.isNotBlank() }.toSet()
-                _isLabMode.value = (supply.category == "DIY" && !supply.isArchived)
                 
                 // Load custom field values
                 journalRepository.getCustomFieldValues(supplyId).firstOrNull()?.let { values ->
@@ -562,6 +569,10 @@ class AddSupplyViewModel(
         _audioPath.value = null
         _customFieldValues.value = mutableMapOf()
         _visibleOptionalFields.value = emptySet()
+        _formulationCode.value = null
+        _formType.value = com.mail2dev.planfora.data.local.entity.SupplyFormType.LIQUID
+        _customTimestamp.value = System.currentTimeMillis()
+        _historicalMaterialCount.value = 0
     }
 }
 
