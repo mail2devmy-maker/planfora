@@ -100,7 +100,7 @@ class AddAssetViewModel(private val repository: JournalRepository) : ViewModel()
     fun updateNotes(newNotes: String) { _notes.value = newNotes }
     fun updateCategory(category: AssetCategory) { _selectedCategory.value = category }
     fun updateLocation(newLocation: String) { _location.value = newLocation }
-    fun updateSubLocation(v: String) { _subLocation.value = v }
+    fun updateSubLocation(v: String) { _subLocation.value = v.uppercase() }
     fun updateTotalPlants(v: String) { _totalPlants.value = v }
     
     fun toggleTag(tag: String) {

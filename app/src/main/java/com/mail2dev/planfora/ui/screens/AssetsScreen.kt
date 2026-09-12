@@ -549,7 +549,7 @@ fun AssetCard(
                             if (asset.subLocation.isNotBlank()) {
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "[${asset.subLocation.take(1).uppercase()}]",
+                                    text = "[${asset.subLocation.uppercase()}]",
                                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold
