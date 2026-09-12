@@ -1,10 +1,15 @@
 package com.mail2dev.planfora.data.repository
 
 import com.mail2dev.planfora.data.local.dao.DiySupplyDao
+import com.mail2dev.planfora.data.local.dao.MeasurementToolDao
 import com.mail2dev.planfora.data.local.entity.DiySupplyEntity
+import com.mail2dev.planfora.data.local.entity.MeasurementToolEntity
 import kotlinx.coroutines.flow.Flow
 
-class SupplyRepository(private val diySupplyDao: DiySupplyDao) {
+class SupplyRepository(
+    private val diySupplyDao: DiySupplyDao,
+    private val measurementToolDao: MeasurementToolDao
+) {
     
     fun getAllSupplies(): Flow<List<DiySupplyEntity>> = diySupplyDao.getAllSupplies()
     
@@ -29,4 +34,10 @@ class SupplyRepository(private val diySupplyDao: DiySupplyDao) {
     }
 
     fun getDistinctActiveIngredients(): Flow<List<String>> = diySupplyDao.getDistinctActiveIngredients()
+
+    // Measurement Tools
+    fun getAllTools(): Flow<List<MeasurementToolEntity>> = measurementToolDao.getAllTools()
+    suspend fun insertTool(tool: MeasurementToolEntity) = measurementToolDao.insertTool(tool)
+    suspend fun updateTool(tool: MeasurementToolEntity) = measurementToolDao.updateTool(tool)
+    suspend fun deleteTool(tool: MeasurementToolEntity) = measurementToolDao.deleteTool(tool)
 }

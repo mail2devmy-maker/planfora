@@ -17,7 +17,7 @@ enum class SupplyCategory(val displayName: String) {
     SUPPLIES_TOOLS("Supplies & Tools")
 }
 
-enum class SupplyTab { INVENTORY, DIY_LAB }
+enum class SupplyTab { INVENTORY, DIY_LAB, TOOLBOX }
 
 class SuppliesViewModel(private val repository: SupplyRepository) : ViewModel() {
 
@@ -32,10 +32,10 @@ class SuppliesViewModel(private val repository: SupplyRepository) : ViewModel() 
 
     val supplies: StateFlow<List<DiySupplyEntity>> = repository.getAllSupplies()
         .combine(_selectedTab) { list, tab ->
-            if (tab == SupplyTab.INVENTORY) {
-                list.filter { it.category != "DIY" || it.isArchived }
-            } else {
-                list.filter { it.category == "DIY" && !it.isArchived }
+            when (tab) {
+                SupplyTab.INVENTORY -> list.filter { it.category != "DIY" || it.isArchived }
+                SupplyTab.DIY_LAB -> list.filter { it.category == "DIY" && !it.isArchived }
+                SupplyTab.TOOLBOX -> emptyList()
             }
         }
         .combine(_selectedCategory) { list, category ->
@@ -60,11 +60,36 @@ class SuppliesViewModel(private val repository: SupplyRepository) : ViewModel() 
     private val _showAddBottomSheet = MutableStateFlow(false)
     val showAddBottomSheet: StateFlow<Boolean> = _showAddBottomSheet.asStateFlow()
 
+    val measurementTools: StateFlow<List<com.mail2dev.planfora.data.local.entity.MeasurementToolEntity>> = repository.getAllTools()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     fun setTab(tab: SupplyTab) {
         _selectedTab.value = tab
-        // When switching to DIY Lab, reset category to ALL to see all DIY types
-        if (tab == SupplyTab.DIY_LAB) {
+        // When switching to DIY Lab or Toolbox, reset category to ALL
+        if (tab == SupplyTab.DIY_LAB || tab == SupplyTab.TOOLBOX) {
             _selectedCategory.value = SupplyCategory.ALL
+        }
+    }
+
+    fun addMeasurementTool(name: String, capacity: Double, unit: String) {
+        viewModelScope.launch {
+            repository.insertTool(com.mail2dev.planfora.data.local.entity.MeasurementToolEntity(
+                name = name,
+                capacity = capacity,
+                unit = unit
+            ))
+        }
+    }
+
+    fun updateMeasurementTool(tool: com.mail2dev.planfora.data.local.entity.MeasurementToolEntity) {
+        viewModelScope.launch {
+            repository.updateTool(tool)
+        }
+    }
+
+    fun deleteMeasurementTool(tool: com.mail2dev.planfora.data.local.entity.MeasurementToolEntity) {
+        viewModelScope.launch {
+            repository.deleteTool(tool)
         }
     }
 

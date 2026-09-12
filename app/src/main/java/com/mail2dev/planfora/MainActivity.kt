@@ -47,7 +47,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         
         val database = AppDatabase.getDatabase(this)
-        val supplyRepository = SupplyRepository(database.diySupplyDao())
+        val supplyRepository = SupplyRepository(database.diySupplyDao(), database.measurementToolDao())
         val journalRepository = JournalRepository(
             database.journalLogDao(),
             database.plantAssetDao(),

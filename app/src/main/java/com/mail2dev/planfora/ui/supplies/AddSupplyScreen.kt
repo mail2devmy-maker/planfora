@@ -243,6 +243,64 @@ fun AddSupplyScreen(
                 }
             }
 
+            // Quick Import Button
+            if (editingSupplyId == null && !isLabMode) {
+                val matureBatches by viewModel.matureDiyBatches.collectAsState()
+                if (matureBatches.isNotEmpty()) {
+                    var showImportPicker by remember { mutableStateOf(false) }
+                    
+                    OutlinedButton(
+                        onClick = { showImportPicker = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = ForestGreen),
+                        border = BorderStroke(1.dp, ForestGreen.copy(alpha = 0.5f))
+                    ) {
+                        Icon(Icons.Default.Input, null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Import from DIY Lab")
+                    }
+                    
+                    if (showImportPicker) {
+                        AlertDialog(
+                            onDismissRequest = { showImportPicker = false },
+                            title = { Text("Select Mature Batch", color = Color.White) },
+                            text = {
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    matureBatches.forEach { batch ->
+                                        Surface(
+                                            onClick = {
+                                                viewModel.importFromDiyBatch(batch)
+                                                showImportPicker = false
+                                            },
+                                            color = Color.White.copy(alpha = 0.05f),
+                                            shape = RoundedCornerShape(8.dp),
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(12.dp),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Column {
+                                                    Text(batch.name, color = Color.White, fontWeight = FontWeight.Bold)
+                                                    Text(batch.batchCode, color = Color.Gray, fontSize = 12.sp)
+                                                }
+                                                Text("${batch.currentVolume} ${batch.unit}", color = ForestGreen, fontWeight = FontWeight.Bold)
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            confirmButton = {},
+                            dismissButton = {
+                                TextButton(onClick = { showImportPicker = false }) { Text("Cancel", color = Color.White) }
+                            },
+                            containerColor = Color(0xFF1E2120)
+                        )
+                    }
+                }
+            }
+
             // Core Name Field
             if (!isProductionUpdate) {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {

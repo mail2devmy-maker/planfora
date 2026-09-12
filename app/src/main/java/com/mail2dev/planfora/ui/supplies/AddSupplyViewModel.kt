@@ -134,6 +134,35 @@ class AddSupplyViewModel(
         .map { list -> list.map { it.name } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val matureDiyBatches: StateFlow<List<DiySupplyEntity>> = repository.getAllSupplies()
+        .map { list -> 
+            val now = System.currentTimeMillis()
+            list.filter { it.category == "DIY" && !it.isArchived && it.targetMaturityDate > 0 && now >= it.targetMaturityDate }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun importFromDiyBatch(batch: DiySupplyEntity) {
+        _name.value = batch.name
+        _category.value = SupplyCategory.DIY
+        _subCategory.value = batch.subCategory ?: ""
+        _containerId.value = batch.containerId
+        _stockQuantity.value = batch.currentVolume.toString()
+        _stockUnit.value = batch.unit
+        _location.value = batch.locationNote
+        _selectedTags.value = batch.tags.split(",").filter { it.isNotBlank() }.toSet()
+        
+        // Parse material list into ledger
+        val materials = batch.materialList.split("|").filter { it.contains(":") }.map { 
+            val parts = it.split(":")
+            parts[0] to parts[1]
+        }
+        _materialLedger.value = materials
+        
+        // Mark as production update of the same ID so saving updates the existing one to archived stock
+        _editingSupplyId.value = batch.id
+        _isProductionUpdate.value = true
+    }
+
     fun updateName(v: String) { 
         _name.value = v 
         

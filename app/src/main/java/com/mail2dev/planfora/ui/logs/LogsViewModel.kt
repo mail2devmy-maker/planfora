@@ -49,6 +49,9 @@ class LogsViewModel(
     val supplies: StateFlow<List<DiySupplyEntity>> = supplyRepository.getAllSupplies()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val measurementTools: StateFlow<List<com.mail2dev.planfora.data.local.entity.MeasurementToolEntity>> = supplyRepository.getAllTools()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     val masterLocations: StateFlow<List<String>> = repository.getAllLocations()
         .map { list -> list.map { it.name } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())

@@ -8,7 +8,9 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.Grass
+import androidx.compose.material.icons.rounded.Place
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.mail2dev.planfora.R
 
@@ -49,9 +51,23 @@ class AssetsViewModel(private val repository: JournalRepository) : ViewModel() {
     private val _showAddBottomSheet = MutableStateFlow(false)
     val showAddBottomSheet: StateFlow<Boolean> = _showAddBottomSheet.asStateFlow()
 
+    private val _selectedLocation = MutableStateFlow<String?>(null)
+    val selectedLocation: StateFlow<String?> = _selectedLocation.asStateFlow()
+
+    val availableLocations: StateFlow<List<String>> = repository.getAllAssets()
+        .map { assets ->
+            assets.map { it.locationNote.ifBlank { "Unassigned" } }
+                .distinct()
+                .sorted()
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     val assets: StateFlow<List<PlantAssetEntity>> = repository.getAllAssets()
         .combine(_selectedCategory) { assets, category ->
             if (category == AssetCategory.ALL) assets else assets.filter { AssetCategory.fromDatabase(it.category) == category }
+        }
+        .combine(_selectedLocation) { assets, location ->
+            if (location == null) assets else assets.filter { it.locationNote.ifBlank { "Unassigned" } == location }
         }
         .combine(_searchQuery) { assets, query ->
             if (query.isBlank()) assets else {
@@ -79,6 +95,10 @@ class AssetsViewModel(private val repository: JournalRepository) : ViewModel() {
 
     fun setCategory(category: AssetCategory) {
         _selectedCategory.value = category
+    }
+
+    fun setLocation(location: String?) {
+        _selectedLocation.value = location
     }
 
     fun setSearchQuery(query: String) {

@@ -45,6 +45,7 @@ fun SuppliesScreen(
     val isUpdateDraft by addSupplyViewModel.isProductionUpdate.collectAsState()
     
     var showDraftConflictDialog by remember { mutableStateOf<DiySupplyEntity?>(null) }
+    var showAddToolDialog by remember { mutableStateOf(false) }
     
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
 
@@ -92,7 +93,9 @@ fun SuppliesScreen(
                     
                     FloatingActionButton(
                         onClick = { 
-                            if (hasDraft) {
+                            if (selectedTab == com.mail2dev.planfora.ui.supplies.SupplyTab.TOOLBOX) {
+                                showAddToolDialog = true
+                            } else if (hasDraft) {
                                 // If draft exists, just reopen it
                                 viewModel.setShowAddBottomSheet(true)
                             } else {
@@ -108,7 +111,7 @@ fun SuppliesScreen(
                         containerColor = ForestGreen,
                         contentColor = Color.White
                     ) {
-                        Icon(Icons.Rounded.Add, contentDescription = "Add Formulation")
+                        Icon(Icons.Rounded.Add, contentDescription = "Add Item")
                     }
                 }
             }
@@ -149,7 +152,11 @@ fun SuppliesScreen(
                                 .padding(horizontal = 12.dp, vertical = 6.dp)
                         ) {
                             Text(
-                                text = if (tab == com.mail2dev.planfora.ui.supplies.SupplyTab.INVENTORY) "Stock" else "DIY Lab",
+                                text = when (tab) {
+                                    com.mail2dev.planfora.ui.supplies.SupplyTab.INVENTORY -> "Stock"
+                                    com.mail2dev.planfora.ui.supplies.SupplyTab.DIY_LAB -> "DIY Lab"
+                                    com.mail2dev.planfora.ui.supplies.SupplyTab.TOOLBOX -> "Toolbox"
+                                },
                                 color = if (isSelected) MaterialTheme.colorScheme.onPrimary else Color.Gray,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold
@@ -187,64 +194,74 @@ fun SuppliesScreen(
                 )
             }
 
+            val measurementTools by viewModel.measurementTools.collectAsState()
+
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 80.dp)
             ) {
-                if (supplies.isEmpty()) {
-                    item {
-                        Box(
-                            modifier = Modifier
-                                .fillParentMaxSize()
-                                .padding(bottom = 100.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(
-                                    if (selectedTab == com.mail2dev.planfora.ui.supplies.SupplyTab.INVENTORY) Icons.Rounded.Inventory2 else Icons.Rounded.Science,
-                                    contentDescription = null,
-                                    tint = Color.Gray.copy(alpha = 0.3f),
-                                    modifier = Modifier.size(64.dp)
-                                )
-                                Spacer(modifier = Modifier.height(16.dp))
-                                Text(
-                                    text = if (selectedTab == com.mail2dev.planfora.ui.supplies.SupplyTab.INVENTORY) "No supplies found" else "DIY Lab is empty",
-                                    color = Color.Gray,
-                                    style = MaterialTheme.typography.bodyLarge
-                                )
-                                Text(
-                                    text = "Tap + to ${if (selectedTab == com.mail2dev.planfora.ui.supplies.SupplyTab.INVENTORY) "add inventory" else "start a batch"}",
-                                    color = Color.Gray.copy(alpha = 0.6f),
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            }
+                if (selectedTab == com.mail2dev.planfora.ui.supplies.SupplyTab.TOOLBOX) {
+                    if (measurementTools.isEmpty()) {
+                        item {
+                            EmptyState(
+                                icon = Icons.Rounded.Construction,
+                                title = "Toolbox is empty",
+                                subtitle = "Tap + to register scoops, spoons or sprayers"
+                            )
                         }
                     }
-                }
-
-                items(supplies) { supply ->
-                    val onClick = { navController.navigate(Screen.SupplyDetail.createRoute(supply.id)) }
-                    if (selectedTab == com.mail2dev.planfora.ui.supplies.SupplyTab.DIY_LAB) {
-                        FormulationCard(
-                            formulation = supply, 
-                            onClick = onClick,
-                            onLongClick = {
-                                haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
-                                if (hasDraft && !isUpdateDraft) {
-                                    showDraftConflictDialog = supply
-                                } else {
-                                    addSupplyViewModel.loadSupply(supply.id, isProductionUpdate = true)
-                                    viewModel.setShowAddBottomSheet(true)
-                                }
-                            }
+                    items(measurementTools) { tool ->
+                        ToolCard(
+                            tool = tool,
+                            onDelete = { viewModel.deleteMeasurementTool(tool) }
                         )
-                    } else {
-                        StoreSupplyCard(supply, onClick)
+                    }
+                } else {
+                    if (supplies.isEmpty()) {
+                        item {
+                            EmptyState(
+                                icon = if (selectedTab == com.mail2dev.planfora.ui.supplies.SupplyTab.INVENTORY) Icons.Rounded.Inventory2 else Icons.Rounded.Science,
+                                title = if (selectedTab == com.mail2dev.planfora.ui.supplies.SupplyTab.INVENTORY) "No supplies found" else "DIY Lab is empty",
+                                subtitle = "Tap + to ${if (selectedTab == com.mail2dev.planfora.ui.supplies.SupplyTab.INVENTORY) "add inventory" else "start a batch"}"
+                            )
+                        }
+                    }
+
+                    items(supplies) { supply ->
+                        val onClick = { navController.navigate(Screen.SupplyDetail.createRoute(supply.id)) }
+                        if (selectedTab == com.mail2dev.planfora.ui.supplies.SupplyTab.DIY_LAB) {
+                            FormulationCard(
+                                formulation = supply, 
+                                onClick = onClick,
+                                onLongClick = {
+                                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                                    if (hasDraft && !isUpdateDraft) {
+                                        showDraftConflictDialog = supply
+                                    } else {
+                                        addSupplyViewModel.loadSupply(supply.id, isProductionUpdate = true)
+                                        viewModel.setShowAddBottomSheet(true)
+                                    }
+                                },
+                                onFinalize = { yield -> viewModel.finalizeBatch(supply, yield) }
+                            )
+                        } else {
+                            StoreSupplyCard(supply, onClick)
+                        }
                     }
                 }
             }
         }
+    }
+
+    if (showAddToolDialog) {
+        AddToolDialog(
+            onDismiss = { showAddToolDialog = false },
+            onConfirm = { name, cap, unit ->
+                viewModel.addMeasurementTool(name, cap, unit)
+                showAddToolDialog = false
+            }
+        )
     }
 
     if (showAddSheet) {
@@ -345,12 +362,138 @@ fun StoreSupplyCard(supply: DiySupplyEntity, onClick: () -> Unit) {
     }
 }
 
+@Composable
+fun EmptyState(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, subtitle: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 100.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = Color.Gray.copy(alpha = 0.3f),
+                modifier = Modifier.size(64.dp)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = title,
+                color = Color.White,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium
+            )
+            Text(
+                text = subtitle,
+                color = Color.Gray.copy(alpha = 0.6f),
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+    }
+}
+
+@Composable
+fun ToolCard(
+    tool: com.mail2dev.planfora.data.local.entity.MeasurementToolEntity,
+    onDelete: () -> Unit
+) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E2120)),
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(tool.name, color = Color.White, fontWeight = FontWeight.Bold)
+                Text("${tool.capacity} ${tool.unit}", color = MaterialTheme.colorScheme.primary, fontSize = 14.sp)
+            }
+            IconButton(onClick = onDelete) {
+                Icon(Icons.Rounded.Delete, contentDescription = "Delete Tool", tint = Color.Gray.copy(alpha = 0.5f))
+            }
+        }
+    }
+}
+
+@Composable
+fun AddToolDialog(onDismiss: () -> Unit, onConfirm: (String, Double, String) -> Unit) {
+    var name by remember { mutableStateOf("") }
+    var capacity by remember { mutableStateOf("") }
+    var unit by remember { mutableStateOf("ml") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Register Tool", color = Color.White) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Tool Name (e.g., Blue Scoop)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary
+                    )
+                )
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = capacity,
+                        onValueChange = { capacity = it },
+                        label = { Text("Capacity") },
+                        modifier = Modifier.weight(1f),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            focusedBorderColor = MaterialTheme.colorScheme.primary
+                        )
+                    )
+                    OutlinedTextField(
+                        value = unit,
+                        onValueChange = { unit = it },
+                        label = { Text("Unit") },
+                        modifier = Modifier.weight(0.6f),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            focusedBorderColor = MaterialTheme.colorScheme.primary
+                        )
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { 
+                    val cap = capacity.toDoubleOrNull() ?: 0.0
+                    if (name.isNotBlank() && cap > 0) {
+                        onConfirm(name, cap, unit)
+                    }
+                },
+                enabled = name.isNotBlank() && capacity.toDoubleOrNull() != null
+            ) { Text("Save Tool") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel", color = Color.White) }
+        },
+        containerColor = Color(0xFF1E2120)
+    )
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun FormulationCard(
     formulation: DiySupplyEntity, 
     onClick: () -> Unit,
-    onLongClick: () -> Unit
+    onLongClick: () -> Unit,
+    onFinalize: (Double) -> Unit
 ) {
     val currentTime = System.currentTimeMillis()
     val isMature = currentTime >= formulation.targetMaturityDate
@@ -392,15 +535,21 @@ fun FormulationCard(
                 )
                 
                 Surface(
-                    onClick = onLongClick,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                    onClick = {
+                        if (isMature) {
+                            onFinalize(formulation.currentVolume)
+                        } else {
+                            onLongClick()
+                        }
+                    },
+                    color = (if (isMature) ForestGreen else MaterialTheme.colorScheme.primary).copy(alpha = 0.1f),
                     shape = RoundedCornerShape(8.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, (if (isMature) ForestGreen else MaterialTheme.colorScheme.primary).copy(alpha = 0.5f)),
                     modifier = Modifier.height(32.dp)
                 ) {
                     Text(
-                        "Update",
-                        color = MaterialTheme.colorScheme.primary,
+                        if (isMature) "Move to Stock" else "Update",
+                        color = if (isMature) ForestGreen else MaterialTheme.colorScheme.primary,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)

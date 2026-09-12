@@ -42,6 +42,8 @@ fun AssetsScreen(
     val hierarchicalAssets by viewModel.hierarchicalAssets.collectAsState()
     val allLogs by viewModel.allLogs.collectAsState()
     val selectedCategory by viewModel.selectedCategory.collectAsState()
+    val selectedLocation by viewModel.selectedLocation.collectAsState()
+    val availableLocations by viewModel.availableLocations.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val showAddSheet by viewModel.showAddBottomSheet.collectAsState()
     val isMultiSelectMode by viewModel.isMultiSelectMode.collectAsState()
@@ -171,6 +173,12 @@ fun AssetsScreen(
             CategoryFilters(
                 selectedCategory = selectedCategory,
                 onCategorySelected = viewModel::setCategory
+            )
+
+            LocationFilters(
+                locations = availableLocations,
+                selectedLocation = selectedLocation,
+                onLocationSelected = viewModel::setLocation
             )
 
             LazyColumn(
@@ -402,6 +410,70 @@ fun BlockHeader(
             ) {
                 Text("Select Block", fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
+        }
+    }
+}
+
+@Composable
+fun LocationFilters(
+    locations: List<String>,
+    selectedLocation: String?,
+    onLocationSelected: (String?) -> Unit
+) {
+    LazyRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 8.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        item {
+            FilterChip(
+                selected = selectedLocation == null,
+                onClick = { onLocationSelected(null) },
+                label = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Rounded.Place,
+                            contentDescription = null,
+                            tint = if (selectedLocation == null) MaterialTheme.colorScheme.onPrimary else Color.Gray,
+                            modifier = Modifier.size(16.dp).padding(end = 4.dp)
+                        )
+                        Text("All")
+                    }
+                },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                    labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    enabled = true,
+                    selected = selectedLocation == null,
+                    borderColor = Color.Gray.copy(alpha = 0.2f),
+                    selectedBorderColor = Color.Transparent
+                )
+            )
+        }
+        items(locations) { location ->
+            FilterChip(
+                selected = selectedLocation == location,
+                onClick = { onLocationSelected(location) },
+                label = { Text(location) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                    labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    enabled = true,
+                    selected = selectedLocation == location,
+                    borderColor = Color.Gray.copy(alpha = 0.2f),
+                    selectedBorderColor = Color.Transparent
+                )
+            )
         }
     }
 }

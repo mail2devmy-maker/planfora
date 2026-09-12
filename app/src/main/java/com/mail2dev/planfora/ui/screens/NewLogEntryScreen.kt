@@ -84,6 +84,7 @@ fun NewLogEntryScreen(
 ) {
     val assets by viewModel.assets.collectAsState()
     val supplies by viewModel.supplies.collectAsState()
+    val measurementTools by viewModel.measurementTools.collectAsState()
     val allLogs by viewModel.allLogs.collectAsState()
     val masterTags by viewModel.masterTags.collectAsState()
     val context = LocalContext.current
@@ -137,6 +138,9 @@ fun NewLogEntryScreen(
     var dosageAmount by remember { mutableStateOf("") }
     var dosageRatio by remember { mutableStateOf("mL / Liter") }
     var appMethod by remember { mutableStateOf("FOLIAR SPRAY") }
+    
+    var selectedTool by remember { mutableStateOf<com.mail2dev.planfora.data.local.entity.MeasurementToolEntity?>(null) }
+    var toolCount by remember { mutableStateOf("") }
     
     var yieldAmount by remember { mutableStateOf("") }
     var yieldUnit by remember { mutableStateOf("kg") }
@@ -666,18 +670,23 @@ fun NewLogEntryScreen(
             when (activityType) {
                 "Pest Control", "Feeding" -> TreatmentDetailsCard(
                     supplies = supplies,
+                    measurementTools = measurementTools,
                     selectedSupplyId = selectedSupplyId,
                     customInputName = customInputName,
                     customInputCategory = customInputCategory,
                     appMethod = appMethod,
                     dosageAmount = dosageAmount,
                     dosageRatio = dosageRatio,
+                    selectedTool = selectedTool,
+                    toolCount = toolCount,
                     availableZones = availableZones,
                     selectedZones = selectedZones,
                     onSupplyClick = { showSupplyBottomSheet = true },
                     onMethodChange = { appMethod = it },
                     onDosageAmountChange = { dosageAmount = it },
                     onDosageRatioChange = { dosageRatio = it },
+                    onToolSelect = { selectedTool = it },
+                    onToolCountChange = { toolCount = it },
                     onCustomInputCategoryChange = { customInputCategory = it },
                     onToggleZone = { zone ->
                         selectedZones = if (selectedZones.contains(zone)) selectedZones - zone else selectedZones + zone
@@ -904,6 +913,14 @@ fun NewLogEntryScreen(
                                 if (selectedZones.isNotEmpty()) {
                                     parameters["targeted_zones"] = selectedZones.joinToString(",")
                                 }
+                                
+                                // Toolbox Calculation
+                                if (selectedTool != null && toolCount.toDoubleOrNull() != null) {
+                                    val count = toolCount.toDouble()
+                                    val totalUsed = count * selectedTool!!.capacity
+                                    parameters["used_qty"] = totalUsed.toString()
+                                    parameters["tool_used"] = "${selectedTool!!.name} ($count)"
+                                }
                             }
                             "Harvest" -> {
                                 if (availableZones.isEmpty()) {
@@ -1073,24 +1090,30 @@ fun NewLogEntryScreen(
 @Composable
 fun TreatmentDetailsCard(
     supplies: List<DiySupplyEntity>,
+    measurementTools: List<com.mail2dev.planfora.data.local.entity.MeasurementToolEntity>,
     selectedSupplyId: Long?,
     customInputName: String,
     customInputCategory: String,
     appMethod: String,
     dosageAmount: String,
     dosageRatio: String,
+    selectedTool: com.mail2dev.planfora.data.local.entity.MeasurementToolEntity?,
+    toolCount: String,
     availableZones: List<String>,
     selectedZones: Set<String>,
     onSupplyClick: () -> Unit,
     onMethodChange: (String) -> Unit,
     onDosageAmountChange: (String) -> Unit,
     onDosageRatioChange: (String) -> Unit,
+    onToolSelect: (com.mail2dev.planfora.data.local.entity.MeasurementToolEntity?) -> Unit,
+    onToolCountChange: (String) -> Unit,
     onCustomInputCategoryChange: (String) -> Unit,
     onToggleZone: (String) -> Unit
 ) {
     PlanForaSurfaceCard(title = "Treatment Details", isImportant = true) {
         val selectedSupply = supplies.find { it.id == selectedSupplyId }
-        
+        var showToolPicker by remember { mutableStateOf(false) }
+
         if (availableZones.isNotEmpty()) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text("Target Zones / Rows", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
@@ -1218,6 +1241,72 @@ fun TreatmentDetailsCard(
             Column(modifier = Modifier.weight(1.5f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(text = "Unit/Ratio", style = MaterialTheme.typography.labelSmall, color = SlateTextPrimary.copy(alpha = 0.9f), fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 2.dp))
                 OutlinedTextField(value = dosageRatio, onValueChange = onDosageRatioChange, modifier = Modifier.fillMaxWidth(), singleLine = true, colors = planForaTextFieldColors(isImportant = true))
+            }
+        }
+
+        // --- TOOLBOX SECTION ---
+        if (selectedSupplyId != null) {
+            HorizontalDivider(color = Color.Gray.copy(alpha = 0.1f), modifier = Modifier.padding(vertical = 8.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Inventory Deduction (Toolbox)", style = MaterialTheme.typography.labelSmall, color = SlateTextSecondary, fontWeight = FontWeight.Bold)
+                    if (selectedTool != null) {
+                        TextButton(onClick = { onToolSelect(null) }, contentPadding = PaddingValues(0.dp)) {
+                            Text("Clear", fontSize = 10.sp, color = Color.Red.copy(alpha = 0.7f))
+                        }
+                    }
+                }
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(modifier = Modifier.weight(1.5f)) {
+                        OutlinedTextField(
+                            value = selectedTool?.name ?: "Select Tool",
+                            onValueChange = {},
+                            readOnly = true,
+                            enabled = false,
+                            modifier = Modifier.fillMaxWidth().clickable { showToolPicker = true },
+                            leadingIcon = { Icon(Icons.Default.Construction, null, modifier = Modifier.size(18.dp)) },
+                            trailingIcon = { Icon(Icons.Default.ArrowDropDown, null) },
+                            colors = planForaTextFieldColors(isImportant = false),
+                            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 12.sp)
+                        )
+                        DropdownMenu(expanded = showToolPicker, onDismissRequest = { showToolPicker = false }) {
+                            measurementTools.forEach { tool ->
+                                DropdownMenuItem(
+                                    text = { Text("${tool.name} (${tool.capacity}${tool.unit})") },
+                                    onClick = { onToolSelect(tool); showToolPicker = false }
+                                )
+                            }
+                            if (measurementTools.isEmpty()) {
+                                DropdownMenuItem(text = { Text("No tools registered", color = Color.Gray) }, onClick = { showToolPicker = false })
+                            }
+                        }
+                    }
+                    OutlinedTextField(
+                        value = toolCount,
+                        onValueChange = onToolCountChange,
+                        modifier = Modifier.weight(0.8f),
+                        placeholder = { Text("Count") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        colors = planForaTextFieldColors(isImportant = false),
+                        textStyle = androidx.compose.ui.text.TextStyle(fontSize = 12.sp)
+                    )
+                    
+                    if (selectedTool != null && toolCount.toDoubleOrNull() != null) {
+                        val total = (toolCount.toDouble() * selectedTool.capacity)
+                        Text(
+                            text = "= $total ${selectedTool.unit}",
+                            color = ForestGreen,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(start = 4.dp)
+                        )
+                    }
+                }
             }
         }
     }

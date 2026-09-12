@@ -252,6 +252,12 @@ Global list of custom tags for assets and logs.
     - Unified long-press management across Tags, Locations, Active Ingredients, and Metrics.
     - Implemented cascading database transactions for all manageable metadata strings.
     - Migrated Active Ingredient input to the high-speed managed sheet pattern.
+- **[2026-09-11] Supplies Ecosystem & Toolbox Integration**:
+    - Refactored Supplies module into a 3-tab system: **Stock** (Inventory), **DIY Lab** (Production), and **Toolbox** (Equipment).
+    - Implemented `MeasurementToolEntity` (DB v28) to register physical tools like scoops and spoons with defined capacities.
+    - Built a "Promote to Stock" workflow allowing users to move mature DIY Lab batches directly into inventory with a single tap.
+    - Integrated "Quick Import" in the Add Supply screen to pre-fill product data from mature ferments.
+    - Standardized inventory deduction in the log entry flow: users can now select a registered tool to automatically calculate and deduct stock based on count (e.g., 2 scoops = 50ml).
 - **[2026-09-04] Importance-Based Field Hierarchy**:
     - Implemented a visual hierarchy for form fields to differentiate between mandatory and optional inputs.
     - Updated `PlanForaSurfaceCard` and `PlanForaFieldGroup` to support `isImportant` parameter.
