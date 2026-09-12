@@ -1,6 +1,5 @@
 package com.mail2dev.planfora.ui.assets
 
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.foundation.BorderStroke
@@ -185,7 +184,7 @@ fun AddAssetScreen(
                                 value = viewModel.subLocation.collectAsState().value,
                                 onValueChange = viewModel::updateSubLocation,
                                 modifier = Modifier.fillMaxWidth(),
-                                placeholder = { Text("e.g. Block A") },
+                                placeholder = { Text("e.g. A1, B2") },
                                 colors = textFieldColors(isImportant = false),
                                 singleLine = true
                             )

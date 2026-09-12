@@ -72,7 +72,7 @@ class AssetsViewModel(private val repository: JournalRepository) : ViewModel() {
         .map { list -> 
             list.groupBy { it.locationNote.ifBlank { "Unassigned" } }
                 .mapValues { entry -> 
-                    entry.value.groupBy { it.subLocation.ifBlank { "General Zone" } }
+                    entry.value.groupBy { it.subLocation.ifBlank { "Unassigned Zone" } }
                 }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())

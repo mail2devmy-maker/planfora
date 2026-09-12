@@ -1578,6 +1578,15 @@ fun AssetPickerBottomSheet(
                                     Icon(Icons.Default.LocationOn, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(10.dp))
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(asset.locationNote.ifBlank { "Unassigned" }, color = Color.Gray, fontSize = 10.sp)
+                                    if (asset.subLocation.isNotBlank()) {
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = "[${asset.subLocation.uppercase()}]",
+                                            color = MaterialTheme.colorScheme.primary,
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
                                 }
                             }
                         }
