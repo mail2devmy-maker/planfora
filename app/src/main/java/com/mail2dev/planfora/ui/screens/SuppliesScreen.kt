@@ -56,6 +56,11 @@ fun SuppliesScreen(
         draftIsLab == currentIsLab
     }
 
+    // Sync addSupplyViewModel's isLabMode with selectedTab
+    LaunchedEffect(selectedTab) {
+        addSupplyViewModel.updateLabMode(selectedTab == com.mail2dev.planfora.ui.supplies.SupplyTab.DIY_LAB)
+    }
+
     if (showDraftConflictDialog != null) {
         AlertDialog(
             onDismissRequest = { showDraftConflictDialog = null },
