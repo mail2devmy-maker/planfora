@@ -91,6 +91,9 @@ class AddSupplyViewModel(
     private val _isLabMode = MutableStateFlow(false)
     val isLabMode = _isLabMode.asStateFlow()
 
+    private val _draftIsLab = MutableStateFlow<Boolean?>(null)
+    val draftIsLab = _draftIsLab.asStateFlow()
+
     private val _isProductionUpdate = MutableStateFlow(false)
     val isProductionUpdate = _isProductionUpdate.asStateFlow()
 
@@ -101,7 +104,7 @@ class AddSupplyViewModel(
     val customTimestamp = _customTimestamp.asStateFlow()
 
     val hasDraftData = combine(
-        _name, _notes, _materialLedger, _imageUris, _location, _editingSupplyId
+        _name, _notes, _materialLedger, _imageUris, _location, _editingSupplyId, _draftIsLab
     ) { args ->
         val name = args[0] as String
         val notes = args[1] as String
@@ -109,9 +112,10 @@ class AddSupplyViewModel(
         val uris = args[3] as List<*>
         val loc = args[4] as String
         val editingId = args[5] as Long?
+        val draftWasLab = args[6] as Boolean?
         
         // Only show as a draft if we are creating a NEW supply, not editing an existing one
-        editingId == null && (name.isNotBlank() || notes.isNotBlank() || ledger.isNotEmpty() ||
+        editingId == null && draftWasLab != null && (name.isNotBlank() || notes.isNotBlank() || ledger.isNotEmpty() ||
                 uris.isNotEmpty() || loc.isNotBlank())
     }.combine(_selectedTags) { hasBaseDraft, tags ->
         hasBaseDraft || tags.isNotEmpty()
@@ -164,6 +168,9 @@ class AddSupplyViewModel(
 
     fun updateName(v: String) { 
         _name.value = v 
+        if (_editingSupplyId.value == null && _draftIsLab.value == null) {
+            _draftIsLab.value = _isLabMode.value
+        }
         
         // Smart Formulation Detection from Product Name
         val uppercaseName = v.uppercase()
@@ -359,6 +366,7 @@ class AddSupplyViewModel(
         _editingSupplyId.value = null
         _isProductionUpdate.value = false
         _isLabMode.value = isLab
+        _draftIsLab.value = null // Reset draft context until user types
         _historicalMaterialCount.value = 0
         _customTimestamp.value = System.currentTimeMillis()
         reset()
@@ -609,6 +617,7 @@ class AddSupplyViewModel(
         _formType.value = com.mail2dev.planfora.data.local.entity.SupplyFormType.LIQUID
         _customTimestamp.value = System.currentTimeMillis()
         _historicalMaterialCount.value = 0
+        _draftIsLab.value = null
     }
 }
 

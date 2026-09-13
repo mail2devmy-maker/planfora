@@ -42,12 +42,19 @@ fun SuppliesScreen(
     val showAddSheet by viewModel.showAddBottomSheet.collectAsState()
     
     val hasDraft by addSupplyViewModel.hasDraftData.collectAsState()
+    val draftIsLab by addSupplyViewModel.draftIsLab.collectAsState()
     val isUpdateDraft by addSupplyViewModel.isProductionUpdate.collectAsState()
     
     var showDraftConflictDialog by remember { mutableStateOf<DiySupplyEntity?>(null) }
     var showAddToolDialog by remember { mutableStateOf(false) }
     
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+
+    val showResumeFab = remember(hasDraft, draftIsLab, selectedTab) {
+        if (!hasDraft) return@remember false
+        val currentIsLab = selectedTab == com.mail2dev.planfora.ui.supplies.SupplyTab.DIY_LAB
+        draftIsLab == currentIsLab
+    }
 
     if (showDraftConflictDialog != null) {
         AlertDialog(
@@ -76,7 +83,7 @@ fun SuppliesScreen(
         floatingActionButton = {
             if (!showAddSheet) {
                 Column(horizontalAlignment = Alignment.End) {
-                    if (hasDraft) {
+                    if (showResumeFab) {
                         SmallFloatingActionButton(
                             onClick = { viewModel.setShowAddBottomSheet(true) },
                             containerColor = Color(0xFFE53935),
@@ -84,7 +91,9 @@ fun SuppliesScreen(
                             modifier = Modifier.padding(bottom = 12.dp)
                         ) {
                             Icon(
-                                if (isUpdateDraft) Icons.Rounded.PendingActions else Icons.Rounded.EditNote,
+                                if (isUpdateDraft) Icons.Rounded.PendingActions 
+                                else if (draftIsLab == true) Icons.Rounded.Science 
+                                else Icons.Rounded.EditNote,
                                 contentDescription = "Resume Draft",
                                 modifier = Modifier.size(24.dp)
                             )

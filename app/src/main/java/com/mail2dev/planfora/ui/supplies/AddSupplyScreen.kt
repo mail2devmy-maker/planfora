@@ -188,8 +188,9 @@ fun AddSupplyScreen(
                 Text(
                     when {
                         isProductionUpdate -> "Update Progress: $name"
-                        editingSupplyId == null -> "New Product / Supply"
-                        else -> "Edit Product / Supply"
+                        editingSupplyId != null -> "Edit Product Profile"
+                        isLabMode -> "New Product / DIY"
+                        else -> "New Stock"
                     },
                     style = MaterialTheme.typography.headlineSmall,
                     color = Color.White,
