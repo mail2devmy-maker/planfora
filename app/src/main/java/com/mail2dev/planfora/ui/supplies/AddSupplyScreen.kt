@@ -1,5 +1,6 @@
 package com.mail2dev.planfora.ui.supplies
 
+import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -12,6 +13,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -37,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.mail2dev.planfora.data.local.entity.DiySupplyEntity
 import com.mail2dev.planfora.data.local.entity.SupplyFormType
 import com.mail2dev.planfora.data.local.entity.SupplyCategory
 import com.mail2dev.planfora.ui.components.CreateCustomFieldDialog
@@ -243,87 +246,10 @@ fun AddSupplyScreen(
                 }
             }
 
-            // Quick Import Button
-            if (editingSupplyId == null && !isLabMode) {
-                val matureBatches by viewModel.matureDiyBatches.collectAsState()
-                if (matureBatches.isNotEmpty()) {
-                    var showImportPicker by remember { mutableStateOf(false) }
-                    
-                    OutlinedButton(
-                        onClick = { showImportPicker = true },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = ForestGreen),
-                        border = BorderStroke(1.dp, ForestGreen.copy(alpha = 0.5f))
-                    ) {
-                        Icon(Icons.Default.Input, null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Import from DIY Lab")
-                    }
-                    
-                    if (showImportPicker) {
-                        AlertDialog(
-                            onDismissRequest = { showImportPicker = false },
-                            title = { Text("Select Mature Batch", color = Color.White) },
-                            text = {
-                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    matureBatches.forEach { batch ->
-                                        Surface(
-                                            onClick = {
-                                                viewModel.importFromDiyBatch(batch)
-                                                showImportPicker = false
-                                            },
-                                            color = Color.White.copy(alpha = 0.05f),
-                                            shape = RoundedCornerShape(8.dp),
-                                            modifier = Modifier.fillMaxWidth()
-                                        ) {
-                                            Row(
-                                                modifier = Modifier.padding(12.dp),
-                                                horizontalArrangement = Arrangement.SpaceBetween,
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Column {
-                                                    Text(batch.name, color = Color.White, fontWeight = FontWeight.Bold)
-                                                    Text(batch.batchCode, color = Color.Gray, fontSize = 12.sp)
-                                                }
-                                                Text("${batch.currentVolume} ${batch.unit}", color = ForestGreen, fontWeight = FontWeight.Bold)
-                                            }
-                                        }
-                                    }
-                                }
-                            },
-                            confirmButton = {},
-                            dismissButton = {
-                                TextButton(onClick = { showImportPicker = false }) { Text("Cancel", color = Color.White) }
-                            },
-                            containerColor = Color(0xFF1E2120)
-                        )
-                    }
-                }
-            }
-
-            // Core Name Field
-            if (!isProductionUpdate) {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                        text = "Product Name",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = SlateTextPrimary.copy(alpha = 0.9f),
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(start = 2.dp)
-                    )
-                    OutlinedTextField(
-                        value = name,
-                        onValueChange = viewModel::updateName,
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = textFieldColors(isImportant = true)
-                    )
-                }
-            }
-
             // Primary Identification & Storage
             PlanForaSurfaceCard(title = "Identification & Storage", isImportant = true) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    if (!isProductionUpdate && (!isLabMode || editingSupplyId != null)) {
+                    if (!isProductionUpdate && !isLabMode && editingSupplyId == null) {
                         Text("Category", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         FlowRow(
                             modifier = Modifier.fillMaxWidth(),
@@ -352,7 +278,92 @@ fun AddSupplyScreen(
                         }
                     }
 
-                    // Location & Tags (Globally moved up for all categories, but for DIY it will be below Specification)
+                    // Quick Import (Prominent if in Stock + DIY)
+                    if (editingSupplyId == null && !isLabMode && category == SupplyCategory.DIY) {
+                        val activeBatches by viewModel.activeDiyBatches.collectAsState()
+                        if (activeBatches.isNotEmpty()) {
+                            var showImportPicker by remember { mutableStateOf(false) }
+                            var batchToConfirm by remember { mutableStateOf<DiySupplyEntity?>(null) }
+                            
+                            Surface(
+                                onClick = { showImportPicker = true },
+                                modifier = Modifier.fillMaxWidth(),
+                                color = ForestGreen.copy(alpha = 0.1f),
+                                border = BorderStroke(1.dp, ForestGreen.copy(alpha = 0.5f)),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(12.dp),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(Icons.Default.Input, null, modifier = Modifier.size(20.dp), tint = ForestGreen)
+                                    Spacer(Modifier.width(12.dp))
+                                    Text("Import from DIY Lab", color = ForestGreen, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                            
+                            if (showImportPicker) {
+                                val now = System.currentTimeMillis()
+                                val (ready, fermenting) = activeBatches.partition { it.targetMaturityDate > 0 && now >= it.targetMaturityDate }
+
+                                AlertDialog(
+                                    onDismissRequest = { showImportPicker = false },
+                                    title = { Text("Select DIY Batch", color = Color.White) },
+                                    text = {
+                                        LazyColumn(
+                                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                                            modifier = Modifier.fillMaxHeight(0.6f)
+                                        ) {
+                                            if (ready.isNotEmpty()) {
+                                                item { Text("READY FOR STOCK", style = MaterialTheme.typography.labelSmall, color = ForestGreen, fontWeight = FontWeight.Bold) }
+                                                items(ready) { batch ->
+                                                    BatchImportRow(batch, true) { 
+                                                        viewModel.importFromDiyBatch(batch)
+                                                        showImportPicker = false 
+                                                    }
+                                                }
+                                            }
+                                            if (fermenting.isNotEmpty()) {
+                                                item { Text("STILL FERMENTING", style = MaterialTheme.typography.labelSmall, color = Color(0xFFFFB74D), fontWeight = FontWeight.Bold) }
+                                                items(fermenting) { batch ->
+                                                    BatchImportRow(batch, false) { 
+                                                        batchToConfirm = batch
+                                                        showImportPicker = false
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    confirmButton = {},
+                                    dismissButton = {
+                                        TextButton(onClick = { showImportPicker = false }) { Text("Cancel", color = Color.White) }
+                                    },
+                                    containerColor = Color(0xFF1E2120)
+                                )
+                            }
+
+                            if (batchToConfirm != null) {
+                                AlertDialog(
+                                    onDismissRequest = { batchToConfirm = null },
+                                    title = { Text("Import Early?", color = Color.White) },
+                                    text = { Text("This batch is still fermenting. Import it to inventory anyway?", color = Color.LightGray) },
+                                    confirmButton = {
+                                        Button(onClick = { 
+                                            viewModel.importFromDiyBatch(batchToConfirm!!)
+                                            batchToConfirm = null 
+                                        }) { Text("Import Anyway") }
+                                    },
+                                    dismissButton = {
+                                        TextButton(onClick = { batchToConfirm = null }) { Text("Cancel", color = Color.White) }
+                                    },
+                                    containerColor = Color(0xFF1E2120)
+                                )
+                            }
+                        }
+                    }
+
+                    // Location & Tags
                     if (category != SupplyCategory.DIY) {
                         PlanForaFieldGroup(isImportant = true) {
                             ReadonlyTriggerField(
@@ -378,7 +389,7 @@ fun AddSupplyScreen(
 
                     if (category == SupplyCategory.DIY) {
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            if (!isProductionUpdate && isLabMode) {
+                            if (!isProductionUpdate) {
                                 Text("DIY Specification", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 
                                 FlowRow(
@@ -408,7 +419,7 @@ fun AddSupplyScreen(
                                 }
                             }
 
-                            // Location & Vessel ID (Moved next to each other as requested)
+                            // Location & Vessel ID
                             PlanForaFieldGroup(isImportant = true) {
                                 ReadonlyTriggerField(
                                     label = "Location",
@@ -438,21 +449,23 @@ fun AddSupplyScreen(
                                 }
                             }
 
-                            if (isLabMode && !isProductionUpdate) {
+                            if (!isProductionUpdate) {
                                 // Maturity and Tags row
                                 PlanForaFieldGroup(isImportant = false) {
-                                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                        Text("Maturity (Days)", style = MaterialTheme.typography.labelSmall, color = SlateTextSecondary.copy(alpha = 0.9f), fontWeight = FontWeight.Bold)
-                                        OutlinedTextField(
-                                            value = viewModel.maturityDays.collectAsState().value,
-                                            onValueChange = viewModel::updateMaturityDays,
-                                            modifier = Modifier.fillMaxWidth().height(52.dp),
-                                            placeholder = { Text("e.g. 30", fontSize = 12.sp) },
-                                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
-                                            colors = textFieldColors(isImportant = false),
-                                            singleLine = true,
-                                            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 13.sp)
-                                        )
+                                    if (isLabMode) {
+                                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            Text("Maturity (Days)", style = MaterialTheme.typography.labelSmall, color = SlateTextSecondary.copy(alpha = 0.9f), fontWeight = FontWeight.Bold)
+                                            OutlinedTextField(
+                                                value = viewModel.maturityDays.collectAsState().value,
+                                                onValueChange = viewModel::updateMaturityDays,
+                                                modifier = Modifier.fillMaxWidth().height(52.dp),
+                                                placeholder = { Text("e.g. 30", fontSize = 12.sp) },
+                                                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                                                colors = textFieldColors(isImportant = false),
+                                                singleLine = true,
+                                                textStyle = androidx.compose.ui.text.TextStyle(fontSize = 13.sp)
+                                            )
+                                        }
                                     }
                                     ReadonlyTriggerField(
                                         label = "Tags",
@@ -550,7 +563,7 @@ fun AddSupplyScreen(
             if (!isProductionUpdate || isLabMode) {
                 PlanForaSurfaceCard(title = "Stock & Safety", isImportant = true) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        if (!isProductionUpdate && category != SupplyCategory.DIY && !isHardware) {
+                        if (!isProductionUpdate && category != SupplyCategory.DIY && !isHardware && !isLabMode) {
                             var showIngredientSheet by remember { mutableStateOf(false) }
                             val activeIngredientValue = viewModel.activeIngredient.collectAsState().value
                             
@@ -677,12 +690,44 @@ fun AddSupplyScreen(
                                 }
                             }
                         }
+
+                        if (category == SupplyCategory.DIY) {
+                            var showFormTypePicker by remember { mutableStateOf(false) }
+                            Box(modifier = Modifier.fillMaxWidth()) {
+                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Text(
+                                        text = "Physical Form",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = SlateTextSecondary.copy(alpha = 0.9f),
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(start = 2.dp)
+                                    )
+                                    OutlinedTextField(
+                                        value = formType.displayName,
+                                        onValueChange = {},
+                                        readOnly = true,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        trailingIcon = {
+                                            IconButton(onClick = { showFormTypePicker = true }) {
+                                                Icon(Icons.Default.ArrowDropDown, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            }
+                                        },
+                                        colors = textFieldColors(isImportant = false)
+                                    )
+                                }
+                                DropdownMenu(expanded = showFormTypePicker, onDismissRequest = { showFormTypePicker = false }) {
+                                    SupplyFormType.entries.forEach { type ->
+                                        DropdownMenuItem(text = { Text(type.displayName) }, onClick = { viewModel.updateFormType(type); showFormTypePicker = false })
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
 
             // Product Formulation Row
-            if (!isHardware && !isProductionUpdate) {
+            if (!isHardware && !isProductionUpdate && category != SupplyCategory.DIY) {
                 PlanForaSurfaceCard(title = "Product Formulation", isImportant = false) {
                     PlanForaFieldGroup(isImportant = false) {
                         var showFormTypePicker by remember { mutableStateOf(false) }
@@ -822,8 +867,9 @@ fun AddSupplyScreen(
                 Text(
                     when {
                         isProductionUpdate -> "Record Production Update"
-                        editingSupplyId == null -> "Create Product Profile"
-                        else -> "Update Product Profile"
+                        editingSupplyId != null -> "Update Product Profile"
+                        isLabMode -> "Start DIY Project"
+                        else -> "Add to Inventory"
                     },
                     fontWeight = FontWeight.Bold
                 )
@@ -870,6 +916,35 @@ fun AddSupplyScreen(
                 showCustomFieldDialog = false
             }
         )
+    }
+}
+
+@Composable
+fun BatchImportRow(batch: DiySupplyEntity, isReady: Boolean, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        color = Color.White.copy(alpha = 0.05f),
+        shape = RoundedCornerShape(8.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(batch.name, color = Color.White, fontWeight = FontWeight.Bold)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(batch.batchCode, color = Color.Gray, fontSize = 11.sp)
+                    if (!isReady && batch.targetMaturityDate > 0) {
+                        val daysLeft = java.util.concurrent.TimeUnit.MILLISECONDS.toDays(batch.targetMaturityDate - System.currentTimeMillis())
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("($daysLeft days left)", color = Color(0xFFFFB74D), fontSize = 11.sp)
+                    }
+                }
+            }
+            Text("${batch.currentVolume} ${batch.unit}", color = if (isReady) ForestGreen else Color.Gray, fontWeight = FontWeight.Bold)
+        }
     }
 }
 

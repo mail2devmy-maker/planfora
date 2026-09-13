@@ -88,9 +88,8 @@ class AddSupplyViewModel(
     private val _editingSupplyId = MutableStateFlow<Long?>(null)
     val editingSupplyId = _editingSupplyId.asStateFlow()
 
-    private val _isLabMode = _category.map { it == SupplyCategory.DIY }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
-    val isLabMode = _isLabMode
+    private val _isLabMode = MutableStateFlow(false)
+    val isLabMode = _isLabMode.asStateFlow()
 
     private val _isProductionUpdate = MutableStateFlow(false)
     val isProductionUpdate = _isProductionUpdate.asStateFlow()
@@ -134,10 +133,9 @@ class AddSupplyViewModel(
         .map { list -> list.map { it.name } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val matureDiyBatches: StateFlow<List<DiySupplyEntity>> = repository.getAllSupplies()
+    val activeDiyBatches: StateFlow<List<DiySupplyEntity>> = repository.getAllSupplies()
         .map { list -> 
-            val now = System.currentTimeMillis()
-            list.filter { it.category == "DIY" && !it.isArchived && it.targetMaturityDate > 0 && now >= it.targetMaturityDate }
+            list.filter { it.category == "DIY" && !it.isArchived }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -150,6 +148,7 @@ class AddSupplyViewModel(
         _stockUnit.value = batch.unit
         _location.value = batch.locationNote
         _selectedTags.value = batch.tags.split(",").filter { it.isNotBlank() }.toSet()
+        _isLabMode.value = false
         
         // Parse material list into ledger
         val materials = batch.materialList.split("|").filter { it.contains(":") }.map { 
@@ -228,7 +227,12 @@ class AddSupplyViewModel(
         }
     }
     fun updateCategory(v: SupplyCategory) { _category.value = v }
-    fun updateSubCategory(v: String) { _subCategory.value = v }
+    fun updateSubCategory(v: String) { 
+        _subCategory.value = v 
+        if (_name.value.isBlank()) {
+            _name.value = v
+        }
+    }
     fun updateMaturityDays(v: String) { _maturityDays.value = v }
     fun updateContainerId(v: String) { _containerId.value = v }
 
@@ -354,6 +358,7 @@ class AddSupplyViewModel(
     fun startNewSupply(defaultCategory: SupplyCategory = SupplyCategory.INSECTICIDE, isLab: Boolean = false) {
         _editingSupplyId.value = null
         _isProductionUpdate.value = false
+        _isLabMode.value = isLab
         _historicalMaterialCount.value = 0
         _customTimestamp.value = System.currentTimeMillis()
         reset()
@@ -408,7 +413,9 @@ class AddSupplyViewModel(
         viewModelScope.launch {
             repository.getAllSupplies().firstOrNull()?.find { it.id == supplyId }?.let { supply ->
                 _name.value = supply.name
-                _category.value = SupplyCategory.entries.find { it.displayName == supply.category } ?: SupplyCategory.DIY
+                val cat = SupplyCategory.entries.find { it.displayName == supply.category } ?: SupplyCategory.DIY
+                _category.value = cat
+                _isLabMode.value = cat == SupplyCategory.DIY && !supply.isArchived
                 _subCategory.value = supply.subCategory ?: ""
                 _containerId.value = supply.containerId
                 
