@@ -30,6 +30,7 @@ import com.mail2dev.planfora.ui.navigation.Screen
 import com.mail2dev.planfora.ui.profile.ProfileViewModel
 import com.mail2dev.planfora.ui.profile.ProfileViewModelFactory
 import com.mail2dev.planfora.ui.screens.AssetsScreen
+import com.mail2dev.planfora.ui.screens.DiyLogsScreen
 import com.mail2dev.planfora.ui.screens.LogsScreen
 import com.mail2dev.planfora.ui.screens.NewLogEntryScreen
 import com.mail2dev.planfora.ui.screens.PlantDetailScreen
@@ -151,6 +152,9 @@ class MainActivity : ComponentActivity() {
                         ) { backStackEntry ->
                             val supplyId = backStackEntry.arguments?.getLong("supplyId") ?: 0L
                             SupplyDetailScreen(supplyId, navController, suppliesViewModel, addSupplyViewModel, logsViewModel)
+                        }
+                        composable(Screen.DiyLogs.route) {
+                            DiyLogsScreen(navController, logsViewModel, profileViewModel)
                         }
                     }
                 }

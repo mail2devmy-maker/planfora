@@ -83,6 +83,10 @@ class LogsViewModel(
         val phiOnly = args[5] as Boolean
 
         logs.filter { log -> 
+            // Exclude pure DIY Production logs from the main timeline
+            val isPureProduction = log.supplyId != null && log.assetId == null
+            if (isPureProduction) return@filter false
+
             val dateMatch = isSameDay(log.timestamp, date)
             val locationMatch = location == null || assets.value.find { it.id == log.assetId }?.locationNote == location
             val activityMatch = activityType == null || log.activityType == activityType
@@ -108,6 +112,11 @@ class LogsViewModel(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
 
     val allLogs: StateFlow<List<JournalLogEntity>> = _allLogs
+
+    val diyLogs: StateFlow<List<JournalLogEntity>> = _allLogs.map { logs ->
+        logs.filter { it.supplyId != null && it.assetId == null }
+            .sortedByDescending { it.timestamp }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _showAddBottomSheet = MutableStateFlow(false)
     val showAddBottomSheet: StateFlow<Boolean> = _showAddBottomSheet.asStateFlow()

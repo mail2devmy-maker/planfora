@@ -196,7 +196,7 @@ fun NewLogEntryScreen(
         )
     }
 
-    val activityTypes = listOf("Observation", "Feeding", "Pruning", "Pest Control", "Repotting", "Harvest", "Weeding", "Production", "Other")
+    val activityTypes = listOf("Observation", "Feeding", "Pruning", "Pest Control", "Repotting", "Harvest", "Weeding", "Other")
     val prefix = remember(activityType) { activityType.take(2).uppercase() }
 
     // Loading editing log
@@ -207,8 +207,13 @@ fun NewLogEntryScreen(
                 title = log.title
                 userEditedTitle = true
                 note = log.note
-                activityType = if (activityTypes.contains(log.activityType)) log.activityType else "Other"
-                if (activityType == "Other") customActivity = log.activityType
+                val logType = log.activityType
+                if (activityTypes.contains(logType) || logType == "Production" || logType == "PRODUCTION") {
+                    activityType = logType
+                } else {
+                    activityType = "Other"
+                    customActivity = logType
+                }
                 selectedAssetIds = log.assetId?.let { setOf(it) } ?: emptySet()
                 selectedSupplyId = log.supplyId
                 customInputName = log.customInputName ?: ""

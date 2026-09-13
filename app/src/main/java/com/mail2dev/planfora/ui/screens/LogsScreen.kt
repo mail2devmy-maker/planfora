@@ -646,7 +646,7 @@ fun FilterStrip(
     onActivityTypeSelected: (String?) -> Unit,
     onTogglePhi: () -> Unit
 ) {
-    val activityTypes = listOf("Observation", "Feeding", "Pruning", "Pest Control", "Repotting", "Harvest", "Weeding", "Production", "Other")
+    val activityTypes = listOf("Observation", "Feeding", "Pruning", "Pest Control", "Repotting", "Harvest", "Weeding", "Other")
 
     Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         // Row 1: Location & PHI

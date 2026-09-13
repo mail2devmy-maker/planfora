@@ -30,6 +30,7 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector)
     object SupplyDetail : Screen("supply_detail/{supplyId}", "Supply Detail", Icons.Rounded.Inventory2) {
         fun createRoute(supplyId: Long) = "supply_detail/$supplyId"
     }
+    object DiyLogs : Screen("diy_logs", "DIY Logs", Icons.Rounded.Science)
 }
 
 val bottomNavItems = listOf(

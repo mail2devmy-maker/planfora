@@ -187,6 +187,23 @@ fun SuppliesScreen(
                 )
             )
 
+            if (selectedTab == com.mail2dev.planfora.ui.supplies.SupplyTab.DIY_LAB) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    Text(
+                        text = "DIY LOGS",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .clickable { navController.navigate(Screen.DiyLogs.route) }
+                            .padding(8.dp)
+                    )
+                }
+            }
+
             if (selectedTab == com.mail2dev.planfora.ui.supplies.SupplyTab.INVENTORY) {
                 SupplyCategoryFilters(
                     selectedCategory = selectedCategory,
