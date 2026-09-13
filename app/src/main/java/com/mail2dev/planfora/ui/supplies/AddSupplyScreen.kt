@@ -246,6 +246,25 @@ fun AddSupplyScreen(
                 }
             }
 
+            // Core Name Field
+            if (!isProductionUpdate) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = "Product Name",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = SlateTextPrimary.copy(alpha = 0.9f),
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(start = 2.dp)
+                    )
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = viewModel::updateName,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = textFieldColors(isImportant = true)
+                    )
+                }
+            }
+
             // Primary Identification & Storage
             PlanForaSurfaceCard(title = "Identification & Storage", isImportant = true) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -281,85 +300,94 @@ fun AddSupplyScreen(
                     // Quick Import (Prominent if in Stock + DIY)
                     if (editingSupplyId == null && !isLabMode && category == SupplyCategory.DIY) {
                         val activeBatches by viewModel.activeDiyBatches.collectAsState()
-                        if (activeBatches.isNotEmpty()) {
-                            var showImportPicker by remember { mutableStateOf(false) }
-                            var batchToConfirm by remember { mutableStateOf<DiySupplyEntity?>(null) }
-                            
-                            Surface(
-                                onClick = { showImportPicker = true },
-                                modifier = Modifier.fillMaxWidth(),
-                                color = ForestGreen.copy(alpha = 0.1f),
-                                border = BorderStroke(1.dp, ForestGreen.copy(alpha = 0.5f)),
-                                shape = RoundedCornerShape(8.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(12.dp),
-                                    horizontalArrangement = Arrangement.Center,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(Icons.Default.Input, null, modifier = Modifier.size(20.dp), tint = ForestGreen)
-                                    Spacer(Modifier.width(12.dp))
-                                    Text("Import from DIY Lab", color = ForestGreen, fontWeight = FontWeight.Bold)
+                        var showImportPicker by remember { mutableStateOf(false) }
+                        var batchToConfirm by remember { mutableStateOf<DiySupplyEntity?>(null) }
+                        
+                        Surface(
+                            onClick = { 
+                                if (activeBatches.isNotEmpty()) {
+                                    showImportPicker = true 
+                                } else {
+                                    Toast.makeText(context, "No active DIY projects in the Lab yet.", Toast.LENGTH_SHORT).show()
                                 }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            color = ForestGreen.copy(alpha = 0.1f),
+                            border = BorderStroke(1.dp, ForestGreen.copy(alpha = 0.5f)),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.Input, null, modifier = Modifier.size(20.dp), tint = ForestGreen)
+                                Spacer(Modifier.width(12.dp))
+                                Text(
+                                    text = if (activeBatches.isEmpty()) "Lab is Empty (Nothing to Import)" else "Import from DIY Lab", 
+                                    color = ForestGreen, 
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp
+                                )
                             }
-                            
-                            if (showImportPicker) {
-                                val now = System.currentTimeMillis()
-                                val (ready, fermenting) = activeBatches.partition { it.targetMaturityDate > 0 && now >= it.targetMaturityDate }
+                        }
+                        
+                        if (showImportPicker) {
+                            val now = System.currentTimeMillis()
+                            val (ready, fermenting) = activeBatches.partition { it.targetMaturityDate > 0 && now >= it.targetMaturityDate }
 
-                                AlertDialog(
-                                    onDismissRequest = { showImportPicker = false },
-                                    title = { Text("Select DIY Batch", color = Color.White) },
-                                    text = {
-                                        LazyColumn(
-                                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                                            modifier = Modifier.fillMaxHeight(0.6f)
-                                        ) {
-                                            if (ready.isNotEmpty()) {
-                                                item { Text("READY FOR STOCK", style = MaterialTheme.typography.labelSmall, color = ForestGreen, fontWeight = FontWeight.Bold) }
-                                                items(ready) { batch ->
-                                                    BatchImportRow(batch, true) { 
-                                                        viewModel.importFromDiyBatch(batch)
-                                                        showImportPicker = false 
-                                                    }
-                                                }
-                                            }
-                                            if (fermenting.isNotEmpty()) {
-                                                item { Text("STILL FERMENTING", style = MaterialTheme.typography.labelSmall, color = Color(0xFFFFB74D), fontWeight = FontWeight.Bold) }
-                                                items(fermenting) { batch ->
-                                                    BatchImportRow(batch, false) { 
-                                                        batchToConfirm = batch
-                                                        showImportPicker = false
-                                                    }
+                            AlertDialog(
+                                onDismissRequest = { showImportPicker = false },
+                                title = { Text("Select DIY Batch", color = Color.White) },
+                                text = {
+                                    LazyColumn(
+                                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                                        modifier = Modifier.fillMaxHeight(0.6f)
+                                    ) {
+                                        if (ready.isNotEmpty()) {
+                                            item { Text("READY FOR STOCK", style = MaterialTheme.typography.labelSmall, color = ForestGreen, fontWeight = FontWeight.Bold) }
+                                            items(ready) { batch ->
+                                                BatchImportRow(batch, true) { 
+                                                    viewModel.importFromDiyBatch(batch)
+                                                    showImportPicker = false 
                                                 }
                                             }
                                         }
-                                    },
-                                    confirmButton = {},
-                                    dismissButton = {
-                                        TextButton(onClick = { showImportPicker = false }) { Text("Cancel", color = Color.White) }
-                                    },
-                                    containerColor = Color(0xFF1E2120)
-                                )
-                            }
+                                        if (fermenting.isNotEmpty()) {
+                                            item { Text("STILL FERMENTING", style = MaterialTheme.typography.labelSmall, color = Color(0xFFFFB74D), fontWeight = FontWeight.Bold) }
+                                            items(fermenting) { batch ->
+                                                BatchImportRow(batch, false) { 
+                                                    batchToConfirm = batch
+                                                    showImportPicker = false
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                confirmButton = {},
+                                dismissButton = {
+                                    TextButton(onClick = { showImportPicker = false }) { Text("Cancel", color = Color.White) }
+                                },
+                                containerColor = Color(0xFF1E2120)
+                            )
+                        }
 
-                            if (batchToConfirm != null) {
-                                AlertDialog(
-                                    onDismissRequest = { batchToConfirm = null },
-                                    title = { Text("Import Early?", color = Color.White) },
-                                    text = { Text("This batch is still fermenting. Import it to inventory anyway?", color = Color.LightGray) },
-                                    confirmButton = {
-                                        Button(onClick = { 
-                                            viewModel.importFromDiyBatch(batchToConfirm!!)
-                                            batchToConfirm = null 
-                                        }) { Text("Import Anyway") }
-                                    },
-                                    dismissButton = {
-                                        TextButton(onClick = { batchToConfirm = null }) { Text("Cancel", color = Color.White) }
-                                    },
-                                    containerColor = Color(0xFF1E2120)
-                                )
-                            }
+                        if (batchToConfirm != null) {
+                            AlertDialog(
+                                onDismissRequest = { batchToConfirm = null },
+                                title = { Text("Import Early?", color = Color.White) },
+                                text = { Text("This batch is still fermenting. Import it to inventory anyway?", color = Color.LightGray) },
+                                confirmButton = {
+                                    Button(onClick = { 
+                                        viewModel.importFromDiyBatch(batchToConfirm!!)
+                                        batchToConfirm = null 
+                                    }) { Text("Import Anyway") }
+                                },
+                                dismissButton = {
+                                    TextButton(onClick = { batchToConfirm = null }) { Text("Cancel", color = Color.White) }
+                                },
+                                containerColor = Color(0xFF1E2120)
+                            )
                         }
                     }
 
@@ -553,7 +581,6 @@ fun AddSupplyScreen(
                             }
                         }
                     }
-
                 }
             }
 
