@@ -212,6 +212,12 @@ class LogsViewModel(
         }
     }
 
+    fun updateSupply(supply: DiySupplyEntity) {
+        viewModelScope.launch {
+            supplyRepository.updateSupply(supply)
+        }
+    }
+
     private fun isSameDay(t1: Long, t2: Long): Boolean {
         val cal1 = Calendar.getInstance().apply { timeInMillis = t1 }
         val cal2 = Calendar.getInstance().apply { timeInMillis = t2 }

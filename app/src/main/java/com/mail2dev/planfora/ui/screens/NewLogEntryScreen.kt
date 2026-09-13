@@ -157,6 +157,8 @@ fun NewLogEntryScreen(
     var selectedZones by remember { mutableStateOf(setOf<String>()) }
     var rowYields by remember { mutableStateOf(mutableMapOf<String, String>()) }
 
+    var logMaterialLedger by remember { mutableStateOf<List<Pair<String, String>>>(emptyList()) }
+
     var parentLog by remember { mutableStateOf<JournalLogEntity?>(null) }
     var selectedTimestamp by remember { mutableStateOf(initialTimestamp ?: System.currentTimeMillis()) }
     var showDatePicker by remember { mutableStateOf(false) }
@@ -194,7 +196,7 @@ fun NewLogEntryScreen(
         )
     }
 
-    val activityTypes = listOf("Observation", "Feeding", "Pruning", "Pest Control", "Repotting", "Harvest", "Weeding", "Other")
+    val activityTypes = listOf("Observation", "Feeding", "Pruning", "Pest Control", "Repotting", "Harvest", "Weeding", "Production", "Other")
     val prefix = remember(activityType) { activityType.take(2).uppercase() }
 
     // Loading editing log
@@ -276,7 +278,9 @@ fun NewLogEntryScreen(
     // Auto-Generated Title Logic
     LaunchedEffect(selectedAssetIds, activityType, selectedSupplyId, customInputName, yieldAmount, yieldUnit, substrateMix, pruningType, dosageAmount, dosageRatio) {
         if (!userEditedTitle) {
-            val assetName = if (selectedAssetIds.isEmpty()) {
+            val assetName = if (activityType == "Production") {
+                supplies.find { it.id == selectedSupplyId }?.name ?: "DIY Project"
+            } else if (selectedAssetIds.isEmpty()) {
                 "General Log"
             } else if (selectedAssetIds.size == 1) {
                 assets.find { it.id == selectedAssetIds.first() }?.name ?: "Unknown Asset"
@@ -293,6 +297,7 @@ fun NewLogEntryScreen(
                 "Repotting" -> substrateMix
                 "Pruning" -> pruningType
                 "Weeding" -> weedingMethod
+                "Production" -> "Update"
                 else -> ""
             }
 
@@ -493,9 +498,34 @@ fun NewLogEntryScreen(
                 }
             }
 
-            // 1. Target Asset Section
-            PlanForaSurfaceCard(title = "Primary Link (Mandatory)", isImportant = true) {
-                if (selectedAssetIds.isEmpty()) {
+            // 1. Target Asset / Project Section
+            val isProduction = activityType == "Production"
+            PlanForaSurfaceCard(
+                title = if (isProduction) "Laboratory Batch (Required)" else "Primary Link (Mandatory)", 
+                isImportant = true
+            ) {
+                if (isProduction) {
+                    val selectedSupply = supplies.find { it.id == selectedSupplyId }
+                    Box(modifier = Modifier.fillMaxWidth().clickable { showSupplyBottomSheet = true }) {
+                        OutlinedTextField(
+                            value = selectedSupply?.batchCode ?: "Select DIY Project",
+                            onValueChange = {},
+                            readOnly = true,
+                            enabled = false,
+                            modifier = Modifier.fillMaxWidth(),
+                            leadingIcon = {
+                                Icon(Icons.Default.Science, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            },
+                            trailingIcon = {
+                                Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            },
+                            singleLine = true,
+                            maxLines = 1,
+                            shape = RoundedCornerShape(8.dp),
+                            colors = planForaTextFieldColors(isImportant = true)
+                        )
+                    }
+                } else if (selectedAssetIds.isEmpty()) {
                     Box(modifier = Modifier.fillMaxWidth().clickable(enabled = parentLogId == null) { showAssetPicker = true }) {
                         OutlinedTextField(
                             value = "Select Plant (Required)",
@@ -728,6 +758,21 @@ fun NewLogEntryScreen(
                     onMethodChange = { weedingMethod = it },
                     onQtyChange = { usedQty = it }
                 )
+                "Production" -> ProductionCard(
+                    supplies = supplies,
+                    selectedSupplyId = selectedSupplyId,
+                    materialLedger = logMaterialLedger,
+                    containerId = potSize, // Reusing potSize state for Vessel ID
+                    onSupplyClick = { showSupplyBottomSheet = true },
+                    onAddMaterial = { logMaterialLedger = logMaterialLedger + ("" to "") },
+                    onUpdateMaterial = { idx, n, q -> 
+                        logMaterialLedger = logMaterialLedger.toMutableList().apply { this[idx] = n to q }
+                    },
+                    onRemoveMaterial = { idx ->
+                        logMaterialLedger = logMaterialLedger.toMutableList().apply { removeAt(idx) }
+                    },
+                    onUpdateContainer = { potSize = it }
+                )
             }
 
             // 4. Observation Notes
@@ -956,6 +1001,23 @@ fun NewLogEntryScreen(
                         val paramsString = parameters.entries.joinToString("|") { "${it.key}:${it.value}" }
                         val imagesString = internalUris.joinToString(",")
                         val batchGroupId = if (selectedAssetIds.size > 1 && editingLogId == null) UUID.randomUUID().toString() else editingLog?.batchGroupId
+
+                        if (activityType == "Production" && selectedSupplyId != null) {
+                            val selectedSupply = supplies.find { it.id == selectedSupplyId }
+                            if (selectedSupply != null) {
+                                // Add log-level materials to existing supply material list
+                                val existingList = selectedSupply.materialList
+                                val newIngredients = logMaterialLedger.filter { it.first.isNotBlank() }.joinToString("|") { "${it.first}:${it.second}" }
+                                val updatedMaterialList = if (existingList.isBlank()) newIngredients else if (newIngredients.isBlank()) existingList else "$existingList|$newIngredients"
+                                
+                                viewModel.updateSupply(
+                                    selectedSupply.copy(
+                                        containerId = if (potSize.isNotBlank()) potSize else selectedSupply.containerId,
+                                        materialList = updatedMaterialList
+                                    )
+                                )
+                            }
+                        }
 
                         if (editingLogId != null && editingLog != null) {
                             viewModel.updateLog(
@@ -1430,6 +1492,101 @@ fun WeedingCard(
                             Icon(Icons.Default.Warning, null, tint = Color(0xFFFFB74D), modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("REI Active: ${selectedSupply.reiHours} Hours", color = Color(0xFFFFB74D), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ProductionCard(
+    supplies: List<DiySupplyEntity>,
+    selectedSupplyId: Long?,
+    materialLedger: List<Pair<String, String>>,
+    containerId: String,
+    onSupplyClick: () -> Unit,
+    onAddMaterial: () -> Unit,
+    onUpdateMaterial: (Int, String, String) -> Unit,
+    onRemoveMaterial: (Int) -> Unit,
+    onUpdateContainer: (String) -> Unit
+) {
+    PlanForaSurfaceCard(title = "Laboratory Progress", isImportant = true) {
+        val selectedSupply = supplies.find { it.id == selectedSupplyId }
+
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                text = "Vessel / Jar ID",
+                style = MaterialTheme.typography.labelSmall,
+                color = SlateTextPrimary.copy(alpha = 0.9f),
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(start = 2.dp)
+            )
+            OutlinedTextField(
+                value = containerId,
+                onValueChange = onUpdateContainer,
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text(selectedSupply?.containerId ?: "e.g. Jar A-01") },
+                colors = planForaTextFieldColors(isImportant = true)
+            )
+        }
+        
+        if (selectedSupply != null) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("CURRENT MATERIALS", style = MaterialTheme.typography.labelSmall, color = Color.Gray, fontWeight = FontWeight.Bold)
+                selectedSupply.materialList.split("|").filter { it.contains(":") }.forEach { mat ->
+                    val parts = mat.split(":")
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(parts[0], color = Color.White, fontSize = 13.sp)
+                        Text(parts[1], color = MaterialTheme.colorScheme.primary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+                
+                HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("ADD NEW INGREDIENTS", style = MaterialTheme.typography.labelSmall, color = Color.Gray, fontWeight = FontWeight.Bold)
+                    TextButton(onClick = onAddMaterial) {
+                        Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Add", fontSize = 11.sp)
+                    }
+                }
+
+                materialLedger.forEachIndexed { index, pair ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedTextField(
+                            value = pair.first,
+                            onValueChange = { onUpdateMaterial(index, it, pair.second) },
+                            modifier = Modifier.weight(2f),
+                            placeholder = { Text("Ingredient", fontSize = 12.sp) },
+                            colors = planForaTextFieldColors(isImportant = false),
+                            singleLine = true,
+                            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 13.sp)
+                        )
+                        OutlinedTextField(
+                            value = pair.second,
+                            onValueChange = { onUpdateMaterial(index, pair.first, it) },
+                            modifier = Modifier.weight(1f),
+                            placeholder = { Text("Qty", fontSize = 12.sp) },
+                            colors = planForaTextFieldColors(isImportant = false),
+                            singleLine = true,
+                            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 13.sp)
+                        )
+                        IconButton(onClick = { onRemoveMaterial(index) }, modifier = Modifier.size(24.dp)) {
+                            Icon(Icons.Default.Close, null, tint = Color.Gray, modifier = Modifier.size(16.dp))
                         }
                     }
                 }

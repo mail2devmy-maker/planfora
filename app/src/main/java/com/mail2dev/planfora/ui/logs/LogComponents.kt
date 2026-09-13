@@ -306,13 +306,24 @@ fun ExpandedLogCard(
             Spacer(modifier = Modifier.height(8.dp))
             
             TextButton(
-                onClick = onFollowUpClick,
+                onClick = {
+                    if (log.activityType == "PRODUCTION" || log.activityType == "Production") {
+                        onEditClick()
+                    } else {
+                        onFollowUpClick()
+                    }
+                },
                 modifier = Modifier.align(Alignment.End),
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
             ) {
                 Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp), tint = SageGreen)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Log Update", color = SageGreen, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    text = if (log.activityType == "PRODUCTION" || log.activityType == "Production") "Log Update" else "Add Follow-up", 
+                    color = SageGreen, 
+                    fontSize = 12.sp, 
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
     }
