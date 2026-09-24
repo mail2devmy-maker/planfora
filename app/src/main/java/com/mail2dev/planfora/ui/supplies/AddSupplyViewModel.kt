@@ -209,15 +209,15 @@ class AddSupplyViewModel(
     }
 
     val masterTags: StateFlow<List<String>> = journalRepository.getTagsByScope("SUPPLY")
-        .map { list -> list.map { it.name } }
+        .map { list -> list.map { it.name.trim() }.filter { it.isNotBlank() }.distinctBy { it.lowercase() } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val masterLocations: StateFlow<List<String>> = journalRepository.getLocationsByScope("SUPPLY")
-        .map { list -> list.map { it.name } }
+        .map { list -> list.map { it.name.trim() }.filter { it.isNotBlank() }.distinctBy { it.lowercase() } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val masterIngredients: StateFlow<List<String>> = journalRepository.getAllIngredients()
-        .map { list -> list.map { it.name } }
+        .map { list -> list.map { it.name.trim() }.filter { it.isNotBlank() }.distinctBy { it.lowercase() } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val activeDiyBatches: StateFlow<List<DiySupplyEntity>> = repository.getAllSupplies()

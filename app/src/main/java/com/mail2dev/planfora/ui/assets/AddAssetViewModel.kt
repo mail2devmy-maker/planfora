@@ -89,11 +89,11 @@ class AddAssetViewModel(private val repository: JournalRepository) : ViewModel()
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     val masterLocations: StateFlow<List<String>> = repository.getLocationsByScope("ASSET")
-        .map { list -> list.map { it.name } }
+        .map { list -> list.map { it.name.trim() }.filter { it.isNotBlank() }.distinctBy { it.lowercase() } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val masterTags: StateFlow<List<String>> = repository.getTagsByScope("ASSET")
-        .map { list -> list.map { it.name } }
+        .map { list -> list.map { it.name.trim() }.filter { it.isNotBlank() }.distinctBy { it.lowercase() } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun updateName(newName: String) { _name.value = newName }

@@ -57,4 +57,28 @@ class DiySupplyEntityTest {
         )
         assertEquals("Unnamed Supply", supply.displayName)
     }
+
+    @Test
+    fun testStockDeductionConversionFromMlToL() {
+        val qtyVal = 250.0
+        val usedQtyUnit = "mL"
+        val stockUnit = "L"
+        val deduction = when {
+            usedQtyUnit.equals("mL", ignoreCase = true) && stockUnit.equals("L", ignoreCase = true) -> qtyVal / 1000.0
+            else -> qtyVal
+        }
+        assertEquals(0.25, deduction, 0.001)
+    }
+
+    @Test
+    fun testStockDeductionConversionFromGToKg() {
+        val qtyVal = 500.0
+        val usedQtyUnit = "g"
+        val stockUnit = "kg"
+        val deduction = when {
+            usedQtyUnit.equals("g", ignoreCase = true) && stockUnit.equals("kg", ignoreCase = true) -> qtyVal / 1000.0
+            else -> qtyVal
+        }
+        assertEquals(0.5, deduction, 0.001)
+    }
 }

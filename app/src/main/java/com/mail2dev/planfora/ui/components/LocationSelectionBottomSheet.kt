@@ -97,13 +97,17 @@ fun LocationSelectionBottomSheet(
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            val uniqueLocations = remember(masterLocations) {
+                masterLocations.map { it.trim() }.filter { it.isNotBlank() }.distinctBy { it.lowercase() }
+            }
+
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                masterLocations.forEach { loc ->
-                    val isSelected = loc == selectedLocation
+                uniqueLocations.forEach { loc ->
+                    val isSelected = loc.trim().equals(selectedLocation.trim(), ignoreCase = true)
                     Surface(
                         modifier = Modifier.combinedClickable(
                             onClick = {

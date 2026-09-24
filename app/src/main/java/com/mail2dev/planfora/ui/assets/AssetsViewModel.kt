@@ -56,8 +56,8 @@ class AssetsViewModel(private val repository: JournalRepository) : ViewModel() {
 
     val availableLocations: StateFlow<List<String>> = repository.getAllAssets()
         .map { assets ->
-            assets.map { it.locationNote.ifBlank { "Unassigned" } }
-                .distinct()
+            assets.map { it.locationNote.trim().ifBlank { "Unassigned" } }
+                .distinctBy { it.lowercase() }
                 .sorted()
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())

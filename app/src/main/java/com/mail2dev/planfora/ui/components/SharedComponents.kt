@@ -78,11 +78,22 @@ fun PlanForaFieldGroup(
 fun planForaTextFieldColors(isImportant: Boolean = false) = OutlinedTextFieldDefaults.colors(
     focusedBorderColor = MaterialTheme.colorScheme.primary,
     unfocusedBorderColor = if (isImportant) MandatoryBorder else OptionalBorder,
+    disabledBorderColor = if (isImportant) MandatoryBorder else OptionalBorder,
     focusedLabelColor = MaterialTheme.colorScheme.primary,
     unfocusedLabelColor = if (isImportant) SlateTextPrimary else SlateTextSecondary,
+    disabledLabelColor = if (isImportant) SlateTextPrimary else SlateTextSecondary,
     cursorColor = MaterialTheme.colorScheme.primary,
     focusedContainerColor = Color.Transparent,
     unfocusedContainerColor = Color.Transparent,
+    disabledContainerColor = Color.Transparent,
     focusedTextColor = SlateTextPrimary,
-    unfocusedTextColor = if (isImportant) SlateTextPrimary else SlateTextSecondary
+    unfocusedTextColor = if (isImportant) SlateTextPrimary else SlateTextSecondary,
+    disabledTextColor = SlateTextPrimary,
+    focusedLeadingIconColor = MaterialTheme.colorScheme.primary,
+    unfocusedLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+    disabledLeadingIconColor = MaterialTheme.colorScheme.primary,
+    focusedTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+    unfocusedTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+    disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+    disabledPlaceholderColor = Color.Gray
 )

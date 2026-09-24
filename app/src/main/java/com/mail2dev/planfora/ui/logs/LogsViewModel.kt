@@ -53,15 +53,15 @@ class LogsViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val masterLocations: StateFlow<List<String>> = repository.getAllLocations()
-        .map { list -> list.map { it.name } }
+        .map { list -> list.map { it.name.trim() }.filter { it.isNotBlank() }.distinctBy { it.lowercase() } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val masterTags: StateFlow<List<String>> = repository.getTagsByScope("ASSET")
-        .map { list -> list.map { it.name } }
+        .map { list -> list.map { it.name.trim() }.filter { it.isNotBlank() }.distinctBy { it.lowercase() } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val masterParameters: StateFlow<List<String>> = repository.getAllParameters()
-        .map { list -> list.map { it.name } }
+        .map { list -> list.map { it.name.trim() }.filter { it.isNotBlank() }.distinctBy { it.lowercase() } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _allLogs = repository.getAllLogs()
@@ -210,6 +210,24 @@ class LogsViewModel(
     fun deleteLog(log: JournalLogEntity) {
         viewModelScope.launch {
             repository.deleteLog(log)
+        }
+    }
+
+    fun addMasterLocation(loc: String) {
+        viewModelScope.launch {
+            repository.insertLocation(com.mail2dev.planfora.data.local.entity.MasterLocationEntity(loc, "ASSET"))
+        }
+    }
+
+    fun updateMasterLocation(oldName: String, newName: String) {
+        viewModelScope.launch {
+            repository.updateLocationName(oldName, newName, "ASSET")
+        }
+    }
+
+    fun deleteMasterLocation(name: String) {
+        viewModelScope.launch {
+            repository.deleteLocationByName(name, "ASSET")
         }
     }
 
