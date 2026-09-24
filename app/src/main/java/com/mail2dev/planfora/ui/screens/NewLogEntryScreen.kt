@@ -44,6 +44,7 @@ import androidx.navigation.NavController
 import androidx.compose.ui.res.painterResource
 import coil.compose.AsyncImage
 import com.mail2dev.planfora.data.local.entity.DiySupplyEntity
+import com.mail2dev.planfora.data.local.entity.displayName
 import com.mail2dev.planfora.data.local.entity.JournalLogEntity
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
@@ -295,13 +296,16 @@ fun NewLogEntryScreen(
 
             val keyParam = when (activityType) {
                 "Pest Control", "Feeding" -> {
-                    val supply = supplies.find { it.id == selectedSupplyId }?.batchCode ?: customInputName
+                    val supply = supplies.find { it.id == selectedSupplyId }?.displayName ?: customInputName
                     if (dosageAmount.isNotBlank()) "$supply ($dosageAmount $dosageRatio)" else supply
                 }
                 "Harvest" -> if (yieldAmount.isNotBlank()) "$yieldAmount $yieldUnit" else ""
                 "Repotting" -> substrateMix
                 "Pruning" -> pruningType
-                "Weeding" -> weedingMethod
+                "Weeding" -> if (weedingMethod == "Chemical") {
+                    val supply = supplies.find { it.id == selectedSupplyId }?.displayName ?: customInputName
+                    if (supply.isNotBlank()) "Chemical • $supply" else "Chemical"
+                } else weedingMethod
                 "Production" -> "Update"
                 else -> ""
             }
@@ -513,7 +517,7 @@ fun NewLogEntryScreen(
                     val selectedSupply = supplies.find { it.id == selectedSupplyId }
                     Box(modifier = Modifier.fillMaxWidth().clickable { showSupplyBottomSheet = true }) {
                         OutlinedTextField(
-                            value = selectedSupply?.batchCode ?: "Select DIY Project",
+                            value = selectedSupply?.displayName ?: "Select DIY Project",
                             onValueChange = {},
                             readOnly = true,
                             enabled = false,
@@ -1222,7 +1226,7 @@ fun TreatmentDetailsCard(
                 modifier = Modifier.padding(start = 2.dp)
             )
             OutlinedTextField(
-                value = selectedSupply?.batchCode ?: customInputName.ifBlank { "Select Product" },
+                value = selectedSupply?.displayName ?: customInputName.ifBlank { "Select Product" },
                 onValueChange = {},
                 readOnly = true,
                 modifier = Modifier
@@ -1449,7 +1453,7 @@ fun WeedingCard(
                     modifier = Modifier.padding(start = 2.dp)
                 )
                 OutlinedTextField(
-                    value = selectedSupply?.batchCode ?: "Select Herbicide",
+                    value = selectedSupply?.displayName ?: "Select Herbicide",
                     onValueChange = {},
                     readOnly = true,
                     modifier = Modifier
@@ -1638,7 +1642,12 @@ fun SupplyPickerBottomSheet(
     onDismiss: () -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
-    val filtered = supplies.filter { it.batchCode.contains(searchQuery, ignoreCase = true) || it.name.contains(searchQuery, ignoreCase = true) }
+    val filtered = supplies.filter {
+        it.displayName.contains(searchQuery, ignoreCase = true) ||
+        it.name.contains(searchQuery, ignoreCase = true) ||
+        it.batchCode.contains(searchQuery, ignoreCase = true) ||
+        (it.activeIngredient?.contains(searchQuery, ignoreCase = true) == true)
+    }
 
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Color(0xFF1E2120)) {
         Column(modifier = Modifier.fillMaxWidth().padding(16.dp).imePadding(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -1855,7 +1864,7 @@ fun SupplyItemRow(supply: DiySupplyEntity, onClick: () -> Unit) {
             Box(modifier = Modifier.size(40.dp).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f), CircleShape), contentAlignment = Alignment.Center) { Icon(Icons.Default.Inventory, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp)) }
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(supply.batchCode, color = Color.White, fontWeight = FontWeight.Bold)
+                Text(supply.displayName, color = Color.White, fontWeight = FontWeight.Bold)
                 if (!supply.activeIngredient.isNullOrBlank()) Text("A.I.: ${supply.activeIngredient}", color = Color.Gray, fontSize = 12.sp)
             }
             Surface(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f), shape = RoundedCornerShape(4.dp)) { Text(supply.category, color = MaterialTheme.colorScheme.primary, fontSize = 10.sp, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)) }

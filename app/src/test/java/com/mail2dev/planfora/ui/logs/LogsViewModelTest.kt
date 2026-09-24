@@ -108,20 +108,29 @@ class LogsViewModelTest {
     }
 
     private val fakeCustomFieldDao = object : CustomFieldDao {
-        override fun getDefinitionsByCategory(category: String): Flow<List<CustomFieldDefinitionEntity>> = flowOf(emptyList())
+        override fun getDefinitions(targetType: FieldTargetType, scope: String): Flow<List<CustomFieldDefinitionEntity>> = flowOf(emptyList())
         override suspend fun insertDefinition(definition: CustomFieldDefinitionEntity): Long = 0
-        override suspend fun deleteDefinition(definition: CustomFieldDefinitionEntity) {}
-        override suspend fun deleteDefinitionsByCategory(category: String) {}
-        override fun getValuesByAsset(assetId: Long): Flow<List<CustomFieldValueEntity>> = flowOf(emptyList())
+        override suspend fun updateDefinition(definition: CustomFieldDefinitionEntity) {}
+        override suspend fun archiveDefinition(definitionId: Long) {}
+        override fun getValuesForEntity(entityId: Long): Flow<List<CustomFieldValueEntity>> = flowOf(emptyList())
         override suspend fun insertValue(value: CustomFieldValueEntity): Long = 0
         override suspend fun insertValues(values: List<CustomFieldValueEntity>) {}
+        override suspend fun deleteValuesForEntity(entityId: Long) {}
+    }
+
+    private val fakeToolDao = object : MeasurementToolDao {
+        override fun getAllTools(): Flow<List<MeasurementToolEntity>> = flowOf(emptyList())
+        override suspend fun insertTool(tool: MeasurementToolEntity) {}
+        override suspend fun updateTool(tool: MeasurementToolEntity) {}
+        override suspend fun deleteTool(tool: MeasurementToolEntity) {}
+        override suspend fun getToolById(id: Long): MeasurementToolEntity? = null
     }
 
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         repository = JournalRepository(fakeLogDao, fakeAssetDao, fakeMasterDao, fakeCustomFieldDao)
-        supplyRepository = SupplyRepository(fakeSupplyDao)
+        supplyRepository = SupplyRepository(fakeSupplyDao, fakeToolDao)
         viewModel = LogsViewModel(repository, supplyRepository)
     }
 

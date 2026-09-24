@@ -38,6 +38,14 @@ data class DiySupplyEntity(
     val displayId: String = "" // Added in v25 for FPJ01, JMS02 style
 )
 
+val DiySupplyEntity.displayName: String
+    get() = when {
+        name.isNotBlank() && batchCode.isNotBlank() && name != batchCode -> "$name ($batchCode)"
+        name.isNotBlank() -> name
+        batchCode.isNotBlank() -> batchCode
+        else -> "Unnamed Supply"
+    }
+
 enum class SupplyCategory(val displayName: String) {
     INSECTICIDE("Insecticides"),
     FUNGICIDE("Fungicides"),

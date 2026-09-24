@@ -90,13 +90,21 @@ class DataBackupManagerTest {
                 override suspend fun removeLogsParameter(name: String) {}
             }
             override fun customFieldDao() = object : CustomFieldDao {
-                override fun getDefinitionsByCategory(category: String): Flow<List<CustomFieldDefinitionEntity>> = flowOf(emptyList())
+                override fun getDefinitions(targetType: FieldTargetType, scope: String): Flow<List<CustomFieldDefinitionEntity>> = flowOf(emptyList())
                 override suspend fun insertDefinition(definition: CustomFieldDefinitionEntity): Long = 0
-                override suspend fun deleteDefinition(definition: CustomFieldDefinitionEntity) {}
-                override suspend fun deleteDefinitionsByCategory(category: String) {}
-                override fun getValuesByAsset(assetId: Long): Flow<List<CustomFieldValueEntity>> = flowOf(emptyList())
+                override suspend fun updateDefinition(definition: CustomFieldDefinitionEntity) {}
+                override suspend fun archiveDefinition(definitionId: Long) {}
+                override fun getValuesForEntity(entityId: Long): Flow<List<CustomFieldValueEntity>> = flowOf(emptyList())
                 override suspend fun insertValue(value: CustomFieldValueEntity): Long = 0
                 override suspend fun insertValues(values: List<CustomFieldValueEntity>) {}
+                override suspend fun deleteValuesForEntity(entityId: Long) {}
+            }
+            override fun measurementToolDao() = object : MeasurementToolDao {
+                override fun getAllTools(): Flow<List<MeasurementToolEntity>> = flowOf(emptyList())
+                override suspend fun insertTool(tool: MeasurementToolEntity) {}
+                override suspend fun updateTool(tool: MeasurementToolEntity) {}
+                override suspend fun deleteTool(tool: MeasurementToolEntity) {}
+                override suspend fun getToolById(id: Long): MeasurementToolEntity? = null
             }
             override fun createInvalidationTracker(): androidx.room.InvalidationTracker = TODO()
             override fun clearAllTables() = TODO()

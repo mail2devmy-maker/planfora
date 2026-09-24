@@ -113,9 +113,14 @@ class LogsViewModel(
 
     val allLogs: StateFlow<List<JournalLogEntity>> = _allLogs
 
-    val diyLogs: StateFlow<List<JournalLogEntity>> = _allLogs.map { logs ->
-        logs.filter { it.supplyId != null && it.assetId == null }
-            .sortedByDescending { it.timestamp }
+    val diyLogs: StateFlow<List<JournalLogEntity>> = combine(_allLogs, supplies) { logs, supplyList ->
+        logs.filter { log ->
+            val supply = supplyList.find { it.id == log.supplyId }
+            log.supplyId != null && 
+            log.assetId == null && 
+            supply?.category == "DIY" &&
+            log.activityType == "PRODUCTION"
+        }.sortedByDescending { it.timestamp }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _showAddBottomSheet = MutableStateFlow(false)

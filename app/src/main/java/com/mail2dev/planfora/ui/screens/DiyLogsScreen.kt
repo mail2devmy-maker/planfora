@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.mail2dev.planfora.data.local.entity.JournalLogEntity
+import com.mail2dev.planfora.data.local.entity.displayName
 import com.mail2dev.planfora.ui.logs.LogsViewModel
 import com.mail2dev.planfora.ui.theme.DarkBackground
 import com.mail2dev.planfora.util.TimeFormatter
@@ -68,7 +69,7 @@ fun DiyLogsScreen(
             ) {
                 items(diyLogs) { log ->
                     val supply = supplies.find { it.id == log.supplyId }
-                    DiyLogLedgerEntry(log, supply?.name ?: "Unknown", use24Hour)
+                    DiyLogLedgerEntry(log, supply?.displayName ?: "Unknown", use24Hour)
                 }
             }
         }

@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.mail2dev.planfora.data.local.entity.JournalLogEntity
+import com.mail2dev.planfora.data.local.entity.displayName
 import com.mail2dev.planfora.ui.components.InlineAudioPlayer
 import com.mail2dev.planfora.ui.theme.DarkBackground
 import com.mail2dev.planfora.ui.theme.ForestGreen
@@ -207,7 +208,7 @@ fun ExpandedLogCard(
             
             if (log.supplyId != null || !log.customInputName.isNullOrBlank()) {
                 val supplyName = if (log.supplyId != null) {
-                    supplies.find { it.id == log.supplyId }?.batchCode ?: "Deleted Supply"
+                    supplies.find { it.id == log.supplyId }?.displayName ?: "Deleted Supply"
                 } else {
                     log.customInputName
                 }
@@ -399,7 +400,7 @@ fun FollowUpLogCard(
             
             if (log.supplyId != null || !log.customInputName.isNullOrBlank()) {
                 val supplyName = if (log.supplyId != null) {
-                    supplies.find { it.id == log.supplyId }?.batchCode ?: "Deleted Supply"
+                    supplies.find { it.id == log.supplyId }?.displayName ?: "Deleted Supply"
                 } else {
                     log.customInputName
                 }

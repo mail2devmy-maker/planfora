@@ -3,6 +3,7 @@ package com.mail2dev.planfora.data.repository
 import com.mail2dev.planfora.data.local.dao.*
 import com.mail2dev.planfora.data.local.entity.*
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -29,8 +30,8 @@ class JournalRepositoryTest {
     }
 
     private val fakeLogDao = object : JournalLogDao {
-        override fun getAllLogs(): Flow<List<JournalLogEntity>> = TODO()
-        override suspend fun getAllLogsOnce(): List<JournalLogEntity> = TODO()
+        override fun getAllLogs(): Flow<List<JournalLogEntity>> = flowOf(emptyList())
+        override suspend fun getAllLogsOnce(): List<JournalLogEntity> = emptyList()
         override fun getLogsForAsset(assetId: Long): Flow<List<JournalLogEntity>> = TODO()
         override suspend fun getLogById(id: Long): JournalLogEntity? = TODO()
         override suspend fun insertLog(log: JournalLogEntity): Long = 1L
@@ -80,13 +81,14 @@ class JournalRepositoryTest {
     }
 
     private val fakeCustomFieldDao = object : CustomFieldDao {
-        override fun getDefinitionsByCategory(category: String): Flow<List<CustomFieldDefinitionEntity>> = TODO()
+        override fun getDefinitions(targetType: FieldTargetType, scope: String): Flow<List<CustomFieldDefinitionEntity>> = flowOf(emptyList())
         override suspend fun insertDefinition(definition: CustomFieldDefinitionEntity): Long = 0
-        override suspend fun deleteDefinition(definition: CustomFieldDefinitionEntity) {}
-        override suspend fun deleteDefinitionsByCategory(category: String) {}
-        override fun getValuesByAsset(assetId: Long): Flow<List<CustomFieldValueEntity>> = TODO()
+        override suspend fun updateDefinition(definition: CustomFieldDefinitionEntity) {}
+        override suspend fun archiveDefinition(definitionId: Long) {}
+        override fun getValuesForEntity(entityId: Long): Flow<List<CustomFieldValueEntity>> = flowOf(emptyList())
         override suspend fun insertValue(value: CustomFieldValueEntity): Long = 0
         override suspend fun insertValues(values: List<CustomFieldValueEntity>) {}
+        override suspend fun deleteValuesForEntity(entityId: Long) {}
     }
 
     private val repository = JournalRepository(fakeLogDao, fakeAssetDao, fakeMasterDao, fakeCustomFieldDao)
