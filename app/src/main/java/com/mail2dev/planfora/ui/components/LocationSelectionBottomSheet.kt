@@ -4,9 +4,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -20,15 +19,25 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.mail2dev.planfora.ui.theme.ForestEmerald
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
+data class LocationZoneOption(
+    val location: String,
+    val subLocation: String = ""
+) {
+    val displayName: String
+        get() = if (subLocation.isNotBlank()) "$location [$subLocation]" else location
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun LocationSelectionBottomSheet(
-    title: String = "Select Location",
+    title: String = "Select Location / Block",
     selectedLocation: String,
+    selectedSubLocation: String = "",
     masterLocations: List<String>,
+    assets: List<com.mail2dev.planfora.data.local.entity.PlantAssetEntity> = emptyList(),
     onLocationSelected: (String) -> Unit,
+    onLocationAndZoneSelected: ((location: String, subLocation: String) -> Unit)? = null,
     onNewLocationCreated: (String) -> Unit,
     onRenameLocation: (String, String) -> Unit,
     onDeleteLocation: (String) -> Unit,
@@ -48,22 +57,17 @@ fun LocationSelectionBottomSheet(
         containerColor = MaterialTheme.colorScheme.background,
         dragHandle = { BottomSheetDefaults.DragHandle(color = MaterialTheme.colorScheme.onSurfaceVariant) }
     ) {
-        Column(modifier = Modifier.padding(12.dp).fillMaxWidth().imePadding()) {
+        Column(modifier = Modifier.padding(16.dp).fillMaxWidth().imePadding()) {
             Text(title, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(12.dp))
 
             if (!isAddingNew) {
-                Button(
+                OutlinedButton(
                     onClick = { isAddingNew = true },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
-                        contentColor = MaterialTheme.colorScheme.onSurface
-                    ),
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline)
+                    shape = RoundedCornerShape(12.dp)
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = null)
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Add New Location")
                 }
@@ -97,48 +101,97 @@ fun LocationSelectionBottomSheet(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            val uniqueLocations = remember(masterLocations) {
-                masterLocations.map { it.trim() }.filter { it.isNotBlank() }.distinctBy { it.lowercase() }
+            val locationZoneOptions = remember(masterLocations, assets) {
+                val options = mutableListOf<LocationZoneOption>()
+                val uniqueLocs = masterLocations.map { it.trim() }.filter { it.isNotBlank() }.distinctBy { it.lowercase() }
+                
+                uniqueLocs.forEach { loc ->
+                    options.add(LocationZoneOption(location = loc, subLocation = ""))
+                    val zones = assets
+                        .filter { it.locationNote.trim().equals(loc.trim(), ignoreCase = true) && it.subLocation.isNotBlank() }
+                        .map { it.subLocation.trim().uppercase() }
+                        .distinct()
+                        .sorted()
+                    zones.forEach { zone ->
+                        options.add(LocationZoneOption(location = loc, subLocation = zone))
+                    }
+                }
+                options
             }
 
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 380.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                uniqueLocations.forEach { loc ->
-                    val isSelected = loc.trim().equals(selectedLocation.trim(), ignoreCase = true)
+                items(locationZoneOptions) { opt ->
+                    val isSelected = opt.location.trim().equals(selectedLocation.trim(), ignoreCase = true) &&
+                            opt.subLocation.trim().equals(selectedSubLocation.trim(), ignoreCase = true)
                     Surface(
-                        modifier = Modifier.combinedClickable(
-                            onClick = {
-                                onLocationSelected(loc)
-                                onDismiss()
-                            },
-                            onLongClick = {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                locationToManage = loc
-                                renameValue = loc
-                            }
-                        ),
-                        shape = RoundedCornerShape(8.dp),
-                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
-                        contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                        border = if (isSelected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .combinedClickable(
+                                onClick = {
+                                    if (onLocationAndZoneSelected != null) {
+                                        onLocationAndZoneSelected(opt.location, opt.subLocation)
+                                    } else {
+                                        onLocationSelected(opt.location)
+                                    }
+                                    onDismiss()
+                                },
+                                onLongClick = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    locationToManage = opt.location
+                                    renameValue = opt.location
+                                }
+                            ),
+                        shape = RoundedCornerShape(10.dp),
+                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f),
+                        contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                        border = BorderStroke(
+                            width = if (isSelected) 1.5.dp else 0.5.dp,
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                        )
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.LocationOn,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = loc,
-                                style = MaterialTheme.typography.labelLarge
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.LocationOn,
+                                    contentDescription = null,
+                                    tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = opt.location,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            if (opt.subLocation.isNotBlank()) {
+                                Surface(
+                                    shape = RoundedCornerShape(6.dp),
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                    contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                ) {
+                                    Text(
+                                        text = "[${opt.subLocation}]",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -221,7 +274,7 @@ fun LocationSelectionBottomSheet(
                 )
             }
 
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }

@@ -220,7 +220,22 @@ fun LogsScreen(
                     }
 
                     items(rootLogs) { rootLog ->
-                        val assetName = assets.find { it.id == rootLog.assetId }?.name ?: "General Log"
+                        val asset = assets.find { it.id == rootLog.assetId }
+                        val assetName = if (asset != null) {
+                            asset.name
+                        } else {
+                            val params = rootLog.parameters.split("|").associate { 
+                                val parts = it.split(":")
+                                if (parts.size == 2) parts[0] to parts[1] else "" to ""
+                            }
+                            val loc = params["location"]
+                            val subLoc = params["subLocation"]
+                            when {
+                                !loc.isNullOrBlank() && !subLoc.isNullOrBlank() -> "📍 $loc [$subLoc]"
+                                !loc.isNullOrBlank() -> "📍 $loc"
+                                else -> "General Log"
+                            }
+                        }
                         val followUps = logs.filter { it.parentLogId == rootLog.id }.sortedBy { it.timestamp }
                         
                         if (layoutMode == LayoutMode.EXPANDED_CARD) {

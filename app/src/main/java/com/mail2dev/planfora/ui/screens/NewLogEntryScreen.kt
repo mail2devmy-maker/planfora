@@ -158,6 +158,7 @@ fun NewLogEntryScreen(
     var usedQty by remember { mutableStateOf("") }
     var usedQtyUnit by remember { mutableStateOf("mL") }
     var selectedLocation by remember { mutableStateOf("") }
+    var selectedSubLocation by remember { mutableStateOf("") }
     var showLocationSheet by remember { mutableStateOf(false) }
     
     var selectedZones by remember { mutableStateOf(setOf<String>()) }
@@ -246,6 +247,7 @@ fun NewLogEntryScreen(
                 usedQty = params["used_qty"] ?: ""
                 usedQtyUnit = params["used_unit"] ?: "mL"
                 selectedLocation = params["location"] ?: (selectedAssetIds.mapNotNull { id -> assets.find { it.id == id }?.locationNote }.firstOrNull { it.isNotBlank() } ?: "")
+                selectedSubLocation = params["subLocation"] ?: ""
                 
                 yieldUnit = params["unit"] ?: "kg"
                 qualityGrade = params["grade"] ?: "A"
@@ -289,12 +291,13 @@ fun NewLogEntryScreen(
     var customInputCategory by remember { mutableStateOf("Other") }
 
     // Auto-Generated Title Logic
-    LaunchedEffect(selectedAssetIds, selectedLocation, activityType, selectedSupplyId, customInputName, yieldAmount, yieldUnit, substrateMix, pruningType, dosageAmount, dosageRatio, weedingMethod, usedQty, usedQtyUnit) {
+    LaunchedEffect(selectedAssetIds, selectedLocation, selectedSubLocation, activityType, selectedSupplyId, customInputName, yieldAmount, yieldUnit, substrateMix, pruningType, dosageAmount, dosageRatio, weedingMethod, usedQty, usedQtyUnit) {
         if (!userEditedTitle) {
+            val locDisplay = if (selectedLocation.isNotBlank() && selectedSubLocation.isNotBlank()) "$selectedLocation [$selectedSubLocation]" else selectedLocation
             val assetName = when {
                 activityType == "Production" -> supplies.find { it.id == selectedSupplyId }?.name ?: "DIY Project"
-                activityType == "Weeding" && selectedLocation.isNotBlank() -> selectedLocation
-                selectedAssetIds.isEmpty() -> if (selectedLocation.isNotBlank()) selectedLocation else "General Log"
+                activityType == "Weeding" && locDisplay.isNotBlank() -> locDisplay
+                selectedAssetIds.isEmpty() -> if (locDisplay.isNotBlank()) locDisplay else "General Log"
                 selectedAssetIds.size == 1 -> assets.find { it.id == selectedAssetIds.first() }?.name ?: "Unknown Asset"
                 else -> "${selectedAssetIds.size} Assets"
             }
@@ -513,93 +516,7 @@ fun NewLogEntryScreen(
                 }
             }
 
-            // 1. Target Asset / Project Section
-            val isProduction = activityType == "Production"
-            val isWeeding = activityType == "Weeding"
-            PlanForaSurfaceCard(
-                title = when {
-                    isProduction -> "Laboratory Batch (Required)"
-                    isWeeding -> "Location / Block (Required)"
-                    else -> "Primary Link (Mandatory)"
-                }, 
-                isImportant = true
-            ) {
-                if (isProduction) {
-                    val selectedSupply = supplies.find { it.id == selectedSupplyId }
-                    ReadOnlyPickerTextField(
-                        value = selectedSupply?.displayName ?: "Select DIY Project",
-                        onClick = { showSupplyBottomSheet = true },
-                        leadingIcon = { Icon(Icons.Default.Science, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-                        trailingIcon = { Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) }
-                    )
-                } else if (isWeeding) {
-                    ReadOnlyPickerTextField(
-                        value = if (selectedLocation.isNotBlank()) "📍 $selectedLocation" else "Select Location / Block (Required)",
-                        onClick = { showLocationSheet = true },
-                        leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-                        trailingIcon = { Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) }
-                    )
-                } else if (selectedAssetIds.isEmpty()) {
-                    ReadOnlyPickerTextField(
-                        value = "Select Plant (Required)",
-                        onClick = { if (parentLogId == null) showAssetPicker = true },
-                        leadingIcon = { Icon(Icons.Default.Park, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-                        trailingIcon = {
-                            if (parentLogId == null) {
-                                Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                        }
-                    )
-                } else {
-                    androidx.compose.foundation.layout.FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        selectedAssetIds.forEach { id ->
-                            val asset = assets.find { it.id == id }
-                            val category = AssetCategory.fromDatabase(asset?.category)
-                            AssistChip(
-                                onClick = { /* Could remove individual if desired */ },
-                                label = { Text(asset?.name ?: "Unknown") },
-                                leadingIcon = { 
-                                    if (category?.iconVector != null) {
-                                        Icon(
-                                            imageVector = category.iconVector,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(16.dp),
-                                            tint = MaterialTheme.colorScheme.primary
-                                        )
-                                    } else {
-                                        Text(category?.icon ?: "🌿") 
-                                    }
-                                },
-                                trailingIcon = {
-                                    if (parentLogId == null) {
-                                        IconButton(onClick = { selectedAssetIds = selectedAssetIds - id }, modifier = Modifier.size(16.dp)) {
-                                            Icon(Icons.Default.Close, null, modifier = Modifier.size(12.dp))
-                                        }
-                                    }
-                                },
-                                colors = AssistChipDefaults.assistChipColors(labelColor = Color.White)
-                            )
-                        }
-                        if (parentLogId == null) {
-                            AssistChip(
-                                onClick = { showAssetPicker = true },
-                                label = { Text("Add More") },
-                                leadingIcon = { Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp)) },
-                                colors = AssistChipDefaults.assistChipColors(
-                                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
-                                ),
-                                border = BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.3f))
-                            )
-                        }
-                    }
-                }
-            }
-
-            // 2. Activity Type Section
+            // 1. Activity Type Section
             PlanForaSurfaceCard(
                 title = "Activity Type", 
                 isImportant = true
@@ -695,6 +612,97 @@ fun NewLogEntryScreen(
                             shape = RoundedCornerShape(8.dp),
                             colors = planForaTextFieldColors(isImportant = true)
                         )
+                    }
+                }
+            }
+
+            // 2. Target Asset / Project Section
+            val isProduction = activityType == "Production"
+            val isWeeding = activityType == "Weeding"
+            PlanForaSurfaceCard(
+                title = when {
+                    isProduction -> "Laboratory Batch (Required)"
+                    isWeeding -> "Location / Block (Required)"
+                    else -> "Primary Link (Mandatory)"
+                }, 
+                isImportant = true
+            ) {
+                if (isProduction) {
+                    val selectedSupply = supplies.find { it.id == selectedSupplyId }
+                    ReadOnlyPickerTextField(
+                        value = selectedSupply?.displayName ?: "Select DIY Project",
+                        onClick = { showSupplyBottomSheet = true },
+                        leadingIcon = { Icon(Icons.Default.Science, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                        trailingIcon = { Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+                    )
+                } else if (isWeeding) {
+                    val locDisplay = when {
+                        selectedLocation.isNotBlank() && selectedSubLocation.isNotBlank() -> "$selectedLocation [$selectedSubLocation]"
+                        selectedLocation.isNotBlank() -> selectedLocation
+                        else -> "Select Location / Block (Required)"
+                    }
+                    ReadOnlyPickerTextField(
+                        value = locDisplay,
+                        onClick = { showLocationSheet = true },
+                        leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                        trailingIcon = { Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+                    )
+                } else if (selectedAssetIds.isEmpty()) {
+                    ReadOnlyPickerTextField(
+                        value = "Select Plant (Required)",
+                        onClick = { if (parentLogId == null) showAssetPicker = true },
+                        leadingIcon = { Icon(Icons.Default.Park, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                        trailingIcon = {
+                            if (parentLogId == null) {
+                                Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    )
+                } else {
+                    androidx.compose.foundation.layout.FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        selectedAssetIds.forEach { id ->
+                            val asset = assets.find { it.id == id }
+                            val category = AssetCategory.fromDatabase(asset?.category)
+                            AssistChip(
+                                onClick = { /* Could remove individual if desired */ },
+                                label = { Text(asset?.name ?: "Unknown") },
+                                leadingIcon = { 
+                                    if (category?.iconVector != null) {
+                                        Icon(
+                                            imageVector = category.iconVector,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp),
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                    } else {
+                                        Text(category?.icon ?: "🌿") 
+                                    }
+                                },
+                                trailingIcon = {
+                                    if (parentLogId == null) {
+                                        IconButton(onClick = { selectedAssetIds = selectedAssetIds - id }, modifier = Modifier.size(16.dp)) {
+                                            Icon(Icons.Default.Close, null, modifier = Modifier.size(12.dp))
+                                        }
+                                    }
+                                },
+                                colors = AssistChipDefaults.assistChipColors(labelColor = Color.White)
+                            )
+                        }
+                        if (parentLogId == null) {
+                            AssistChip(
+                                onClick = { showAssetPicker = true },
+                                label = { Text("Add More") },
+                                leadingIcon = { Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp)) },
+                                colors = AssistChipDefaults.assistChipColors(
+                                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+                                ),
+                                border = BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.3f))
+                            )
+                        }
                     }
                 }
             }
@@ -996,6 +1004,9 @@ fun NewLogEntryScreen(
                                 if (selectedLocation.isNotBlank()) {
                                     parameters["location"] = selectedLocation
                                 }
+                                if (selectedSubLocation.isNotBlank()) {
+                                    parameters["subLocation"] = selectedSubLocation
+                                }
                                 if (weedingMethod == "Chemical") {
                                     val selectedSupply = supplies.find { it.id == selectedSupplyId }
                                     val qtyVal = usedQty.toDoubleOrNull() ?: 0.0
@@ -1138,11 +1149,26 @@ fun NewLogEntryScreen(
         LocationSelectionBottomSheet(
             title = "Select Weeding Location / Block",
             selectedLocation = selectedLocation,
+            selectedSubLocation = selectedSubLocation,
             masterLocations = masterLocations,
+            assets = assets,
             onLocationSelected = { loc ->
                 selectedLocation = loc
-                selectedAssetIds = assets.filter { it.locationNote.equals(loc, ignoreCase = true) }.map { it.id }.toSet()
+                selectedSubLocation = ""
+                selectedAssetIds = assets.filter { it.locationNote.trim().equals(loc.trim(), ignoreCase = true) }.map { it.id }.toSet()
                 parameters["location"] = loc
+                parameters.remove("subLocation")
+                showLocationSheet = false
+            },
+            onLocationAndZoneSelected = { loc, subLoc ->
+                selectedLocation = loc
+                selectedSubLocation = subLoc
+                selectedAssetIds = assets.filter {
+                    it.locationNote.trim().equals(loc.trim(), ignoreCase = true) &&
+                    (subLoc.isBlank() || it.subLocation.trim().equals(subLoc.trim(), ignoreCase = true))
+                }.map { it.id }.toSet()
+                parameters["location"] = loc
+                if (subLoc.isNotBlank()) parameters["subLocation"] = subLoc else parameters.remove("subLocation")
                 showLocationSheet = false
             },
             onNewLocationCreated = viewModel::addMasterLocation,

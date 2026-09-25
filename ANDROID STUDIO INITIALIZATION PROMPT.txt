@@ -1,0 +1,10 @@
+I am starting a new AI session for the Android app 'PlanFora'. 
+I have no manual coding expertise, so you must follow our project documentation precisely.
+
+Please read the following files in the project root:
+- `docs/SYSTEM_PROMPT.md`
+- `docs/ARCHITECTURE.md`
+- `docs/CHANGELOG.md`
+- `docs/CURRENT_TASK.md`
+
+Summarize the current milestone we are working on in 2 sentences, and confirm you are ready to receive instructions for Milestone #2.73.

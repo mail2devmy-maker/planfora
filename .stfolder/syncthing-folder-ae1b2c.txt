@@ -1,0 +1,5 @@
+# This directory is a Syncthing folder marker.
+# Do not delete.
+
+folderID: cbeal-grhkt
+created: 2026-09-24T18:15:06+08:00
