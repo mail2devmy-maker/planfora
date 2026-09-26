@@ -8,11 +8,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,6 +20,9 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
+import androidx.compose.ui.res.painterResource
 import com.mail2dev.planfora.data.local.entity.JournalLogEntity
 import com.mail2dev.planfora.data.local.entity.PlantAssetEntity
 import com.mail2dev.planfora.ui.assets.AddAssetScreen
@@ -31,9 +30,6 @@ import com.mail2dev.planfora.ui.assets.AddAssetViewModel
 import com.mail2dev.planfora.ui.assets.AssetCategory
 import com.mail2dev.planfora.ui.assets.AssetsViewModel
 import com.mail2dev.planfora.ui.navigation.Screen
-import com.mail2dev.planfora.ui.theme.DarkBackground
-import com.mail2dev.planfora.ui.theme.ForestGreen
-import com.mail2dev.planfora.ui.theme.SageGreen
 import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -43,27 +39,79 @@ fun AssetsScreen(
     viewModel: AssetsViewModel,
     addAssetViewModel: AddAssetViewModel
 ) {
-    val groupedAssets by viewModel.groupedAssets.collectAsState()
+    val hierarchicalAssets by viewModel.hierarchicalAssets.collectAsState()
     val allLogs by viewModel.allLogs.collectAsState()
     val selectedCategory by viewModel.selectedCategory.collectAsState()
+    val selectedLocation by viewModel.selectedLocation.collectAsState()
+    val availableLocations by viewModel.availableLocations.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val showAddSheet by viewModel.showAddBottomSheet.collectAsState()
     val isMultiSelectMode by viewModel.isMultiSelectMode.collectAsState()
     val selectedAssetIds by viewModel.selectedAssetIds.collectAsState()
 
+    val hasDraft by addAssetViewModel.hasDraftData.collectAsState()
+    
+    var showDraftConflictDialog by remember { mutableStateOf<com.mail2dev.planfora.data.local.entity.PlantAssetEntity?>(null) }
+
+    var collapsedLocations by remember { mutableStateOf(setOf<String>()) }
+    var collapsedBlocks by remember { mutableStateOf(setOf<String>()) }
+    
+    if (showDraftConflictDialog != null) {
+        AlertDialog(
+            onDismissRequest = { showDraftConflictDialog = null },
+            title = { Text("Discard current draft?", color = Color.White) },
+            text = { Text("You have an active draft for a new plant. Starting an edit will discard it. Continue?", color = Color.LightGray) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        addAssetViewModel.loadAsset(showDraftConflictDialog!!.id)
+                        viewModel.setShowAddBottomSheet(true)
+                        showDraftConflictDialog = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                ) { Text("Discard & Edit") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDraftConflictDialog = null }) { Text("Cancel", color = Color.White) }
+            },
+            containerColor = Color(0xFF1E2120)
+        )
+    }
+
     Scaffold(
-        containerColor = DarkBackground,
+        containerColor = MaterialTheme.colorScheme.background,
         floatingActionButton = {
             if (!isMultiSelectMode) {
-                FloatingActionButton(
-                    onClick = { 
-                        addAssetViewModel.startNewAsset()
-                        viewModel.setShowAddBottomSheet(true) 
-                    },
-                    containerColor = ForestGreen,
-                    contentColor = Color.White
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = "New Asset")
+                Column(horizontalAlignment = Alignment.End) {
+                    if (hasDraft && !showAddSheet) {
+                        SmallFloatingActionButton(
+                            onClick = { viewModel.setShowAddBottomSheet(true) },
+                            containerColor = Color(0xFFE53935), // Pure Red
+                            contentColor = Color.White,
+                            modifier = Modifier.padding(bottom = 12.dp)
+                        ) {
+                            Icon(
+                                Icons.Rounded.Spa,
+                                contentDescription = "Resume Draft",
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+
+                    FloatingActionButton(
+                        onClick = {
+                            if (hasDraft) {
+                                viewModel.setShowAddBottomSheet(true)
+                            } else {
+                                addAssetViewModel.startNewAsset()
+                                viewModel.setShowAddBottomSheet(true)
+                            }
+                        },
+                        containerColor = com.mail2dev.planfora.ui.theme.ForestGreen,
+                        contentColor = Color.White
+                    ) {
+                        Icon(Icons.Rounded.Add, contentDescription = "New Asset")
+                    }
                 }
             }
         },
@@ -102,21 +150,23 @@ fun AssetsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = SageGreen) },
+                leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
                         IconButton(onClick = { viewModel.setSearchQuery("") }) {
-                            Icon(Icons.Default.Close, contentDescription = "Clear", tint = Color.Gray)
+                            Icon(Icons.Rounded.Close, contentDescription = "Clear", tint = Color.Gray)
                         }
                     }
                 },
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    focusedBorderColor = SageGreen,
-                    unfocusedBorderColor = Color.Gray.copy(alpha = 0.5f)
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
                 )
             )
 
@@ -125,14 +175,20 @@ fun AssetsScreen(
                 onCategorySelected = viewModel::setCategory
             )
 
+            LocationFilters(
+                locations = availableLocations,
+                selectedLocation = selectedLocation,
+                onLocationSelected = viewModel::setLocation
+            )
+
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
                 contentPadding = PaddingValues(bottom = if (isMultiSelectMode) 100.dp else 80.dp)
             ) {
-                if (groupedAssets.isEmpty()) {
+                if (hierarchicalAssets.isEmpty()) {
                     item {
                         Box(
                             modifier = Modifier
@@ -142,7 +198,7 @@ fun AssetsScreen(
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Icon(
-                                    Icons.Default.LocationOn,
+                                    Icons.Rounded.Forest,
                                     contentDescription = null,
                                     tint = Color.Gray.copy(alpha = 0.3f),
                                     modifier = Modifier.size(64.dp)
@@ -163,29 +219,77 @@ fun AssetsScreen(
                     }
                 }
 
-                groupedAssets.forEach { (location, assets) ->
+                hierarchicalAssets.forEach { (location, blocks) ->
+                    val isLocationCollapsed = collapsedLocations.contains(location)
+                    val totalLocationPlants = blocks.values.flatten().sumOf { it.totalPlants }
+
                     item {
                         LocationHeader(
                             location = location,
-                            onSelectAll = { viewModel.selectAllInZone(assets) }
-                        )
-                    }
-                    items(assets) { plantAsset ->
-                        val assetLogs = allLogs.filter { it.assetId == plantAsset.id }
-                        AssetCard(
-                            asset = plantAsset,
-                            logs = assetLogs,
-                            isSelected = selectedAssetIds.contains(plantAsset.id),
-                            isMultiSelectMode = isMultiSelectMode,
-                            onLongClick = { viewModel.toggleAssetSelection(plantAsset.id) },
-                            onClick = {
-                                if (isMultiSelectMode) {
-                                    viewModel.toggleAssetSelection(plantAsset.id)
-                                } else {
-                                    navController.navigate(Screen.PlantDetail.createRoute(plantAsset.id))
-                                }
+                            totalPlants = totalLocationPlants,
+                            isCollapsed = isLocationCollapsed,
+                            onCollapseToggle = {
+                                collapsedLocations = if (isLocationCollapsed) collapsedLocations - location else collapsedLocations + location
                             }
                         )
+                    }
+                    
+                    if (!isLocationCollapsed) {
+                        blocks.forEach { (blockName, assets) ->
+                            val blockKey = "$location-$blockName"
+                            val isBlockCollapsed = collapsedBlocks.contains(blockKey)
+                            val totalBlockPlants = assets.sumOf { it.totalPlants }
+
+                            item {
+                                BlockHeader(
+                                    blockName = blockName,
+                                    assetCount = assets.size,
+                                    totalPlants = totalBlockPlants,
+                                    isCollapsed = isBlockCollapsed,
+                                    onCollapseToggle = {
+                                        collapsedBlocks = if (isBlockCollapsed) collapsedBlocks - blockKey else collapsedBlocks + blockKey
+                                    },
+                                    onSelectAll = { viewModel.selectAllInZone(assets) }
+                                )
+                            }
+
+                            if (!isBlockCollapsed) {
+                                items(assets) { plantAsset ->
+                                    Row(
+                                        modifier = Modifier
+                                            .padding(start = 12.dp)
+                                            .height(IntrinsicSize.Min)
+                                    ) {
+                                        // Hierarchy Line (SageGreen)
+                                        Box(
+                                            modifier = Modifier
+                                                .width(2.dp)
+                                                .fillMaxHeight()
+                                                .background(com.mail2dev.planfora.ui.theme.SageGreen.copy(alpha = 0.3f))
+                                        )
+                                        
+                                        val assetLogs = allLogs.filter { it.assetId == plantAsset.id }
+                                        Box(modifier = Modifier.padding(start = 12.dp, bottom = 4.dp)) {
+                                            AssetCard(
+                                                asset = plantAsset,
+                                                logs = assetLogs,
+                                                isSelected = selectedAssetIds.contains(plantAsset.id),
+                                                isMultiSelectMode = isMultiSelectMode,
+                                                onLongClick = { viewModel.toggleAssetSelection(plantAsset.id) },
+                                                onClick = {
+                                                    if (isMultiSelectMode) {
+                                                        viewModel.toggleAssetSelection(plantAsset.id)
+                                                    } else {
+                                                        // Note: detail screen also allows editing, but for the "Add" sheet conflict:
+                                                        navController.navigate(Screen.PlantDetail.createRoute(plantAsset.id))
+                                                    }
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -201,24 +305,175 @@ fun AssetsScreen(
 }
 
 @Composable
-fun LocationHeader(location: String, onSelectAll: () -> Unit) {
+fun LocationHeader(
+    location: String,
+    totalPlants: Int,
+    isCollapsed: Boolean,
+    onCollapseToggle: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 8.dp),
+            .clickable { onCollapseToggle() }
+            .padding(top = 12.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(Icons.Default.LocationOn, contentDescription = null, tint = SageGreen, modifier = Modifier.size(16.dp))
+        Icon(
+            imageVector = if (isCollapsed) Icons.Rounded.ArrowRight else Icons.Rounded.ArrowDropDown,
+            contentDescription = null,
+            tint = Color.White.copy(alpha = 0.6f),
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Icon(
+            Icons.Rounded.LocationOn, 
+            contentDescription = null, 
+            tint = Color.White.copy(alpha = 0.6f), 
+            modifier = Modifier.size(14.dp)
+        )
         Spacer(modifier = Modifier.width(8.dp))
         Text(
-            text = location,
-            style = MaterialTheme.typography.labelLarge,
-            color = SageGreen,
+            text = location.uppercase(),
+            style = MaterialTheme.typography.labelSmall,
+            color = Color.White.copy(alpha = 0.6f),
             fontWeight = FontWeight.Bold,
+            letterSpacing = 1.sp,
             modifier = Modifier.weight(1f)
         )
-        TextButton(onClick = onSelectAll) {
-            Text("Select Zone", color = SageGreen, fontSize = 12.sp)
+        if (totalPlants > 0) {
+            Text(
+                text = "($totalPlants plants)",
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.White.copy(alpha = 0.4f),
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+@Composable
+fun BlockHeader(
+    blockName: String, 
+    assetCount: Int, 
+    totalPlants: Int,
+    isCollapsed: Boolean,
+    onCollapseToggle: () -> Unit,
+    onSelectAll: () -> Unit
+) {
+    Surface(
+        color = Color.White.copy(alpha = 0.05f),
+        shape = RoundedCornerShape(8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onCollapseToggle() }
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = if (isCollapsed) Icons.Rounded.ChevronRight else Icons.Rounded.ExpandMore,
+                contentDescription = null,
+                tint = com.mail2dev.planfora.ui.theme.SageGreen,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = blockName,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                    if (totalPlants > 0) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "($totalPlants plants)",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.Gray,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                Text(
+                    text = "$assetCount units inside",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.Gray
+                )
+            }
+            TextButton(
+                onClick = { 
+                    onSelectAll()
+                },
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+            ) {
+                Text("Select Block", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+@Composable
+fun LocationFilters(
+    locations: List<String>,
+    selectedLocation: String?,
+    onLocationSelected: (String?) -> Unit
+) {
+    LazyRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 8.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        item {
+            FilterChip(
+                selected = selectedLocation == null,
+                onClick = { onLocationSelected(null) },
+                label = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Rounded.Place,
+                            contentDescription = null,
+                            tint = if (selectedLocation == null) MaterialTheme.colorScheme.onPrimary else Color.Gray,
+                            modifier = Modifier.size(16.dp).padding(end = 4.dp)
+                        )
+                        Text("All")
+                    }
+                },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                    labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    enabled = true,
+                    selected = selectedLocation == null,
+                    borderColor = Color.Gray.copy(alpha = 0.2f),
+                    selectedBorderColor = Color.Transparent
+                )
+            )
+        }
+        items(locations) { location ->
+            FilterChip(
+                selected = selectedLocation == location,
+                onClick = { onLocationSelected(location) },
+                label = { Text(location) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                    labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    enabled = true,
+                    selected = selectedLocation == location,
+                    borderColor = Color.Gray.copy(alpha = 0.2f),
+                    selectedBorderColor = Color.Transparent
+                )
+            )
         }
     }
 }
@@ -241,23 +496,37 @@ fun CategoryFilters(
                 onClick = { onCategorySelected(category) },
                 label = { 
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (category.icon.isNotBlank()) {
+                        if (category == AssetCategory.ALL) {
+                            Icon(
+                                Icons.Rounded.Folder, 
+                                contentDescription = null, 
+                                tint = Color(0xFFFFD54F),
+                                modifier = Modifier.size(16.dp).padding(end = 4.dp)
+                            )
+                        } else if (category.iconVector != null) {
+                            Icon(
+                                imageVector = category.iconVector,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp).padding(end = 4.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        } else if (category.icon.isNotBlank()) {
                             Text(category.icon, modifier = Modifier.padding(end = 4.dp))
                         }
                         Text(category.displayName) 
                     }
                 },
                 colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = SageGreen,
-                    selectedLabelColor = DarkBackground,
-                    labelColor = Color.Gray,
-                    containerColor = Color.Transparent
+                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                    labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
                 ),
                 border = FilterChipDefaults.filterChipBorder(
                     enabled = true,
                     selected = selectedCategory == category,
-                    borderColor = Color.Gray,
-                    selectedBorderColor = SageGreen
+                    borderColor = Color.Gray.copy(alpha = 0.2f),
+                    selectedBorderColor = Color.Transparent
                 )
             )
         }
@@ -274,7 +543,7 @@ fun AssetCard(
     onClick: () -> Unit,
     onLongClick: () -> Unit
 ) {
-    val category = AssetCategory.entries.find { it.displayName == asset.category } ?: AssetCategory.TREE
+    val category = AssetCategory.fromDatabase(asset.category)
     
     val activePhiLog = logs.find { log ->
         val phiExpiry = log.parameters.split("|").find { it.startsWith("phi_expiry:") }?.substringAfter("phi_expiry:")?.toLongOrNull() ?: 0L
@@ -283,7 +552,7 @@ fun AssetCard(
 
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) SageGreen.copy(alpha = 0.15f) else Color(0xFF1E2120)
+            containerColor = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color(0xFF1E2120)
         ),
         shape = RoundedCornerShape(12.dp),
         modifier = Modifier
@@ -295,82 +564,135 @@ fun AssetCard(
                 )
             },
         border = androidx.compose.foundation.BorderStroke(
-            width = if (isSelected) 1.5.dp else 0.5.dp,
-            color = if (isSelected) SageGreen else Color.Gray.copy(alpha = 0.2f)
+            width = if (isSelected) 1.5.dp else 1.dp,
+            color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray.copy(alpha = 0.1f)
         )
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (isMultiSelectMode) {
-                    Checkbox(
-                        checked = isSelected,
-                        onCheckedChange = { onClick() },
-                        colors = CheckboxDefaults.colors(
-                            checkedColor = SageGreen,
-                            uncheckedColor = Color.Gray
-                        ),
-                        modifier = Modifier.padding(end = 8.dp)
-                    )
-                }
-
-                Surface(
-                    color = SageGreen.copy(alpha = 0.1f),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text(category.icon, fontSize = 20.sp, modifier = Modifier.padding(6.dp))
-                }
-                
-                Spacer(modifier = Modifier.width(12.dp))
-                
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(asset.name, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    val physId = asset.tags.split(",").find { it.startsWith("PhysID:") }?.substringAfter(":") ?: ""
-                    if (physId.isNotBlank()) {
-                        Text("ID: $physId", color = SageGreen, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
-                    }
-                }
-
-                if (activePhiLog != null) {
-                    val phiExpiryStr = activePhiLog.parameters.split("|").find { it.startsWith("phi_expiry:") }?.substringAfter("phi_expiry:")
-                    val phiExpiry = phiExpiryStr?.toLongOrNull() ?: 0L
-                    val remainingDays = ((phiExpiry - System.currentTimeMillis()) / (24L * 60 * 60 * 1000)).coerceAtLeast(1)
-                    
-                    Surface(
-                        color = Color(0xFFFFB74D).copy(alpha = 0.2f),
-                        shape = RoundedCornerShape(16.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFFB74D).copy(alpha = 0.5f))
-                    ) {
-                        Text(
-                            text = "⚠️ PHI: $remainingDays d",
-                            color = Color(0xFFFFB74D),
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
+        Column {
+            val imageUri = asset.imageUris.split(",").firstOrNull { it.isNotBlank() }
+            if (imageUri != null) {
+                AsyncImage(
+                    model = imageUri,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxWidth().height(140.dp),
+                    contentScale = ContentScale.Crop
+                )
             }
 
-            if (asset.tags.isNotBlank()) {
-                Spacer(modifier = Modifier.height(12.dp))
-                androidx.compose.foundation.layout.FlowRow(
+            Column(modifier = Modifier.padding(12.dp)) {
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    asset.tags.split(",").filter { !it.startsWith("PhysID:") && !it.startsWith("Batch:") }.take(4).forEach { tag ->
+                    if (isMultiSelectMode) {
+                        Checkbox(
+                            checked = isSelected,
+                            onCheckedChange = { onClick() },
+                            colors = CheckboxDefaults.colors(
+                                checkedColor = MaterialTheme.colorScheme.primary,
+                                uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            ),
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                    }
+
+                    if (imageUri == null) {
                         Surface(
-                            color = ForestGreen.copy(alpha = 0.2f),
-                            shape = RoundedCornerShape(4.dp)
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+                            shape = RoundedCornerShape(8.dp)
                         ) {
-                            Text(
-                                text = "#$tag",
-                                color = SageGreen,
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
-                                fontSize = 10.sp
-                            )
+                            if (category.iconVector != null) {
+                                Icon(
+                                    imageVector = category.iconVector,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(32.dp).padding(6.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            } else {
+                                Text(category.icon, fontSize = 20.sp, modifier = Modifier.padding(6.dp))
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                    }
+                    
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(asset.name, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            if (asset.subLocation.isNotBlank()) {
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "[${asset.subLocation.uppercase()}]",
+                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                        
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            val physId = asset.tags.split(",").find { it.startsWith("PhysID:") }?.substringAfter(":") ?: ""
+                            if (physId.isNotBlank()) {
+                                Text("ID: $physId", color = Color.Gray, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                                if (asset.totalPlants > 0) Spacer(modifier = Modifier.width(8.dp))
+                            }
+                            
+                            if (asset.totalPlants > 0) {
+                                Text(
+                                    text = "${asset.totalPlants} plants",
+                                    color = Color.Gray,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                    }
+
+                    if (activePhiLog != null) {
+                        val phiExpiryStr = activePhiLog.parameters.split("|").find { it.startsWith("phi_expiry:") }?.substringAfter("phi_expiry:")
+                        val phiExpiry = phiExpiryStr?.toLongOrNull() ?: 0L
+                        val remainingDays = ((phiExpiry - System.currentTimeMillis()) / (24L * 60 * 60 * 1000)).coerceAtLeast(1)
+                        
+                        Surface(
+                            color = Color(0xFFFFB74D).copy(alpha = 0.2f),
+                            shape = RoundedCornerShape(16.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFFB74D).copy(alpha = 0.5f))
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            ) {
+                                Icon(Icons.Rounded.Warning, null, tint = Color(0xFFFFB74D), modifier = Modifier.size(12.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "PHI: $remainingDays d",
+                                    color = Color(0xFFFFB74D),
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                }
+
+                if (asset.tags.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    androidx.compose.foundation.layout.FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        asset.tags.split(",").filter { !it.startsWith("PhysID:") && !it.startsWith("Batch:") }.take(4).forEach { tag ->
+                            Surface(
+                                color = Color.White.copy(alpha = 0.1f),
+                                shape = RoundedCornerShape(4.dp)
+                            ) {
+                                Text(
+                                    text = "#$tag",
+                                    color = Color.Gray,
+                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                                    fontSize = 10.sp
+                                )
+                            }
                         }
                     }
                 }
@@ -406,7 +728,7 @@ fun BatchSelectionBar(
                 )
                 Text(
                     text = "Ready for batch logging",
-                    color = SageGreen,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp
                 )
             }
@@ -417,10 +739,10 @@ fun BatchSelectionBar(
                 }
                 Button(
                     onClick = onLogBatch,
-                    colors = ButtonDefaults.buttonColors(containerColor = ForestGreen),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                 ) {
-                    Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Rounded.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Log Batch", fontWeight = FontWeight.Bold)
                 }

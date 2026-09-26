@@ -2,14 +2,18 @@ package com.mail2dev.planfora.ui.screens
 
 import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.animation.*
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -19,6 +23,8 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -35,28 +41,40 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.res.painterResource
 import coil.compose.AsyncImage
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import com.mail2dev.planfora.data.local.entity.DiySupplyEntity
+import com.mail2dev.planfora.data.local.entity.displayName
+import com.mail2dev.planfora.ui.components.LocationSelectionBottomSheet
 import com.mail2dev.planfora.data.local.entity.JournalLogEntity
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import com.mail2dev.planfora.data.local.entity.PlantAssetEntity
 import com.mail2dev.planfora.ui.assets.AssetCategory
-import com.mail2dev.planfora.ui.assets.AssetsViewModel
+import com.mail2dev.planfora.ui.components.CreateCustomFieldDialog
+import com.mail2dev.planfora.ui.components.DynamicCustomFieldInput
+import com.mail2dev.planfora.ui.components.ManageFieldDialog
 import com.mail2dev.planfora.ui.components.HarvestActivityCard
 import com.mail2dev.planfora.ui.components.MediaAttachmentStrip
-import com.mail2dev.planfora.ui.components.ParameterInputSection
+import com.mail2dev.planfora.ui.components.PlanForaFieldGroup
+import com.mail2dev.planfora.ui.components.PlanForaSurfaceCard
 import com.mail2dev.planfora.ui.components.TagPickerSheet
+import com.mail2dev.planfora.ui.components.planForaTextFieldColors
+import com.mail2dev.planfora.data.local.entity.FieldTargetType
 import com.mail2dev.planfora.ui.logs.LogsViewModel
-import com.mail2dev.planfora.ui.theme.DarkBackground
-import com.mail2dev.planfora.ui.theme.ForestGreen
-import com.mail2dev.planfora.ui.theme.SageGreen
+import com.mail2dev.planfora.ui.theme.*
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.Calendar
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun NewLogEntryScreen(
     navController: NavController,
@@ -69,6 +87,7 @@ fun NewLogEntryScreen(
 ) {
     val assets by viewModel.assets.collectAsState()
     val supplies by viewModel.supplies.collectAsState()
+    val measurementTools by viewModel.measurementTools.collectAsState()
     val allLogs by viewModel.allLogs.collectAsState()
     val masterTags by viewModel.masterTags.collectAsState()
     val context = LocalContext.current
@@ -101,9 +120,17 @@ fun NewLogEntryScreen(
     var activityType by remember { mutableStateOf("Observation") }
     var customActivity by remember { mutableStateOf("") }
     var showCustomActivityInput by remember { mutableStateOf(false) }
+    var isActivityTypeExpanded by remember { mutableStateOf(editingLogId == null) }
     
     var tags by remember { mutableStateOf(setOf<String>()) }
     var parameters by remember { mutableStateOf(mutableMapOf<String, String>()) }
+
+    // Dynamic Custom Fields State
+    val customFieldDefinitions by viewModel.getCustomFieldDefinitions(FieldTargetType.LOG_ACTIVITY, activityType).collectAsState(emptyList())
+    var customFieldValues by remember { mutableStateOf(mutableMapOf<Long, String>()) }
+    var showCustomFieldDialog by remember { mutableStateOf(false) }
+    var fieldToManage by remember { mutableStateOf<com.mail2dev.planfora.data.local.entity.CustomFieldDefinitionEntity?>(null) }
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
 
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
     
@@ -115,6 +142,9 @@ fun NewLogEntryScreen(
     var dosageRatio by remember { mutableStateOf("mL / Liter") }
     var appMethod by remember { mutableStateOf("FOLIAR SPRAY") }
     
+    var selectedTool by remember { mutableStateOf<com.mail2dev.planfora.data.local.entity.MeasurementToolEntity?>(null) }
+    var toolCount by remember { mutableStateOf("") }
+    
     var yieldAmount by remember { mutableStateOf("") }
     var yieldUnit by remember { mutableStateOf("kg") }
     var qualityGrade by remember { mutableStateOf("A") }
@@ -123,13 +153,58 @@ fun NewLogEntryScreen(
     var potSize by remember { mutableStateOf("") }
     
     var pruningType by remember { mutableStateOf("Sanitary") }
+
+    var weedingMethod by remember { mutableStateOf("Manual") }
+    var usedQty by remember { mutableStateOf("") }
+    var usedQtyUnit by remember { mutableStateOf("mL") }
+    var selectedLocation by remember { mutableStateOf("") }
+    var selectedSubLocation by remember { mutableStateOf("") }
+    var showLocationSheet by remember { mutableStateOf(false) }
     
     var selectedZones by remember { mutableStateOf(setOf<String>()) }
     var rowYields by remember { mutableStateOf(mutableMapOf<String, String>()) }
 
-    var parentLog by remember { mutableStateOf<JournalLogEntity?>(null) }
+    var logMaterialLedger by remember { mutableStateOf<List<Pair<String, String>>>(emptyList()) }
 
-    val activityTypes = listOf("Observation", "Feeding", "Pruning", "Pest Control", "Repotting", "Harvest", "Other")
+    var parentLog by remember { mutableStateOf<JournalLogEntity?>(null) }
+    var selectedTimestamp by remember { mutableStateOf(initialTimestamp ?: System.currentTimeMillis()) }
+    var showDatePicker by remember { mutableStateOf(false) }
+    var showTimePicker by remember { mutableStateOf(false) }
+    var showDiscardDialog by remember { mutableStateOf(false) }
+
+    val hasUnsavedChanges = remember(userEditedTitle, note, tags, imageUris, audioPath, customActivity, dosageAmount, yieldAmount, substrateMix) {
+        userEditedTitle || note.isNotBlank() || tags.isNotEmpty() || imageUris.isNotEmpty() || audioPath != null || 
+        customActivity.isNotBlank() || dosageAmount.isNotBlank() || yieldAmount.isNotBlank() || substrateMix.isNotBlank()
+    }
+
+    BackHandler(enabled = hasUnsavedChanges && editingLogId == null) {
+        showDiscardDialog = true
+    }
+
+    if (showDiscardDialog) {
+        AlertDialog(
+            onDismissRequest = { showDiscardDialog = false },
+            title = { Text("Discard changes?", color = Color.White) },
+            text = { Text("You have unsaved changes. Are you sure you want to discard them?", color = Color.LightGray) },
+            confirmButton = {
+                TextButton(onClick = { 
+                    showDiscardDialog = false
+                    navController.popBackStack() 
+                }) {
+                    Text("Discard", color = Color.Red)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDiscardDialog = false }) {
+                    Text("Continue Editing", color = Color.White)
+                }
+            },
+            containerColor = Color(0xFF1E2120)
+        )
+    }
+
+    val activityTypes = listOf("Observation", "Feeding", "Pruning", "Pest Control", "Repotting", "Harvest", "Weeding", "Other")
+    val prefix = remember(activityType) { activityType.take(2).uppercase() }
 
     // Loading editing log
     LaunchedEffect(editingLogId) {
@@ -139,9 +214,14 @@ fun NewLogEntryScreen(
                 title = log.title
                 userEditedTitle = true
                 note = log.note
-                activityType = if (activityTypes.contains(log.activityType)) log.activityType else "Other"
-                if (activityType == "Other") customActivity = log.activityType
-                selectedAssetIds = setOf(log.assetId)
+                val logType = log.activityType
+                if (activityTypes.contains(logType) || logType == "Production" || logType == "PRODUCTION") {
+                    activityType = logType
+                } else {
+                    activityType = "Other"
+                    customActivity = logType
+                }
+                selectedAssetIds = log.assetId?.let { setOf(it) } ?: emptySet()
                 selectedSupplyId = log.supplyId
                 customInputName = log.customInputName ?: ""
                 tags = log.tags.split(",").filter { it.isNotBlank() }.toSet()
@@ -162,6 +242,12 @@ fun NewLogEntryScreen(
                 potSize = params["pot_size"] ?: ""
                 
                 pruningType = params["pruning_type"] ?: "Sanitary"
+
+                weedingMethod = params["weeding_method"] ?: "Manual"
+                usedQty = params["used_qty"] ?: ""
+                usedQtyUnit = params["used_unit"] ?: "mL"
+                selectedLocation = params["location"] ?: (selectedAssetIds.mapNotNull { id -> assets.find { it.id == id }?.locationNote }.firstOrNull { it.isNotBlank() } ?: "")
+                selectedSubLocation = params["subLocation"] ?: ""
                 
                 yieldUnit = params["unit"] ?: "kg"
                 qualityGrade = params["grade"] ?: "A"
@@ -179,6 +265,13 @@ fun NewLogEntryScreen(
                 
                 if (log.targetZones != null) {
                     selectedZones = log.targetZones.split(",").toSet()
+                }
+
+                // Load custom field values
+                scope.launch {
+                    viewModel.getCustomFieldValues(id).firstOrNull()?.let { values ->
+                        customFieldValues = values.associate { it.fieldDefId to it.value }.toMutableMap()
+                    }
                 }
             }
         }
@@ -198,24 +291,31 @@ fun NewLogEntryScreen(
     var customInputCategory by remember { mutableStateOf("Other") }
 
     // Auto-Generated Title Logic
-    LaunchedEffect(selectedAssetIds, activityType, selectedSupplyId, customInputName, yieldAmount, yieldUnit, substrateMix, pruningType, dosageAmount, dosageRatio) {
+    LaunchedEffect(selectedAssetIds, selectedLocation, selectedSubLocation, activityType, selectedSupplyId, customInputName, yieldAmount, yieldUnit, substrateMix, pruningType, dosageAmount, dosageRatio, weedingMethod, usedQty, usedQtyUnit) {
         if (!userEditedTitle) {
-            val assetName = if (selectedAssetIds.isEmpty()) {
-                "General Log"
-            } else if (selectedAssetIds.size == 1) {
-                assets.find { it.id == selectedAssetIds.first() }?.name ?: "Unknown Asset"
-            } else {
-                "${selectedAssetIds.size} Assets"
+            val locDisplay = if (selectedLocation.isNotBlank() && selectedSubLocation.isNotBlank()) "$selectedLocation [$selectedSubLocation]" else selectedLocation
+            val assetName = when {
+                activityType == "Production" -> supplies.find { it.id == selectedSupplyId }?.name ?: "DIY Project"
+                activityType == "Weeding" && locDisplay.isNotBlank() -> locDisplay
+                selectedAssetIds.isEmpty() -> if (locDisplay.isNotBlank()) locDisplay else "General Log"
+                selectedAssetIds.size == 1 -> assets.find { it.id == selectedAssetIds.first() }?.name ?: "Unknown Asset"
+                else -> "${selectedAssetIds.size} Assets"
             }
 
             val keyParam = when (activityType) {
                 "Pest Control", "Feeding" -> {
-                    val supply = supplies.find { it.id == selectedSupplyId }?.batchCode ?: customInputName
+                    val supply = supplies.find { it.id == selectedSupplyId }?.displayName ?: customInputName
                     if (dosageAmount.isNotBlank()) "$supply ($dosageAmount $dosageRatio)" else supply
                 }
                 "Harvest" -> if (yieldAmount.isNotBlank()) "$yieldAmount $yieldUnit" else ""
                 "Repotting" -> substrateMix
                 "Pruning" -> pruningType
+                "Weeding" -> if (weedingMethod == "Chemical") {
+                    val supply = supplies.find { it.id == selectedSupplyId }?.displayName ?: customInputName
+                    val qtyText = if (usedQty.isNotBlank()) " ($usedQty $usedQtyUnit)" else ""
+                    if (supply.isNotBlank()) "Chemical • $supply$qtyText" else "Chemical"
+                } else weedingMethod
+                "Production" -> "Update"
                 else -> ""
             }
 
@@ -250,7 +350,7 @@ fun NewLogEntryScreen(
         parentLogId?.let {
             parentLog = viewModel.getLogById(it)
             parentLog?.let { parent ->
-                selectedAssetIds = setOf(parent.assetId)
+                selectedAssetIds = parent.assetId?.let { setOf(it) } ?: emptySet()
                 title = "Follow-up: ${parent.title}"
                 userEditedTitle = true
             }
@@ -261,142 +361,171 @@ fun NewLogEntryScreen(
         topBar = {
             TopAppBar(
                 title = { 
-                    TextField(
-                        value = title,
-                        onValueChange = { 
-                            title = it 
-                            userEditedTitle = true
-                        },
-                        placeholder = { Text("Log Title...", color = Color.Gray) },
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent,
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
-                            cursorColor = SageGreen,
-                            focusedIndicatorColor = SageGreen.copy(alpha = 0.5f),
-                            unfocusedIndicatorColor = Color.Transparent
-                        ),
-                        textStyle = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        // Display ID Badge from wireframe
+                        Surface(
+                            color = Color.White.copy(alpha = 0.1f),
+                            shape = RoundedCornerShape(4.dp),
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        ) {
+                            Text(
+                                text = if (editingLogId != null) editingLog?.displayId ?: "" 
+                                       else if (parentLog != null) "${parentLog?.displayId}.[Next]" 
+                                       else "$prefix[Next]",
+                                color = MaterialTheme.colorScheme.primary,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+
+                        TextField(
+                            value = title,
+                            onValueChange = { 
+                                title = it 
+                                userEditedTitle = true
+                            },
+                            placeholder = { Text("Log Title...", color = Color.Gray) },
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                cursorColor = MaterialTheme.colorScheme.primary,
+                                focusedIndicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                                unfocusedIndicatorColor = Color.Transparent
+                            ),
+                            textStyle = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = { 
+                        if (hasUnsavedChanges && editingLogId == null) {
+                            showDiscardDialog = true
+                        } else {
+                            navController.popBackStack()
+                        }
+                    }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = DarkBackground)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         },
-        containerColor = DarkBackground
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
+        if (showDatePicker) {
+            val cal = Calendar.getInstance().apply { timeInMillis = selectedTimestamp }
+            DisposableEffect(Unit) {
+                val datePicker = android.app.DatePickerDialog(
+                    context,
+                    { _, year, month, dayOfMonth ->
+                        cal.set(java.util.Calendar.YEAR, year)
+                        cal.set(java.util.Calendar.MONTH, month)
+                        cal.set(java.util.Calendar.DAY_OF_MONTH, dayOfMonth)
+                        selectedTimestamp = cal.timeInMillis
+                        showDatePicker = false
+                        showTimePicker = true // Chain to time picker
+                    },
+                    cal.get(java.util.Calendar.YEAR),
+                    cal.get(java.util.Calendar.MONTH),
+                    cal.get(java.util.Calendar.DAY_OF_MONTH)
+                )
+                datePicker.setOnCancelListener { showDatePicker = false }
+                datePicker.show()
+                onDispose { datePicker.dismiss() }
+            }
+        }
+
+        if (showTimePicker) {
+            val cal = Calendar.getInstance().apply { timeInMillis = selectedTimestamp }
+            DisposableEffect(Unit) {
+                val timePicker = android.app.TimePickerDialog(
+                    context,
+                    { _, hourOfDay, minute ->
+                        cal.set(java.util.Calendar.HOUR_OF_DAY, hourOfDay)
+                        cal.set(java.util.Calendar.MINUTE, minute)
+                        selectedTimestamp = cal.timeInMillis
+                        showTimePicker = false
+                    },
+                    cal.get(java.util.Calendar.HOUR_OF_DAY),
+                    cal.get(java.util.Calendar.MINUTE),
+                    false
+                )
+                timePicker.setOnCancelListener { showTimePicker = false }
+                timePicker.show()
+                onDispose { timePicker.dismiss() }
+            }
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = 12.dp)
                 .verticalScroll(rememberScrollState())
                 .imePadding(),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Spacer(modifier = Modifier.height(8.dp))
-            
+            val dateText = remember(selectedTimestamp) {
+                SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(selectedTimestamp))
+            }
+            val timeText = remember(selectedTimestamp) {
+                SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(selectedTimestamp))
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                AssistChip(
+                    onClick = { showDatePicker = true },
+                    label = { Text(dateText, fontSize = 12.sp) },
+                    leadingIcon = { Icon(Icons.Default.DateRange, null, modifier = Modifier.size(16.dp)) },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = AssistChipDefaults.assistChipColors(
+                        labelColor = Color.White,
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+                    ),
+                    border = AssistChipDefaults.assistChipBorder(borderColor = Color.Gray.copy(alpha = 0.3f), enabled = true)
+                )
+                AssistChip(
+                    onClick = { showTimePicker = true },
+                    label = { Text(timeText, fontSize = 12.sp) },
+                    leadingIcon = { Icon(Icons.Default.Schedule, null, modifier = Modifier.size(16.dp)) },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = AssistChipDefaults.assistChipColors(
+                        labelColor = Color.White,
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+                    ),
+                    border = AssistChipDefaults.assistChipBorder(borderColor = Color.Gray.copy(alpha = 0.3f), enabled = true)
+                )
+            }
+
             if (parentLog != null) {
-                Surface(
-                    color = SageGreen.copy(alpha = 0.1f),
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(0.5.dp, SageGreen.copy(alpha = 0.3f)),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Link, contentDescription = null, tint = SageGreen, modifier = Modifier.size(18.dp))
+                PlanForaSurfaceCard {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Link, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(12.dp))
                         Text("Follow-up: ${parentLog?.title}", color = Color.White, style = MaterialTheme.typography.bodyMedium)
                     }
                 }
             }
 
-            // 1. Target Asset Section
-            Surface(
-                color = Color(0xFF1E2120).copy(alpha = 0.5f),
-                shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant),
-                modifier = Modifier.fillMaxWidth()
+            // 1. Activity Type Section
+            PlanForaSurfaceCard(
+                title = "Activity Type", 
+                isImportant = true
             ) {
-                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Associated Plant(s)", style = MaterialTheme.typography.labelLarge, color = SageGreen, fontWeight = FontWeight.SemiBold)
-                    
-                    if (selectedAssetIds.isEmpty()) {
-                        Box(modifier = Modifier.fillMaxWidth().clickable(enabled = parentLogId == null) { showAssetPicker = true }) {
-                            OutlinedTextField(
-                                value = "Optional Plant Link",
-                                onValueChange = {},
-                                readOnly = true,
-                                enabled = false,
-                                modifier = Modifier.fillMaxWidth(),
-                                trailingIcon = {
-                                    if (parentLogId == null) {
-                                        Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = SageGreen)
-                                    }
-                                },
-                                singleLine = true,
-                                maxLines = 1,
-                                shape = RoundedCornerShape(8.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    disabledTextColor = Color.Gray,
-                                    disabledBorderColor = Color.Gray.copy(alpha = 0.5f),
-                                    disabledLabelColor = SageGreen
-                                )
-                            )
-                        }
-                    } else {
-                        androidx.compose.foundation.layout.FlowRow(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            selectedAssetIds.forEach { id ->
-                                val asset = assets.find { it.id == id }
-                                val category = AssetCategory.entries.find { it.displayName == asset?.category }
-                                AssistChip(
-                                    onClick = { /* Could remove individual if desired */ },
-                                    label = { Text(asset?.name ?: "Unknown") },
-                                    leadingIcon = { Text(category?.icon ?: "🌿") },
-                                    trailingIcon = {
-                                        if (parentLogId == null) {
-                                            IconButton(onClick = { selectedAssetIds = selectedAssetIds - id }, modifier = Modifier.size(16.dp)) {
-                                                Icon(Icons.Default.Close, null, modifier = Modifier.size(12.dp))
-                                            }
-                                        }
-                                    },
-                                    colors = AssistChipDefaults.assistChipColors(labelColor = Color.White)
-                                )
-                            }
-                            if (parentLogId == null) {
-                                AssistChip(
-                                    onClick = { showAssetPicker = true },
-                                    label = { Text("Add More") },
-                                    leadingIcon = { Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp)) },
-                                    colors = AssistChipDefaults.assistChipColors(labelColor = SageGreen)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            // 2. Activity Type Section
-            Surface(
-                color = Color(0xFF1E2120).copy(alpha = 0.5f),
-                shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Activity Type", style = MaterialTheme.typography.labelLarge, color = SageGreen, fontWeight = FontWeight.SemiBold)
+                if (isActivityTypeExpanded) {
                     androidx.compose.foundation.layout.FlowRow(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         activityTypes.forEach { type ->
                             FilterChip(
@@ -404,30 +533,176 @@ fun NewLogEntryScreen(
                                 onClick = { 
                                     activityType = type
                                     showCustomActivityInput = type == "Other"
+                                    isActivityTypeExpanded = false
                                 },
                                 label = { Text(type, style = MaterialTheme.typography.bodySmall) },
                                 colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = SageGreen,
-                                    selectedLabelColor = DarkBackground,
-                                    labelColor = Color.Gray,
-                                    containerColor = Color.Transparent
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                    labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+                                ),
+                                border = FilterChipDefaults.filterChipBorder(
+                                    enabled = true,
+                                    selected = activityType == type,
+                                    borderColor = Color.Gray.copy(alpha = 0.2f),
+                                    selectedBorderColor = Color.Transparent
                                 ),
                                 shape = RoundedCornerShape(8.dp)
                             )
                         }
                     }
-                    if (showCustomActivityInput) {
-                        Spacer(modifier = Modifier.height(8.dp))
+                } else {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { isActivityTypeExpanded = true },
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                            shape = RoundedCornerShape(8.dp),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "[$prefix] ",
+                                    color = MaterialTheme.colorScheme.primary,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = if (activityType == "Other" && customActivity.isNotBlank()) customActivity else activityType,
+                                    color = Color.White,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                        
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Change Activity",
+                            tint = Color.Gray.copy(alpha = 0.6f),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+
+                if (showCustomActivityInput && isActivityTypeExpanded) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            text = "Specify Activity",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = SlateTextPrimary.copy(alpha = 0.9f),
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(start = 2.dp)
+                        )
                         OutlinedTextField(
                             value = customActivity,
                             onValueChange = { customActivity = it },
-                            placeholder = { Text("Specify Activity") },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                             maxLines = 1,
                             shape = RoundedCornerShape(8.dp),
-                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = SageGreen, focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                            colors = planForaTextFieldColors(isImportant = true)
                         )
+                    }
+                }
+            }
+
+            // 2. Target Asset / Project Section
+            val isProduction = activityType == "Production"
+            val isWeeding = activityType == "Weeding"
+            PlanForaSurfaceCard(
+                title = when {
+                    isProduction -> "Laboratory Batch (Required)"
+                    isWeeding -> "Location / Block (Required)"
+                    else -> "Primary Link (Mandatory)"
+                }, 
+                isImportant = true
+            ) {
+                if (isProduction) {
+                    val selectedSupply = supplies.find { it.id == selectedSupplyId }
+                    ReadOnlyPickerTextField(
+                        value = selectedSupply?.displayName ?: "Select DIY Project",
+                        onClick = { showSupplyBottomSheet = true },
+                        leadingIcon = { Icon(Icons.Default.Science, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                        trailingIcon = { Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+                    )
+                } else if (isWeeding) {
+                    val locDisplay = when {
+                        selectedLocation.isNotBlank() && selectedSubLocation.isNotBlank() -> "$selectedLocation [$selectedSubLocation]"
+                        selectedLocation.isNotBlank() -> selectedLocation
+                        else -> "Select Location / Block (Required)"
+                    }
+                    ReadOnlyPickerTextField(
+                        value = locDisplay,
+                        onClick = { showLocationSheet = true },
+                        leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                        trailingIcon = { Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+                    )
+                } else if (selectedAssetIds.isEmpty()) {
+                    ReadOnlyPickerTextField(
+                        value = "Select Plant (Required)",
+                        onClick = { if (parentLogId == null) showAssetPicker = true },
+                        leadingIcon = { Icon(Icons.Default.Park, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                        trailingIcon = {
+                            if (parentLogId == null) {
+                                Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    )
+                } else {
+                    androidx.compose.foundation.layout.FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        selectedAssetIds.forEach { id ->
+                            val asset = assets.find { it.id == id }
+                            val category = AssetCategory.fromDatabase(asset?.category)
+                            AssistChip(
+                                onClick = { /* Could remove individual if desired */ },
+                                label = { Text(asset?.name ?: "Unknown") },
+                                leadingIcon = { 
+                                    if (category?.iconVector != null) {
+                                        Icon(
+                                            imageVector = category.iconVector,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp),
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                    } else {
+                                        Text(category?.icon ?: "🌿") 
+                                    }
+                                },
+                                trailingIcon = {
+                                    if (parentLogId == null) {
+                                        IconButton(onClick = { selectedAssetIds = selectedAssetIds - id }, modifier = Modifier.size(16.dp)) {
+                                            Icon(Icons.Default.Close, null, modifier = Modifier.size(12.dp))
+                                        }
+                                    }
+                                },
+                                colors = AssistChipDefaults.assistChipColors(labelColor = Color.White)
+                            )
+                        }
+                        if (parentLogId == null) {
+                            AssistChip(
+                                onClick = { showAssetPicker = true },
+                                label = { Text("Add More") },
+                                leadingIcon = { Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp)) },
+                                colors = AssistChipDefaults.assistChipColors(
+                                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+                                ),
+                                border = BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.3f))
+                            )
+                        }
                     }
                 }
             }
@@ -436,18 +711,23 @@ fun NewLogEntryScreen(
             when (activityType) {
                 "Pest Control", "Feeding" -> TreatmentDetailsCard(
                     supplies = supplies,
+                    measurementTools = measurementTools,
                     selectedSupplyId = selectedSupplyId,
                     customInputName = customInputName,
                     customInputCategory = customInputCategory,
                     appMethod = appMethod,
                     dosageAmount = dosageAmount,
                     dosageRatio = dosageRatio,
+                    selectedTool = selectedTool,
+                    toolCount = toolCount,
                     availableZones = availableZones,
                     selectedZones = selectedZones,
                     onSupplyClick = { showSupplyBottomSheet = true },
                     onMethodChange = { appMethod = it },
                     onDosageAmountChange = { dosageAmount = it },
                     onDosageRatioChange = { dosageRatio = it },
+                    onToolSelect = { selectedTool = it },
+                    onToolCountChange = { toolCount = it },
                     onCustomInputCategoryChange = { customInputCategory = it },
                     onToggleZone = { zone ->
                         selectedZones = if (selectedZones.contains(zone)) selectedZones - zone else selectedZones + zone
@@ -480,108 +760,196 @@ fun NewLogEntryScreen(
                     pruningType = pruningType,
                     onTypeChange = { pruningType = it }
                 )
+                "Weeding" -> WeedingCard(
+                    supplies = supplies,
+                    selectedSupplyId = selectedSupplyId,
+                    weedingMethod = weedingMethod,
+                    usedQty = usedQty,
+                    usedQtyUnit = usedQtyUnit,
+                    onSupplyClick = { showSupplyBottomSheet = true },
+                    onMethodChange = { weedingMethod = it },
+                    onQtyChange = { usedQty = it },
+                    onUnitChange = { usedQtyUnit = it }
+                )
+                "Production" -> ProductionCard(
+                    supplies = supplies,
+                    selectedSupplyId = selectedSupplyId,
+                    materialLedger = logMaterialLedger,
+                    containerId = potSize, // Reusing potSize state for Vessel ID
+                    onSupplyClick = { showSupplyBottomSheet = true },
+                    onAddMaterial = { logMaterialLedger = logMaterialLedger + ("" to "") },
+                    onUpdateMaterial = { idx, n, q -> 
+                        logMaterialLedger = logMaterialLedger.toMutableList().apply { this[idx] = n to q }
+                    },
+                    onRemoveMaterial = { idx ->
+                        logMaterialLedger = logMaterialLedger.toMutableList().apply { removeAt(idx) }
+                    },
+                    onUpdateContainer = { potSize = it }
+                )
             }
 
             // 4. Observation Notes
-            OutlinedTextField(
-                value = note,
-                onValueChange = { note = it },
-                label = { Text("Observation Notes") },
-                modifier = Modifier.fillMaxWidth().heightIn(min = 120.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    focusedBorderColor = SageGreen,
-                    unfocusedBorderColor = Color.Gray.copy(alpha = 0.5f)
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = "Observation Notes",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = SlateTextSecondary.copy(alpha = 0.9f),
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 2.dp)
                 )
-            )
+                OutlinedTextField(
+                    value = note,
+                    onValueChange = { note = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 120.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f),
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.LightGray,
+                        cursorColor = MaterialTheme.colorScheme.primary,
+                        focusedLabelColor = MaterialTheme.colorScheme.primary,
+                        unfocusedLabelColor = Color.Gray
+                    ),
+                    placeholder = { Text("Describe your observations...", color = Color.Gray.copy(alpha = 0.6f), fontSize = 14.sp) }
+                )
+            }
 
             // 5. Streamlined Attachments & Tags
-            Surface(
-                color = Color(0xFF1E2120).copy(alpha = 0.5f),
-                shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text("Attachments & Metadata", style = MaterialTheme.typography.labelLarge, color = SageGreen, fontWeight = FontWeight.SemiBold)
+            PlanForaSurfaceCard(title = "Attachments & Metadata", isImportant = false) {
+                androidx.compose.foundation.layout.FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    AssistChip(
+                        onClick = { showTagSheet = true },
+                        label = { Text("Tags") },
+                        leadingIcon = { Icon(Icons.Default.Tag, null, modifier = Modifier.size(16.dp)) },
+                        colors = AssistChipDefaults.assistChipColors(
+                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+                        ),
+                        border = BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.3f))
+                    )
+
+                    tags.forEach { tag ->
                         AssistChip(
-                            onClick = { showTagSheet = true },
-                            label = { Text("Tags") },
-                            leadingIcon = { Icon(Icons.Default.Tag, null, modifier = Modifier.size(16.dp)) },
-                            colors = AssistChipDefaults.assistChipColors(labelColor = SageGreen)
+                            onClick = { tags = tags - tag },
+                            label = { Text(tag, fontSize = 10.sp) },
+                            trailingIcon = { Icon(Icons.Default.Close, null, modifier = Modifier.size(12.dp)) },
+                            colors = AssistChipDefaults.assistChipColors(labelColor = Color.White, containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+                        )
+                    }
+                }
+
+                HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
+
+                // Distinct Media Section
+                MediaAttachmentStrip(
+                    imageUris = imageUris,
+                    audioPath = audioPath,
+                    onImagesAdd = { imageUris = imageUris + it },
+                    onImageRemove = { imageUris = imageUris - it },
+                    onAudioCaptured = { audioPath = it },
+                    onAudioRemove = { audioPath = null }
+                )
+
+                HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
+
+                // Unified Dynamic Custom Fields
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Metrics".uppercase(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold)
+                    
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AssistChip(
+                            onClick = { showCustomFieldDialog = true },
+                            label = { Text("Optional Fields", fontSize = 11.sp) },
+                            leadingIcon = { Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp)) },
+                            colors = AssistChipDefaults.assistChipColors(
+                                labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+                            ),
+                            border = BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.3f))
                         )
                     }
 
-                    MediaAttachmentStrip(
-                        imageUris = imageUris,
-                        audioPath = audioPath,
-                        onImagesAdd = { imageUris = imageUris + it },
-                        onImageRemove = { imageUris = imageUris - it },
-                        onAudioCaptured = { audioPath = it },
-                        onAudioRemove = { audioPath = null }
-                    )
-
-                    if (tags.isNotEmpty()) {
-                        androidx.compose.foundation.layout.FlowRow(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    customFieldDefinitions.forEach { def ->
+                        Surface(
+                            color = Color(0xFF1E2120),
+                            shape = RoundedCornerShape(12.dp),
+                            border = BorderStroke(1.dp, Color.Gray.copy(alpha = 0.1f)),
+                            modifier = Modifier.fillMaxWidth().combinedClickable(
+                                onClick = {},
+                                onLongClick = {
+                                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                                    fieldToManage = def
+                                }
+                            )
                         ) {
-                            tags.forEach { tag ->
-                                AssistChip(
-                                    onClick = { tags = tags - tag },
-                                    label = { Text(tag, fontSize = 10.sp) },
-                                    trailingIcon = { Icon(Icons.Default.Close, null, modifier = Modifier.size(12.dp)) },
-                                    colors = AssistChipDefaults.assistChipColors(labelColor = Color.White, containerColor = ForestGreen.copy(alpha = 0.3f))
+                            Row(
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                Text(
+                                    text = def.fieldName, 
+                                    modifier = Modifier.weight(1f), 
+                                    color = Color.White, 
+                                    fontWeight = FontWeight.Bold, 
+                                    fontSize = 14.sp
                                 )
+                                Box(modifier = Modifier.weight(2f)) {
+                                    DynamicCustomFieldInput(
+                                        definition = def,
+                                        value = customFieldValues[def.id] ?: "",
+                                        onValueChange = { customFieldValues = customFieldValues.toMutableMap().apply { put(def.id, it) } }
+                                    )
+                                }
+                                IconButton(
+                                    onClick = { viewModel.archiveCustomFieldDefinition(def.id) }, 
+                                    modifier = Modifier.size(32.dp)
+                                ) {
+                                    Icon(Icons.Default.Close, null, tint = Color.Gray, modifier = Modifier.size(20.dp))
+                                }
                             }
                         }
                     }
-
-                    HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
-
-                    // Option A: Quick-Add Metric Chips & Ledger
-                    val masterParameters by viewModel.masterParameters.collectAsState()
-                    ParameterInputSection(
-                        parameters = parameters,
-                        masterParameters = masterParameters,
-                        onParameterChange = { k, v ->
-                            val n = parameters.toMutableMap()
-                            n[k] = v
-                            parameters = n
-                        },
-                        onParameterRemove = { k ->
-                            val n = parameters.toMutableMap()
-                            n.remove(k)
-                            parameters = n
-                        },
-                        onCustomAdd = { k ->
-                            viewModel.addMasterParameter(k)
-                            val n = parameters.toMutableMap()
-                            n[k] = ""
-                            parameters = n
-                        },
-                        onRenameParameter = { old, new ->
-                            viewModel.updateMasterParameter(old, new)
-                            if (parameters.containsKey(old)) {
-                                val n = parameters.toMutableMap()
-                                n[new] = n[old] ?: ""
-                                n.remove(old)
-                                parameters = n
-                            }
-                        },
-                        onDeleteParameter = { name ->
-                            viewModel.deleteMasterParameter(name)
-                            if (parameters.containsKey(name)) {
-                                val n = parameters.toMutableMap()
-                                n.remove(name)
-                                parameters = n
-                            }
-                        }
-                    )
                 }
+            }
+
+            if (showCustomFieldDialog) {
+                CreateCustomFieldDialog(
+                    targetType = FieldTargetType.LOG_ACTIVITY,
+                    scope = activityType,
+                    onDismiss = { showCustomFieldDialog = false },
+                    onSave = { definition ->
+                        viewModel.addCustomFieldDefinition(definition)
+                        showCustomFieldDialog = false
+                    }
+                )
+            }
+
+            fieldToManage?.let { def ->
+                ManageFieldDialog(
+                    definition = def,
+                    onDismiss = { fieldToManage = null },
+                    onRename = { newName ->
+                        viewModel.updateCustomFieldDefinition(def.copy(fieldName = newName))
+                    },
+                    onArchive = {
+                        viewModel.archiveCustomFieldDefinition(def.id)
+                    }
+                )
             }
 
             Button(
@@ -597,11 +965,19 @@ fun NewLogEntryScreen(
                                 parameters["method"] = appMethod
                                 val selectedSupply = supplies.find { it.id == selectedSupplyId }
                                 if (selectedSupply?.phiDays != null && selectedSupply.phiDays!! > 0) {
-                                    val phiExpiry = (initialTimestamp ?: System.currentTimeMillis()) + (selectedSupply.phiDays!! * 24L * 60 * 60 * 1000)
+                                    val phiExpiry = selectedTimestamp + (selectedSupply.phiDays!! * 24L * 60 * 60 * 1000)
                                     parameters["phi_expiry"] = phiExpiry.toString()
                                 }
                                 if (selectedZones.isNotEmpty()) {
                                     parameters["targeted_zones"] = selectedZones.joinToString(",")
+                                }
+                                
+                                // Toolbox Calculation
+                                if (selectedTool != null && toolCount.toDoubleOrNull() != null) {
+                                    val count = toolCount.toDouble()
+                                    val totalUsed = count * selectedTool!!.capacity
+                                    parameters["used_qty"] = totalUsed.toString()
+                                    parameters["tool_used"] = "${selectedTool!!.name} ($count)"
                                 }
                             }
                             "Harvest" -> {
@@ -623,12 +999,62 @@ fun NewLogEntryScreen(
                             "Pruning" -> {
                                 parameters["pruning_type"] = pruningType
                             }
+                            "Weeding" -> {
+                                parameters["weeding_method"] = weedingMethod
+                                if (selectedLocation.isNotBlank()) {
+                                    parameters["location"] = selectedLocation
+                                }
+                                if (selectedSubLocation.isNotBlank()) {
+                                    parameters["subLocation"] = selectedSubLocation
+                                }
+                                if (weedingMethod == "Chemical") {
+                                    val selectedSupply = supplies.find { it.id == selectedSupplyId }
+                                    val qtyVal = usedQty.toDoubleOrNull() ?: 0.0
+                                    val stockUnit = selectedSupply?.stockUnit ?: "L"
+                                    
+                                    val deduction = when {
+                                        usedQtyUnit.equals("mL", ignoreCase = true) && stockUnit.equals("L", ignoreCase = true) -> qtyVal / 1000.0
+                                        usedQtyUnit.equals("g", ignoreCase = true) && stockUnit.equals("kg", ignoreCase = true) -> qtyVal / 1000.0
+                                        usedQtyUnit.equals("L", ignoreCase = true) && stockUnit.equals("mL", ignoreCase = true) -> qtyVal * 1000.0
+                                        usedQtyUnit.equals("kg", ignoreCase = true) && stockUnit.equals("g", ignoreCase = true) -> qtyVal * 1000.0
+                                        else -> qtyVal
+                                    }
+                                    
+                                    parameters["used_qty"] = deduction.toString()
+                                    parameters["used_unit"] = usedQtyUnit
+                                    parameters["user_entered_qty"] = usedQty
+                                    
+                                    if (selectedSupply?.reiHours != null && selectedSupply.reiHours!! > 0) {
+                                        val reiExpiry = selectedTimestamp + (selectedSupply.reiHours!! * 60L * 60 * 1000)
+                                        parameters["rei_expiry"] = reiExpiry.toString()
+                                    }
+                                } else {
+                                    parameters["used_qty"] = usedQty
+                                }
+                            }
                         }
 
                         val tagsString = tags.joinToString(",")
                         val paramsString = parameters.entries.joinToString("|") { "${it.key}:${it.value}" }
                         val imagesString = internalUris.joinToString(",")
                         val batchGroupId = if (selectedAssetIds.size > 1 && editingLogId == null) UUID.randomUUID().toString() else editingLog?.batchGroupId
+
+                        if (activityType == "Production" && selectedSupplyId != null) {
+                            val selectedSupply = supplies.find { it.id == selectedSupplyId }
+                            if (selectedSupply != null) {
+                                // Add log-level materials to existing supply material list
+                                val existingList = selectedSupply.materialList
+                                val newIngredients = logMaterialLedger.filter { it.first.isNotBlank() }.joinToString("|") { "${it.first}:${it.second}" }
+                                val updatedMaterialList = if (existingList.isBlank()) newIngredients else if (newIngredients.isBlank()) existingList else "$existingList|$newIngredients"
+                                
+                                viewModel.updateSupply(
+                                    selectedSupply.copy(
+                                        containerId = if (potSize.isNotBlank()) potSize else selectedSupply.containerId,
+                                        materialList = updatedMaterialList
+                                    )
+                                )
+                            }
+                        }
 
                         if (editingLogId != null && editingLog != null) {
                             viewModel.updateLog(
@@ -640,9 +1066,33 @@ fun NewLogEntryScreen(
                                     imageUris = if (imagesString.isNotBlank()) imagesString else editingLog!!.imageUris,
                                     activityType = if (activityType == "Other") customActivity else activityType,
                                     supplyId = selectedSupplyId,
+                                    assetId = selectedAssetIds.firstOrNull(),
                                     customInputName = if (selectedSupplyId == null) customInputName else null,
                                     targetZones = if (selectedZones.isNotEmpty()) selectedZones.joinToString(",") else null
-                                )
+                                ),
+                                customFieldValues = customFieldValues
+                            )
+                        } else if (selectedAssetIds.isEmpty()) {
+                            // General Log (No Asset)
+                            viewModel.addJournalLog(
+                                assetId = null,
+                                title = title,
+                                note = note,
+                                photoPath = null,
+                                audioFilePath = audioPath,
+                                ecValue = null,
+                                phValue = null,
+                                tags = tagsString,
+                                parameters = paramsString,
+                                imageUris = imagesString,
+                                activityType = if (activityType == "Other") customActivity else activityType,
+                                parentLogId = parentLogId,
+                                timestamp = selectedTimestamp,
+                                supplyId = selectedSupplyId,
+                                customInputName = if (selectedSupplyId == null) customInputName else null,
+                                batchGroupId = batchGroupId,
+                                targetZones = if (selectedZones.isNotEmpty()) selectedZones.joinToString(",") else null,
+                                customFieldValues = customFieldValues
                             )
                         } else {
                             selectedAssetIds.forEach { assetId ->
@@ -659,11 +1109,12 @@ fun NewLogEntryScreen(
                                     imageUris = imagesString,
                                     activityType = if (activityType == "Other") customActivity else activityType,
                                     parentLogId = parentLogId,
-                                    timestamp = initialTimestamp ?: System.currentTimeMillis(),
+                                    timestamp = selectedTimestamp,
                                     supplyId = selectedSupplyId,
                                     customInputName = if (selectedSupplyId == null) customInputName else null,
                                     batchGroupId = batchGroupId,
-                                    targetZones = if (selectedZones.isNotEmpty()) selectedZones.joinToString(",") else null
+                                    targetZones = if (selectedZones.isNotEmpty()) selectedZones.joinToString(",") else null,
+                                    customFieldValues = customFieldValues
                                 )
                             }
                         }
@@ -671,9 +1122,9 @@ fun NewLogEntryScreen(
                     }
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp).padding(bottom = 24.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = ForestGreen),
-                enabled = title.isNotBlank() && selectedAssetIds.isNotEmpty(),
-                shape = RoundedCornerShape(12.dp)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                enabled = title.isNotBlank(),
+                shape = MaterialTheme.shapes.medium
             ) {
                 Text(if (editingLogId == null) "Save Activity Log" else "Update Activity Log", fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
@@ -690,6 +1141,40 @@ fun NewLogEntryScreen(
                 showAssetPicker = false
             },
             onDismiss = { showAssetPicker = false }
+        )
+    }
+
+    if (showLocationSheet) {
+        val masterLocations by viewModel.masterLocations.collectAsState()
+        LocationSelectionBottomSheet(
+            title = "Select Weeding Location / Block",
+            selectedLocation = selectedLocation,
+            selectedSubLocation = selectedSubLocation,
+            masterLocations = masterLocations,
+            assets = assets,
+            onLocationSelected = { loc ->
+                selectedLocation = loc
+                selectedSubLocation = ""
+                selectedAssetIds = assets.filter { it.locationNote.trim().equals(loc.trim(), ignoreCase = true) }.map { it.id }.toSet()
+                parameters["location"] = loc
+                parameters.remove("subLocation")
+                showLocationSheet = false
+            },
+            onLocationAndZoneSelected = { loc, subLoc ->
+                selectedLocation = loc
+                selectedSubLocation = subLoc
+                selectedAssetIds = assets.filter {
+                    it.locationNote.trim().equals(loc.trim(), ignoreCase = true) &&
+                    (subLoc.isBlank() || it.subLocation.trim().equals(subLoc.trim(), ignoreCase = true))
+                }.map { it.id }.toSet()
+                parameters["location"] = loc
+                if (subLoc.isNotBlank()) parameters["subLocation"] = subLoc else parameters.remove("subLocation")
+                showLocationSheet = false
+            },
+            onNewLocationCreated = viewModel::addMasterLocation,
+            onRenameLocation = viewModel::updateMasterLocation,
+            onDeleteLocation = viewModel::deleteMasterLocation,
+            onDismiss = { showLocationSheet = false }
         )
     }
 
@@ -738,35 +1223,35 @@ fun NewLogEntryScreen(
 @Composable
 fun TreatmentDetailsCard(
     supplies: List<DiySupplyEntity>,
+    measurementTools: List<com.mail2dev.planfora.data.local.entity.MeasurementToolEntity>,
     selectedSupplyId: Long?,
     customInputName: String,
     customInputCategory: String,
     appMethod: String,
     dosageAmount: String,
     dosageRatio: String,
+    selectedTool: com.mail2dev.planfora.data.local.entity.MeasurementToolEntity?,
+    toolCount: String,
     availableZones: List<String>,
     selectedZones: Set<String>,
     onSupplyClick: () -> Unit,
     onMethodChange: (String) -> Unit,
     onDosageAmountChange: (String) -> Unit,
     onDosageRatioChange: (String) -> Unit,
+    onToolSelect: (com.mail2dev.planfora.data.local.entity.MeasurementToolEntity?) -> Unit,
+    onToolCountChange: (String) -> Unit,
     onCustomInputCategoryChange: (String) -> Unit,
     onToggleZone: (String) -> Unit
 ) {
-    Surface(
-        color = Color(0xFF1E2120).copy(alpha = 0.5f),
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Treatment Details", style = MaterialTheme.typography.labelLarge, color = SageGreen, fontWeight = FontWeight.SemiBold)
+    PlanForaSurfaceCard(title = "Treatment Details", isImportant = true) {
+        val selectedSupply = supplies.find { it.id == selectedSupplyId }
+        var showToolPicker by remember { mutableStateOf(false) }
 
-            val selectedSupply = supplies.find { it.id == selectedSupplyId }
-            
-            if (availableZones.isNotEmpty()) {
+        if (availableZones.isNotEmpty()) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text("Target Zones / Rows", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                 androidx.compose.foundation.layout.FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     availableZones.forEach { zone ->
@@ -776,24 +1261,37 @@ fun TreatmentDetailsCard(
                             onClick = { onToggleZone(zone) },
                             label = { Text(zone, fontSize = 10.sp) },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = SageGreen,
-                                selectedLabelColor = DarkBackground
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                                labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            ),
+                            border = FilterChipDefaults.filterChipBorder(
+                                enabled = true,
+                                selected = isSelected,
+                                borderColor = Color.Gray.copy(alpha = 0.2f),
+                                selectedBorderColor = Color.Transparent
                             )
                         )
                     }
                 }
-                HorizontalDivider(color = Color.Gray.copy(alpha = 0.1f))
             }
+            HorizontalDivider(color = Color.Gray.copy(alpha = 0.1f))
+        }
 
-            OutlinedTextField(
-                value = selectedSupply?.batchCode ?: customInputName.ifBlank { "Select Product" },
-                onValueChange = {},
-                readOnly = true,
-                modifier = Modifier.fillMaxWidth().clickable { onSupplyClick() },
-                enabled = false,
-                leadingIcon = { Icon(Icons.Default.Science, null, tint = SageGreen, modifier = Modifier.size(20.dp)) },
-                trailingIcon = { Icon(Icons.Default.ArrowDropDown, null, tint = SageGreen) },
-                colors = OutlinedTextFieldDefaults.colors(disabledTextColor = Color.White, disabledBorderColor = Color.Gray.copy(alpha = 0.3f))
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                text = "Product / Input",
+                style = MaterialTheme.typography.labelSmall,
+                color = SlateTextPrimary.copy(alpha = 0.9f),
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(start = 2.dp)
+            )
+            ReadOnlyPickerTextField(
+                value = selectedSupply?.displayName ?: customInputName.ifBlank { "Select Product" },
+                onClick = { onSupplyClick() },
+                leadingIcon = { Icon(Icons.Default.Science, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp)) },
+                trailingIcon = { Icon(Icons.Default.ArrowDropDown, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) }
             )
 
             AnimatedVisibility(
@@ -804,7 +1302,7 @@ fun TreatmentDetailsCard(
                 selectedSupply?.notes?.let { notes ->
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(start = 4.dp, top = 4.dp, bottom = 4.dp)
+                        modifier = Modifier.padding(start = 4.dp, top = 2.dp, bottom = 4.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Info,
@@ -821,38 +1319,121 @@ fun TreatmentDetailsCard(
                     }
                 }
             }
+        }
 
-            if (selectedSupplyId == null && customInputName.isNotBlank()) {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf("Pesticide", "Fungicide", "Organic").forEach { cat ->
-                        FilterChip(
+        if (selectedSupplyId == null && customInputName.isNotBlank()) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("Pesticide", "Fungicide", "Organic").forEach { cat ->
+                    FilterChip(
+                        selected = customInputCategory == cat,
+                        onClick = { onCustomInputCategoryChange(cat) },
+                        label = { Text(cat, fontSize = 10.sp) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                            labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
                             selected = customInputCategory == cat,
-                            onClick = { onCustomInputCategoryChange(cat) },
-                            label = { Text(cat, fontSize = 10.sp) },
-                            colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SageGreen)
+                            borderColor = Color.Gray.copy(alpha = 0.2f),
+                            selectedBorderColor = Color.Transparent
+                        )
+                    )
+                }
+            }
+        }
+
+        PlanForaFieldGroup(isImportant = true) {
+            listOf("FOLIAR SPRAY", "SOIL DRENCH", "SPOT").forEach { method ->
+                val isSelected = appMethod == method
+                Surface(
+                    onClick = { onMethodChange(method) },
+                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.weight(1f),
+                    border = if (!isSelected) BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline) else null
+                ) {
+                    Text(method, color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 9.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 8.dp))
+                }
+            }
+        }
+
+        PlanForaFieldGroup(isImportant = true) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(text = "Amount", style = MaterialTheme.typography.labelSmall, color = SlateTextPrimary.copy(alpha = 0.9f), fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 2.dp))
+                OutlinedTextField(value = dosageAmount, onValueChange = onDosageAmountChange, modifier = Modifier.fillMaxWidth(), singleLine = true, colors = planForaTextFieldColors(isImportant = true))
+            }
+            Column(modifier = Modifier.weight(1.5f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(text = "Unit/Ratio", style = MaterialTheme.typography.labelSmall, color = SlateTextPrimary.copy(alpha = 0.9f), fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 2.dp))
+                OutlinedTextField(value = dosageRatio, onValueChange = onDosageRatioChange, modifier = Modifier.fillMaxWidth(), singleLine = true, colors = planForaTextFieldColors(isImportant = true))
+            }
+        }
+
+        // --- TOOLBOX SECTION ---
+        if (selectedSupplyId != null) {
+            HorizontalDivider(color = Color.Gray.copy(alpha = 0.1f), modifier = Modifier.padding(vertical = 8.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Inventory Deduction (Toolbox)", style = MaterialTheme.typography.labelSmall, color = SlateTextSecondary, fontWeight = FontWeight.Bold)
+                    if (selectedTool != null) {
+                        TextButton(onClick = { onToolSelect(null) }, contentPadding = PaddingValues(0.dp)) {
+                            Text("Clear", fontSize = 10.sp, color = Color.Red.copy(alpha = 0.7f))
+                        }
+                    }
+                }
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(modifier = Modifier.weight(1.5f)) {
+                        OutlinedTextField(
+                            value = selectedTool?.name ?: "Select Tool",
+                            onValueChange = {},
+                            readOnly = true,
+                            enabled = true,
+                            modifier = Modifier.fillMaxWidth().clickable { showToolPicker = true },
+                            leadingIcon = { Icon(Icons.Default.Construction, null, modifier = Modifier.size(18.dp)) },
+                            trailingIcon = { Icon(Icons.Default.ArrowDropDown, null) },
+                            colors = planForaTextFieldColors(isImportant = false),
+                            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 12.sp)
+                        )
+                        DropdownMenu(expanded = showToolPicker, onDismissRequest = { showToolPicker = false }) {
+                            measurementTools.forEach { tool ->
+                                DropdownMenuItem(
+                                    text = { Text("${tool.name} (${tool.capacity}${tool.unit})") },
+                                    onClick = { onToolSelect(tool); showToolPicker = false }
+                                )
+                            }
+                            if (measurementTools.isEmpty()) {
+                                DropdownMenuItem(text = { Text("No tools registered", color = Color.Gray) }, onClick = { showToolPicker = false })
+                            }
+                        }
+                    }
+                    OutlinedTextField(
+                        value = toolCount,
+                        onValueChange = onToolCountChange,
+                        modifier = Modifier.weight(0.8f),
+                        placeholder = { Text("Count") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        colors = planForaTextFieldColors(isImportant = false),
+                        textStyle = androidx.compose.ui.text.TextStyle(fontSize = 12.sp)
+                    )
+                    
+                    if (selectedTool != null && toolCount.toDoubleOrNull() != null) {
+                        val total = (toolCount.toDouble() * selectedTool.capacity)
+                        Text(
+                            text = "= $total ${selectedTool.unit}",
+                            color = ForestGreen,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(start = 4.dp)
                         )
                     }
                 }
-            }
-
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("FOLIAR SPRAY", "SOIL DRENCH", "SPOT").forEach { method ->
-                    val isSelected = appMethod == method
-                    Surface(
-                        onClick = { onMethodChange(method) },
-                        color = if (isSelected) SageGreen else Color.White.copy(alpha = 0.05f),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.weight(1f),
-                        border = if (!isSelected) BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.2f)) else null
-                    ) {
-                        Text(method, color = if (isSelected) DarkBackground else Color.Gray, fontSize = 9.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 8.dp))
-                    }
-                }
-            }
-
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = dosageAmount, onValueChange = onDosageAmountChange, label = { Text("Amount") }, modifier = Modifier.weight(1f), singleLine = true)
-                OutlinedTextField(value = dosageRatio, onValueChange = onDosageRatioChange, label = { Text("Unit/Ratio") }, modifier = Modifier.weight(1.5f), singleLine = true)
             }
         }
     }
@@ -860,34 +1441,292 @@ fun TreatmentDetailsCard(
 
 @Composable
 fun RepottingCard(substrateMix: String, potSize: String, onSubstrateChange: (String) -> Unit, onPotSizeChange: (String) -> Unit) {
-    Surface(
-        color = Color(0xFF1E2120).copy(alpha = 0.5f),
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Substrate & Container", style = MaterialTheme.typography.labelLarge, color = SageGreen, fontWeight = FontWeight.SemiBold)
-            OutlinedTextField(value = substrateMix, onValueChange = onSubstrateChange, label = { Text("Substrate Mix") }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("e.g. Coco/Perlite 70/30") })
-            OutlinedTextField(value = potSize, onValueChange = onPotSizeChange, label = { Text("Pot Size / Bed ID") }, modifier = Modifier.fillMaxWidth())
+    PlanForaSurfaceCard(title = "Substrate & Container", isImportant = false) {
+        val fieldColors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = MaterialTheme.colorScheme.primary,
+            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f),
+            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+            focusedTextColor = Color.White,
+            unfocusedTextColor = Color.LightGray,
+            cursorColor = MaterialTheme.colorScheme.primary,
+            focusedLabelColor = MaterialTheme.colorScheme.primary,
+            unfocusedLabelColor = Color.Gray
+        )
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(text = "Substrate Mix", style = MaterialTheme.typography.labelSmall, color = SlateTextSecondary.copy(alpha = 0.9f), fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 2.dp))
+            OutlinedTextField(value = substrateMix, onValueChange = onSubstrateChange, modifier = Modifier.fillMaxWidth(), placeholder = { Text("e.g. Coco/Perlite 70/30") }, colors = fieldColors)
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(text = "Pot Size / Bed ID", style = MaterialTheme.typography.labelSmall, color = SlateTextSecondary.copy(alpha = 0.9f), fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 2.dp))
+            OutlinedTextField(value = potSize, onValueChange = onPotSizeChange, modifier = Modifier.fillMaxWidth(), colors = fieldColors)
+        }
+    }
+}
+
+@Composable
+fun WeedingCard(
+    supplies: List<DiySupplyEntity>,
+    selectedSupplyId: Long?,
+    weedingMethod: String,
+    usedQty: String,
+    usedQtyUnit: String,
+    onSupplyClick: () -> Unit,
+    onMethodChange: (String) -> Unit,
+    onQtyChange: (String) -> Unit,
+    onUnitChange: (String) -> Unit
+) {
+    PlanForaSurfaceCard(title = "Weeding Details", isImportant = true) {
+        PlanForaFieldGroup(isImportant = true) {
+            listOf("Manual", "Mechanical", "Chemical").forEach { method ->
+                val isSelected = weedingMethod == method
+                Surface(
+                    onClick = { onMethodChange(method) },
+                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.weight(1f),
+                    border = if (!isSelected) BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline) else null
+                ) {
+                    Text(
+                        text = method, 
+                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant, 
+                        fontSize = 11.sp, 
+                        fontWeight = FontWeight.Bold, 
+                        textAlign = TextAlign.Center, 
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
+            }
+        }
+
+        if (weedingMethod == "Chemical") {
+            val selectedSupply = supplies.find { it.id == selectedSupplyId }
+            
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = "Herbicide / Product",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = SlateTextPrimary.copy(alpha = 0.9f),
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 2.dp)
+                )
+                ReadOnlyPickerTextField(
+                    value = selectedSupply?.displayName ?: "Select Herbicide",
+                    onClick = { onSupplyClick() },
+                    leadingIcon = { Icon(Icons.Default.Science, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp)) },
+                    trailingIcon = { Icon(Icons.Default.ArrowDropDown, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+                )
+            }
+
+            if (selectedSupply != null) {
+                PlanForaFieldGroup(isImportant = true) {
+                    Column(modifier = Modifier.weight(1.3f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Used Quantity",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = SlateTextPrimary.copy(alpha = 0.9f),
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(start = 2.dp)
+                            )
+                            val availableUnits = if ((selectedSupply.stockUnit ?: "").lowercase() in listOf("kg", "g")) listOf("g", "kg") else listOf("mL", "L")
+                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                availableUnits.forEach { unit ->
+                                    FilterChip(
+                                        selected = usedQtyUnit.equals(unit, ignoreCase = true),
+                                        onClick = { onUnitChange(unit) },
+                                        label = { Text(unit, fontSize = 10.sp) },
+                                        modifier = Modifier.height(24.dp),
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                                            labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                        OutlinedTextField(
+                            value = usedQty,
+                            onValueChange = onQtyChange,
+                            modifier = Modifier.fillMaxWidth(),
+                            suffix = { Text(usedQtyUnit) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            colors = planForaTextFieldColors(isImportant = true)
+                        )
+                    }
+                    
+                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text("Current Stock", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                        val stockUnit = selectedSupply.stockUnit ?: "L"
+                        Text(
+                            text = "${selectedSupply.stockQuantity ?: 0.0} $stockUnit",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
+                        val qtyVal = usedQty.toDoubleOrNull() ?: 0.0
+                        if (qtyVal > 0) {
+                            val deduction = when {
+                                usedQtyUnit.equals("mL", ignoreCase = true) && stockUnit.equals("L", ignoreCase = true) -> qtyVal / 1000.0
+                                usedQtyUnit.equals("g", ignoreCase = true) && stockUnit.equals("kg", ignoreCase = true) -> qtyVal / 1000.0
+                                usedQtyUnit.equals("L", ignoreCase = true) && stockUnit.equals("mL", ignoreCase = true) -> qtyVal * 1000.0
+                                usedQtyUnit.equals("kg", ignoreCase = true) && stockUnit.equals("g", ignoreCase = true) -> qtyVal * 1000.0
+                                else -> qtyVal
+                            }
+                            if (usedQtyUnit != stockUnit) {
+                                Text(
+                                    text = "Deducts ${String.format(Locale.getDefault(), "%.2f", deduction)} $stockUnit",
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                    }
+                }
+                
+                if (selectedSupply.reiHours != null && selectedSupply.reiHours!! > 0) {
+                    Surface(
+                        color = Color(0xFFFFB74D).copy(alpha = 0.1f),
+                        shape = RoundedCornerShape(8.dp),
+                        border = BorderStroke(1.dp, Color(0xFFFFB74D).copy(alpha = 0.3f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Warning, null, tint = Color(0xFFFFB74D), modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("REI Active: ${selectedSupply.reiHours} Hours", color = Color(0xFFFFB74D), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ProductionCard(
+    supplies: List<DiySupplyEntity>,
+    selectedSupplyId: Long?,
+    materialLedger: List<Pair<String, String>>,
+    containerId: String,
+    onSupplyClick: () -> Unit,
+    onAddMaterial: () -> Unit,
+    onUpdateMaterial: (Int, String, String) -> Unit,
+    onRemoveMaterial: (Int) -> Unit,
+    onUpdateContainer: (String) -> Unit
+) {
+    PlanForaSurfaceCard(title = "Laboratory Progress", isImportant = true) {
+        val selectedSupply = supplies.find { it.id == selectedSupplyId }
+
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                text = "Vessel / Jar ID",
+                style = MaterialTheme.typography.labelSmall,
+                color = SlateTextPrimary.copy(alpha = 0.9f),
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(start = 2.dp)
+            )
+            OutlinedTextField(
+                value = containerId,
+                onValueChange = onUpdateContainer,
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text(selectedSupply?.containerId ?: "e.g. Jar A-01") },
+                colors = planForaTextFieldColors(isImportant = true)
+            )
+        }
+        
+        if (selectedSupply != null) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("CURRENT MATERIALS", style = MaterialTheme.typography.labelSmall, color = Color.Gray, fontWeight = FontWeight.Bold)
+                selectedSupply.materialList.split("|").filter { it.contains(":") }.forEach { mat ->
+                    val parts = mat.split(":")
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(parts[0], color = Color.White, fontSize = 13.sp)
+                        Text(parts[1], color = MaterialTheme.colorScheme.primary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+                
+                HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("ADD NEW INGREDIENTS", style = MaterialTheme.typography.labelSmall, color = Color.Gray, fontWeight = FontWeight.Bold)
+                    TextButton(onClick = onAddMaterial) {
+                        Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Add", fontSize = 11.sp)
+                    }
+                }
+
+                materialLedger.forEachIndexed { index, pair ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedTextField(
+                            value = pair.first,
+                            onValueChange = { onUpdateMaterial(index, it, pair.second) },
+                            modifier = Modifier.weight(2f),
+                            placeholder = { Text("Ingredient", fontSize = 12.sp) },
+                            colors = planForaTextFieldColors(isImportant = false),
+                            singleLine = true,
+                            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 13.sp)
+                        )
+                        OutlinedTextField(
+                            value = pair.second,
+                            onValueChange = { onUpdateMaterial(index, pair.first, it) },
+                            modifier = Modifier.weight(1f),
+                            placeholder = { Text("Qty", fontSize = 12.sp) },
+                            colors = planForaTextFieldColors(isImportant = false),
+                            singleLine = true,
+                            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 13.sp)
+                        )
+                        IconButton(onClick = { onRemoveMaterial(index) }, modifier = Modifier.size(24.dp)) {
+                            Icon(Icons.Default.Close, null, tint = Color.Gray, modifier = Modifier.size(16.dp))
+                        }
+                    }
+                }
+            }
         }
     }
 }
 
 @Composable
 fun PruningCard(pruningType: String, onTypeChange: (String) -> Unit) {
-    Surface(
-        color = Color(0xFF1E2120).copy(alpha = 0.5f),
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Pruning Type", style = MaterialTheme.typography.labelLarge, color = SageGreen, fontWeight = FontWeight.SemiBold)
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("Sanitary", "Structural", "Thinning").forEach { type ->
-                    FilterChip(selected = pruningType == type, onClick = { onTypeChange(type) }, label = { Text(type) }, modifier = Modifier.weight(1f), colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SageGreen))
-                }
+    PlanForaSurfaceCard(title = "Pruning Type", isImportant = false) {
+        PlanForaFieldGroup(isImportant = false) {
+            listOf("Sanitary", "Structural", "Thinning").forEach { type ->
+                FilterChip(
+                    selected = pruningType == type,
+                    onClick = { onTypeChange(type) },
+                    label = { Text(type) },
+                    modifier = Modifier.weight(1f),
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                        labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = pruningType == type,
+                        borderColor = Color.Gray.copy(alpha = 0.2f),
+                        selectedBorderColor = Color.Transparent
+                    )
+                )
             }
         }
     }
@@ -903,22 +1742,34 @@ fun SupplyPickerBottomSheet(
     onDismiss: () -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
-    val filtered = supplies.filter { it.batchCode.contains(searchQuery, ignoreCase = true) || it.name.contains(searchQuery, ignoreCase = true) }
+    val filtered = supplies.filter {
+        it.displayName.contains(searchQuery, ignoreCase = true) ||
+        it.name.contains(searchQuery, ignoreCase = true) ||
+        it.batchCode.contains(searchQuery, ignoreCase = true) ||
+        (it.activeIngredient?.contains(searchQuery, ignoreCase = true) == true)
+    }
 
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Color(0xFF1E2120)) {
-        Column(modifier = Modifier.fillMaxWidth().padding(16.dp).imePadding()) {
+        Column(modifier = Modifier.fillMaxWidth().padding(16.dp).imePadding(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("Search Supplies", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-            Spacer(modifier = Modifier.height(16.dp))
             OutlinedTextField(value = searchQuery, onValueChange = { searchQuery = it }, placeholder = { Text("🔍 Search...") }, modifier = Modifier.fillMaxWidth())
-            Spacer(modifier = Modifier.height(20.dp))
             LazyColumn(modifier = Modifier.fillMaxHeight(0.7f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 item {
-                    Surface(onClick = onCustomInput, color = Color.White.copy(alpha = 0.05f), shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
-                        Row(modifier = Modifier.padding(16.dp)) { Icon(Icons.Default.Edit, null, tint = SageGreen); Spacer(modifier = Modifier.width(12.dp)); Text("One-off Custom Input", color = Color.White) }
+                    Surface(
+                        onClick = onCustomInput,
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(modifier = Modifier.padding(16.dp)) {
+                            Icon(Icons.Default.Edit, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text("One-off Custom Input", color = Color.White)
+                        }
                     }
                 }
                 if (recentlyUsed.isNotEmpty() && searchQuery.isBlank()) {
-                    item { Text("RECENTLY USED", color = SageGreen, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 8.dp)) }
+                    item { Text("RECENTLY USED", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 8.dp)) }
                     items(recentlyUsed) { s -> SupplyItemRow(s) {
                         val activity = when {
                             s.category.contains("icide", ignoreCase = true) -> "Pest Control"
@@ -929,7 +1780,7 @@ fun SupplyPickerBottomSheet(
                         onSelect(s.id, activity, ai)
                     } }
                 }
-                item { Text("ALL SUPPLIES", color = SageGreen, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 8.dp)) }
+                item { Text("ALL SUPPLIES", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 8.dp)) }
                 items(filtered) { s -> SupplyItemRow(s) {
                     val activity = when {
                         s.category.contains("icide", ignoreCase = true) -> "Pest Control"
@@ -955,10 +1806,13 @@ fun AssetPickerBottomSheet(
     var searchQuery by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf(AssetCategory.ALL) }
     var selectedLocation by remember { mutableStateOf("All") }
+    val uniqueLocations = remember(masterLocations) {
+        masterLocations.map { it.trim() }.filter { it.isNotBlank() }.distinctBy { it.lowercase() }
+    }
 
     val filteredAssets = assets.filter { asset ->
         (selectedCategory == AssetCategory.ALL || asset.category == selectedCategory.displayName) &&
-        (selectedLocation == "All" || asset.locationNote == selectedLocation) &&
+        (selectedLocation == "All" || asset.locationNote.trim().equals(selectedLocation.trim(), ignoreCase = true)) &&
         (asset.name.contains(searchQuery, ignoreCase = true) || 
          asset.locationNote.contains(searchQuery, ignoreCase = true) ||
          asset.tags.contains(searchQuery, ignoreCase = true))
@@ -969,36 +1823,133 @@ fun AssetPickerBottomSheet(
         containerColor = Color(0xFF1E2120),
         dragHandle = { BottomSheetDefaults.DragHandle(color = Color.Gray) }
     ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(16.dp).fillMaxHeight(0.85f)) {
+        Column(modifier = Modifier.fillMaxWidth().padding(16.dp).fillMaxHeight(0.85f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("Select Plant / Asset", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-            Spacer(modifier = Modifier.height(16.dp))
             OutlinedTextField(value = searchQuery, onValueChange = { searchQuery = it }, placeholder = { Text("🔍 Search...") }, modifier = Modifier.fillMaxWidth())
-            Spacer(modifier = Modifier.height(12.dp))
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(AssetCategory.entries) { cat ->
-                    FilterChip(selected = selectedCategory == cat, onClick = { selectedCategory = cat }, label = { Text("${cat.icon} ${cat.displayName}", fontSize = 11.sp) }, colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SageGreen))
+                    FilterChip(
+                        selected = selectedCategory == cat,
+                        onClick = { selectedCategory = cat },
+                        label = { 
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (cat.iconVector != null) {
+                                    Icon(
+                                        imageVector = cat.iconVector,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp).padding(end = 4.dp),
+                                        tint = if (selectedCategory == cat) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary
+                                    )
+                                } else {
+                                    Text(cat.icon, modifier = Modifier.padding(end = 4.dp))
+                                }
+                                Text(cat.displayName, fontSize = 11.sp)
+                            }
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                            labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = selectedCategory == cat,
+                            borderColor = Color.Gray.copy(alpha = 0.2f),
+                            selectedBorderColor = Color.Transparent
+                        )
+                    )
                 }
             }
-            Spacer(modifier = Modifier.height(8.dp))
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                item { FilterChip(selected = selectedLocation == "All", onClick = { selectedLocation = "All" }, label = { Text("All Locations") }, colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SageGreen)) }
-                items(masterLocations) { loc -> FilterChip(selected = selectedLocation == loc, onClick = { selectedLocation = loc }, label = { Text(loc) }, colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SageGreen)) }
+                item {
+                    FilterChip(
+                        selected = selectedLocation == "All",
+                        onClick = { selectedLocation = "All" },
+                        label = { Text("All Locations") },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                            labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = selectedLocation == "All",
+                            borderColor = Color.Gray.copy(alpha = 0.2f),
+                            selectedBorderColor = Color.Transparent
+                        )
+                    )
+                }
+                items(uniqueLocations) { loc ->
+                    FilterChip(
+                        selected = selectedLocation.trim().equals(loc.trim(), ignoreCase = true),
+                        onClick = { selectedLocation = loc },
+                        label = { Text(loc) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                            labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = selectedLocation == loc,
+                            borderColor = Color.Gray.copy(alpha = 0.2f),
+                            selectedBorderColor = Color.Transparent
+                        )
+                    )
+                }
             }
-            Spacer(modifier = Modifier.height(16.dp))
             LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                item { Surface(onClick = { onAssetSelected(null) }, color = Color.White.copy(alpha = 0.05f), shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) { Text("None / General Log", color = Color.White, modifier = Modifier.padding(16.dp)) } }
+                item {
+                    Surface(
+                        onClick = { onAssetSelected(null) },
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("None / General Log", color = Color.White, modifier = Modifier.padding(16.dp))
+                    }
+                }
                 items(filteredAssets) { asset ->
-                    val catIcon = AssetCategory.entries.find { it.displayName == asset.category }?.icon ?: "🌿"
-                    Surface(onClick = { onAssetSelected(asset.id) }, color = Color.White.copy(alpha = 0.05f), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth(), border = BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.1f))) {
+                    val category = AssetCategory.fromDatabase(asset.category)
+                    Surface(
+                        onClick = { onAssetSelected(asset.id) },
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                        border = BorderStroke(0.5.dp, Color.Gray.copy(alpha = 0.1f))
+                    ) {
                         Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Box(modifier = Modifier.size(44.dp).background(SageGreen.copy(alpha = 0.1f), CircleShape), contentAlignment = Alignment.Center) { Text(catIcon, fontSize = 20.sp) }
+                            Box(modifier = Modifier.size(44.dp).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f), CircleShape), contentAlignment = Alignment.Center) { 
+                                if (category?.iconVector != null) {
+                                    Icon(
+                                        imageVector = category.iconVector,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(24.dp),
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                } else {
+                                    Text(category?.icon ?: "🌿", fontSize = 20.sp)
+                                }
+                            }
                             Spacer(modifier = Modifier.width(16.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(asset.name, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Default.LocationOn, null, tint = SageGreen, modifier = Modifier.size(10.dp))
+                                    Icon(Icons.Default.LocationOn, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(10.dp))
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(asset.locationNote.ifBlank { "Unassigned" }, color = Color.Gray, fontSize = 10.sp)
+                                    if (asset.subLocation.isNotBlank()) {
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = "[${asset.subLocation.uppercase()}]",
+                                            color = MaterialTheme.colorScheme.primary,
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -1010,16 +1961,56 @@ fun AssetPickerBottomSheet(
 }
 
 @Composable
+fun ReadOnlyPickerTextField(
+    value: String,
+    onClick: () -> Unit,
+    placeholder: String = "",
+    leadingIcon: @Composable (() -> Unit)? = null,
+    trailingIcon: @Composable (() -> Unit)? = null,
+    isImportant: Boolean = true,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+    ) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = {},
+            readOnly = true,
+            enabled = false,
+            placeholder = { Text(placeholder) },
+            modifier = Modifier.fillMaxWidth(),
+            leadingIcon = leadingIcon,
+            trailingIcon = trailingIcon,
+            singleLine = true,
+            maxLines = 1,
+            shape = RoundedCornerShape(8.dp),
+            colors = planForaTextFieldColors(isImportant = isImportant)
+        )
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .clickable(
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() }
+                ) { onClick() }
+        )
+    }
+}
+
+@Composable
 fun SupplyItemRow(supply: DiySupplyEntity, onClick: () -> Unit) {
     Surface(onClick = onClick, color = Color.Transparent, modifier = Modifier.fillMaxWidth()) {
         Row(modifier = Modifier.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(modifier = Modifier.size(40.dp).background(SageGreen.copy(alpha = 0.1f), CircleShape), contentAlignment = Alignment.Center) { Icon(Icons.Default.Inventory, null, tint = SageGreen, modifier = Modifier.size(20.dp)) }
+            Box(modifier = Modifier.size(40.dp).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f), CircleShape), contentAlignment = Alignment.Center) { Icon(Icons.Default.Inventory, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp)) }
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(supply.batchCode, color = Color.White, fontWeight = FontWeight.Bold)
+                Text(supply.displayName, color = Color.White, fontWeight = FontWeight.Bold)
                 if (!supply.activeIngredient.isNullOrBlank()) Text("A.I.: ${supply.activeIngredient}", color = Color.Gray, fontSize = 12.sp)
             }
-            Surface(color = SageGreen.copy(alpha = 0.2f), shape = RoundedCornerShape(4.dp)) { Text(supply.category, color = SageGreen, fontSize = 10.sp, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)) }
+            Surface(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f), shape = RoundedCornerShape(4.dp)) { Text(supply.category, color = MaterialTheme.colorScheme.primary, fontSize = 10.sp, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)) }
         }
     }
 }

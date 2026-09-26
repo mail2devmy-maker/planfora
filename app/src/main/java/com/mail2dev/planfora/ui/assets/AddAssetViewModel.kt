@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mail2dev.planfora.data.local.entity.CustomFieldDefinitionEntity
 import com.mail2dev.planfora.data.local.entity.CustomFieldValueEntity
+import com.mail2dev.planfora.data.local.entity.FieldTargetType
+import com.mail2dev.planfora.data.local.entity.CustomFieldType
 import com.mail2dev.planfora.data.local.entity.MasterLocationEntity
 import com.mail2dev.planfora.data.local.entity.MasterTagEntity
 import com.mail2dev.planfora.data.local.entity.PlantAssetEntity
@@ -25,6 +27,12 @@ class AddAssetViewModel(private val repository: JournalRepository) : ViewModel()
     private val _location = MutableStateFlow("")
     val location = _location.asStateFlow()
 
+    private val _subLocation = MutableStateFlow("")
+    val subLocation = _subLocation.asStateFlow()
+
+    private val _totalPlants = MutableStateFlow("")
+    val totalPlants = _totalPlants.asStateFlow()
+
     private val _selectedTags = MutableStateFlow(setOf<String>())
     val selectedTags = _selectedTags.asStateFlow()
 
@@ -37,74 +45,63 @@ class AddAssetViewModel(private val repository: JournalRepository) : ViewModel()
     private val _audioPath = MutableStateFlow<String?>(null)
     val audioPath = _audioPath.asStateFlow()
 
-    private val _visibleOptionalFields = MutableStateFlow(setOf<OptionalField>())
-    val visibleOptionalFields = _visibleOptionalFields.asStateFlow()
-
     // Custom Fields State
     private val _customFieldDefinitions = _selectedCategory.flatMapLatest { cat ->
-        repository.getCustomFieldDefinitions(cat.displayName)
+        repository.getCustomFieldDefinitions(FieldTargetType.ASSET_CATEGORY, cat.displayName)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     val customFieldDefinitions = _customFieldDefinitions
 
     private val _customFieldValues = MutableStateFlow(mutableMapOf<Long, String>())
     val customFieldValues = _customFieldValues.asStateFlow()
 
-    // Optional field values
+    // Internal hidden state for preserved DB columns
     private val _plantedDate = MutableStateFlow<Long?>(null)
-    val plantedDate = _plantedDate.asStateFlow()
-
     private val _acquisitionDate = MutableStateFlow<Long?>(null)
-    val acquisitionDate = _acquisitionDate.asStateFlow()
-
     private val _costValue = MutableStateFlow("")
-    val costValue = _costValue.asStateFlow()
-
     private val _batchTrayId = MutableStateFlow("")
-    val batchTrayId = _batchTrayId.asStateFlow()
-
     private val _motherPlantLink = MutableStateFlow("")
-    val motherPlantLink = _motherPlantLink.asStateFlow()
-
     private val _physicalId = MutableStateFlow("")
-    val physicalId = _physicalId.asStateFlow()
-
     private val _quantity = MutableStateFlow("")
-    val quantity = _quantity.asStateFlow()
-
     private val _propagatedDate = MutableStateFlow<Long?>(null)
-    val propagatedDate = _propagatedDate.asStateFlow()
-
     private val _rootstock = MutableStateFlow("")
-    val rootstock = _rootstock.asStateFlow()
-
     private val _plotRowId = MutableStateFlow("")
-    val plotRowId = _plotRowId.asStateFlow()
-
     private val _zones = MutableStateFlow("")
-    val zones = _zones.asStateFlow()
-
     private val _expectedHarvestDate = MutableStateFlow<Long?>(null)
-    val expectedHarvestDate = _expectedHarvestDate.asStateFlow()
 
     private val _editingAssetId = MutableStateFlow<Long?>(null)
     val editingAssetId = _editingAssetId.asStateFlow()
 
+    val hasDraftData = combine(
+        _name, _notes, _location, _imageUris, _audioPath, _editingAssetId
+    ) { args ->
+        val name = args[0] as String
+        val notes = args[1] as String
+        val loc = args[2] as String
+        val uris = args[3] as List<*>
+        val audio = args[4] as String?
+        val editingId = args[5] as Long?
+
+        // Only show as a draft for NEW assets, not for editing existing ones
+        editingId == null && (name.isNotBlank() || notes.isNotBlank() || loc.isNotBlank() ||
+                uris.isNotEmpty() || audio != null)
+    }.combine(_selectedTags) { hasBaseDraft, tags ->
+        hasBaseDraft || tags.isNotEmpty()
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     val masterLocations: StateFlow<List<String>> = repository.getLocationsByScope("ASSET")
-        .map { list -> list.map { it.name } }
+        .map { list -> list.map { it.name.trim() }.filter { it.isNotBlank() }.distinctBy { it.lowercase() } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val masterTags: StateFlow<List<String>> = repository.getTagsByScope("ASSET")
-        .map { list -> list.map { it.name } }
+        .map { list -> list.map { it.name.trim() }.filter { it.isNotBlank() }.distinctBy { it.lowercase() } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun updateName(newName: String) { _name.value = newName }
     fun updateNotes(newNotes: String) { _notes.value = newNotes }
-    fun updateCategory(category: AssetCategory) { 
-        _selectedCategory.value = category 
-        // Logic for auto-highlighting suggested chips could be here, 
-        // but it's mainly a UI concern for highlighting.
-    }
+    fun updateCategory(category: AssetCategory) { _selectedCategory.value = category }
     fun updateLocation(newLocation: String) { _location.value = newLocation }
+    fun updateSubLocation(v: String) { _subLocation.value = v.uppercase() }
+    fun updateTotalPlants(v: String) { _totalPlants.value = v }
     
     fun toggleTag(tag: String) {
         _selectedTags.update { tags ->
@@ -161,71 +158,9 @@ class AddAssetViewModel(private val repository: JournalRepository) : ViewModel()
         reset()
     }
 
-    fun toggleOptionalField(field: OptionalField) {
-        _visibleOptionalFields.update { fields ->
-            if (fields.contains(field)) fields - field else fields + field
-        }
-    }
-
-    fun updatePlantedDate(date: Long?) { _plantedDate.value = date }
-    fun updateAcquisitionDate(date: Long?) { _acquisitionDate.value = date }
-    fun updateCostValue(value: String) { _costValue.value = value }
-    fun updateBatchTrayId(id: String) { _batchTrayId.value = id }
-    fun updateMotherPlantLink(link: String) { _motherPlantLink.value = link }
-    fun updatePhysicalId(id: String) { _physicalId.value = id }
-    fun updateQuantity(q: String) { _quantity.value = q }
-    fun updatePropagatedDate(date: Long?) { _propagatedDate.value = date }
-    fun updateRootstock(r: String) { _rootstock.value = r }
-    fun updatePlotRowId(id: String) { _plotRowId.value = id }
-    fun updateZones(zones: String) { _zones.value = zones }
-    fun updateExpectedHarvestDate(date: Long?) { _expectedHarvestDate.value = date }
-
-    fun loadAsset(assetId: Long) {
-        viewModelScope.launch {
-            repository.getAssetById(assetId)?.let { asset ->
-                _editingAssetId.value = assetId
-                _name.value = asset.name
-                _selectedCategory.value = AssetCategory.entries.find { it.displayName == asset.category } ?: AssetCategory.TREE
-                _location.value = asset.locationNote
-                _notes.value = asset.notes
-                _zones.value = asset.zones
-                _plantedDate.value = if ((asset.plantedDate ?: 0L) > 0L) asset.plantedDate else null
-                _acquisitionDate.value = if ((asset.acquisitionDate ?: 0L) > 0L) asset.acquisitionDate else null
-                _audioPath.value = asset.audioPath
-                _imageUris.value = asset.imageUris.split(",").filter { it.isNotBlank() }.map { Uri.parse(it) }
-                
-                // Parse tags
-                val tagList = asset.tags.split(",")
-                val userTags = tagList.filter { !it.contains(":") }.toSet()
-                _selectedTags.value = userTags
-                
-                tagList.forEach { tag ->
-                    when {
-                        tag.startsWith("Batch:") -> _batchTrayId.value = tag.substringAfter(":")
-                        tag.startsWith("PhysID:") -> _physicalId.value = tag.substringAfter(":")
-                        tag.startsWith("Qty:") -> _quantity.value = tag.substringAfter(":")
-                        tag.startsWith("Mother:") -> _motherPlantLink.value = tag.substringAfter(":")
-                        tag.startsWith("Rootstock:") -> _rootstock.value = tag.substringAfter(":")
-                        tag.startsWith("Plot:") -> _plotRowId.value = tag.substringAfter(":")
-                        tag.startsWith("PropDate:") -> { /* TODO: parse date if needed, but current UI uses System.currentTimeMillis() or selected date */ }
-                        tag.startsWith("ExpHarv:") -> { /* TODO: parse date if needed */ }
-                    }
-                }
-                
-                // If special tags exist, toggle the optional fields visibility
-                val newVisibleFields = mutableSetOf<OptionalField>()
-                if (_batchTrayId.value.isNotBlank()) newVisibleFields.add(OptionalField.BATCH_TRAY_ID)
-                if (_physicalId.value.isNotBlank()) newVisibleFields.add(OptionalField.PHYSICAL_ID)
-                if (_quantity.value.isNotBlank()) newVisibleFields.add(OptionalField.QUANTITY)
-                if (_motherPlantLink.value.isNotBlank()) newVisibleFields.add(OptionalField.MOTHER_PLANT_LINK)
-                if (_rootstock.value.isNotBlank()) newVisibleFields.add(OptionalField.ROOTSTOCK)
-                if (_plotRowId.value.isNotBlank()) newVisibleFields.add(OptionalField.PLOT_ROW_ID)
-                if ((asset.plantedDate ?: 0L) > 0L) newVisibleFields.add(OptionalField.PLANTING_DATE)
-                if ((asset.acquisitionDate ?: 0L) > 0L) newVisibleFields.add(OptionalField.ACQUISITION_DETAILS)
-                
-                _visibleOptionalFields.value = newVisibleFields
-            }
-        }
+    fun discardDraft() {
+        reset()
+        _editingAssetId.value = null
     }
 
     fun addImageUri(uri: Uri) { _imageUris.update { it + uri } }
@@ -240,42 +175,38 @@ class AddAssetViewModel(private val repository: JournalRepository) : ViewModel()
         }
     }
 
-    fun addCustomFieldDefinition(name: String, type: String, optionsJson: String?, isGlobal: Boolean) {
+    fun addCustomFieldDefinition(definition: CustomFieldDefinitionEntity) {
         viewModelScope.launch {
-            repository.insertCustomFieldDefinition(
-                CustomFieldDefinitionEntity(
-                    category = if (isGlobal) "Global" else _selectedCategory.value.displayName,
-                    fieldName = name,
-                    fieldType = type,
-                    radioOptionsJson = optionsJson
-                )
-            )
+            repository.insertCustomFieldDefinition(definition)
+        }
+    }
+
+    fun archiveCustomFieldDefinition(definitionId: Long) {
+        viewModelScope.launch {
+            repository.archiveCustomFieldDefinition(definitionId)
+        }
+    }
+
+    fun updateCustomFieldDefinition(definition: CustomFieldDefinitionEntity) {
+        viewModelScope.launch {
+            repository.updateCustomFieldDefinition(definition)
         }
     }
 
     fun saveAsset() {
         viewModelScope.launch {
             val combinedTags = _selectedTags.value.toMutableList()
-            if (_batchTrayId.value.isNotBlank()) combinedTags.add("Batch:${_batchTrayId.value}")
-            if (_physicalId.value.isNotBlank()) combinedTags.add("PhysID:${_physicalId.value}")
-            if (_quantity.value.isNotBlank()) combinedTags.add("Qty:${_quantity.value}")
-            if (_motherPlantLink.value.isNotBlank()) combinedTags.add("Mother:${_motherPlantLink.value}")
-            if (_rootstock.value.isNotBlank()) combinedTags.add("Rootstock:${_rootstock.value}")
-            if (_plotRowId.value.isNotBlank()) combinedTags.add("Plot:${_plotRowId.value}")
-            
-            val tagSdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-            _propagatedDate.value?.let { combinedTags.add("PropDate:${tagSdf.format(Date(it))}") }
-            _expectedHarvestDate.value?.let { combinedTags.add("ExpHarv:${tagSdf.format(Date(it))}") }
-
             val asset = PlantAssetEntity(
                 id = _editingAssetId.value ?: 0,
                 name = _name.value,
                 category = _selectedCategory.value.displayName,
                 plantedDate = _plantedDate.value,
-                totalLogsCount = 0, // In reality, we should keep the current count if editing
+                totalLogsCount = 0,
                 lastActionDate = System.currentTimeMillis(),
                 tags = combinedTags.joinToString(","),
                 locationNote = _location.value,
+                subLocation = _subLocation.value,
+                totalPlants = _totalPlants.value.toIntOrNull() ?: 0,
                 acquisitionDate = _acquisitionDate.value,
                 notes = _notes.value,
                 zones = _zones.value,
@@ -283,18 +214,48 @@ class AddAssetViewModel(private val repository: JournalRepository) : ViewModel()
                 audioPath = _audioPath.value
             )
             
-            if (_editingAssetId.value == null) {
+            val assetId = if (_editingAssetId.value == null) {
                 repository.insertAsset(asset)
             } else {
                 repository.updateAsset(asset)
+                _editingAssetId.value!!
             }
             
-            // We need the newly created asset ID to save custom field values.
-            // Assuming repository.insertAsset returns the ID or we query it.
-            // For now, let's assume we handle value persistence in repository.insertAsset or separate logic.
-            // repository.insertCustomFieldValues(...)
+            repository.deleteCustomFieldValues(assetId)
+            val values = _customFieldValues.value.map { (defId, value) ->
+                CustomFieldValueEntity(entityId = assetId, fieldDefId = defId, value = value)
+            }
+            repository.insertCustomFieldValues(values)
             
             reset()
+        }
+    }
+
+    fun loadAsset(assetId: Long) {
+        viewModelScope.launch {
+            repository.getAssetById(assetId)?.let { asset ->
+                _editingAssetId.value = assetId
+                _name.value = asset.name
+                _selectedCategory.value = AssetCategory.entries.find { it.displayName == asset.category } ?: AssetCategory.TREE
+                _location.value = asset.locationNote
+                _subLocation.value = asset.subLocation
+                _totalPlants.value = if (asset.totalPlants > 0) asset.totalPlants.toString() else ""
+                _notes.value = asset.notes
+                _zones.value = asset.zones
+                _plantedDate.value = if ((asset.plantedDate ?: 0L) > 0L) asset.plantedDate else null
+                _acquisitionDate.value = if ((asset.acquisitionDate ?: 0L) > 0L) asset.acquisitionDate else null
+                _audioPath.value = asset.audioPath
+                _imageUris.value = asset.imageUris.split(",").filter { it.isNotBlank() }.map { Uri.parse(it) }
+                
+                val tagList = asset.tags.split(",")
+                val userTags = tagList.filter { !it.contains(":") }.toSet()
+                _selectedTags.value = userTags
+                
+                // Load custom field values
+                repository.getCustomFieldValues(assetId).firstOrNull()?.let { values ->
+                    _customFieldValues.value = values.associate { it.fieldDefId to it.value }.toMutableMap()
+                }
+            }
         }
     }
 
@@ -302,8 +263,9 @@ class AddAssetViewModel(private val repository: JournalRepository) : ViewModel()
         _name.value = ""
         _notes.value = ""
         _location.value = ""
+        _subLocation.value = ""
+        _totalPlants.value = ""
         _selectedTags.value = emptySet()
-        _visibleOptionalFields.value = emptySet()
         _plantedDate.value = null
         _acquisitionDate.value = null
         _propagatedDate.value = null
@@ -317,20 +279,8 @@ class AddAssetViewModel(private val repository: JournalRepository) : ViewModel()
         _imageUris.value = emptyList()
         _audioPath.value = null
         _customFieldValues.value = mutableMapOf()
+        _selectedCategory.value = AssetCategory.TREE
+        _costValue.value = ""
+        _motherPlantLink.value = ""
     }
-}
-
-enum class OptionalField(val displayName: String, val icon: String) {
-    PLANTING_DATE("Planting Date", "📅"),
-    ACQUISITION_DETAILS("Acquisition Details", "🛒"),
-    GPS_COORDINATES("GPS Coordinates", "📍"),
-    COST_VALUE("Cost/Value", "💰"),
-    BATCH_TRAY_ID("Batch / Tray ID", "🧪"),
-    MOTHER_PLANT_LINK("Mother Plant Link", "✂️"),
-    PHYSICAL_ID("Physical ID / Tree #", "🔢"),
-    QUANTITY("Quantity", "🔢"),
-    PROPAGATED_DATE("Propagated Date", "📅"),
-    ROOTSTOCK("Rootstock", "🌳"),
-    PLOT_ROW_ID("Plot / Row ID", "📍"),
-    EXPECTED_HARVEST_DATE("Expected Harvest", "📅")
 }

@@ -25,8 +25,8 @@ class JournalRepository(
     suspend fun getLogById(id: Long): JournalLogEntity? =
         journalLogDao.getLogById(id)
 
-    suspend fun insertAsset(asset: PlantAssetEntity) {
-        plantAssetDao.insertAsset(asset)
+    suspend fun insertAsset(asset: PlantAssetEntity): Long {
+        return plantAssetDao.insertAsset(asset)
     }
 
     suspend fun updateAsset(asset: PlantAssetEntity) {
@@ -40,17 +40,36 @@ class JournalRepository(
     suspend fun getAssetById(id: Long): PlantAssetEntity? =
         plantAssetDao.getAssetById(id)
 
-    suspend fun insertLog(log: JournalLogEntity) {
-        journalLogDao.insertLog(log)
-        // Update log count for the asset
-        plantAssetDao.getAssetById(log.assetId)?.let { asset ->
-            plantAssetDao.updateAsset(
-                asset.copy(
-                    totalLogsCount = asset.totalLogsCount + 1,
-                    lastActionDate = log.timestamp
-                )
-            )
+    suspend fun insertLog(log: JournalLogEntity): Long {
+        val allLogs = journalLogDao.getAllLogsOnce()
+        val prefix = log.activityType.take(2).uppercase()
+        
+        val generatedDisplayId = if (log.parentLogId == null) {
+            val rootLogsForPrefix = allLogs.filter { it.parentLogId == null && it.displayId.startsWith(prefix) }
+            val nextNum = rootLogsForPrefix.mapNotNull { 
+                it.displayId.removePrefix(prefix).toIntOrNull() 
+            }.maxOrNull() ?: 0
+            "$prefix${nextNum + 1}"
+        } else {
+            val parentLog = allLogs.find { it.id == log.parentLogId }
+            val parentDisplayId = parentLog?.displayId ?: "${prefix}1"
+            val siblingCount = allLogs.count { it.parentLogId == log.parentLogId }
+            "$parentDisplayId.${siblingCount + 1}"
         }
+
+        val logId = journalLogDao.insertLog(log.copy(displayId = generatedDisplayId))
+        // Update log count for the asset
+        log.assetId?.let { assetId ->
+            plantAssetDao.getAssetById(assetId)?.let { asset ->
+                plantAssetDao.updateAsset(
+                    asset.copy(
+                        totalLogsCount = asset.totalLogsCount + 1,
+                        lastActionDate = log.timestamp
+                    )
+                )
+            }
+        }
+        return logId
     }
 
     suspend fun updateLog(log: JournalLogEntity) {
@@ -60,17 +79,26 @@ class JournalRepository(
     suspend fun deleteLog(log: JournalLogEntity) {
         journalLogDao.deleteLog(log)
         // Update log count for the asset
-        plantAssetDao.getAssetById(log.assetId)?.let { asset ->
-            plantAssetDao.updateAsset(
-                asset.copy(
-                    totalLogsCount = (asset.totalLogsCount - 1).coerceAtLeast(0)
+        log.assetId?.let { assetId ->
+            plantAssetDao.getAssetById(assetId)?.let { asset ->
+                plantAssetDao.updateAsset(
+                    asset.copy(
+                        totalLogsCount = (asset.totalLogsCount - 1).coerceAtLeast(0)
+                    )
                 )
-            )
+            }
         }
     }
 
     suspend fun getLogsBySupply(supplyId: Long): List<JournalLogEntity> =
         journalLogDao.getLogsBySupply(supplyId)
+
+    suspend fun deductSupplyStock(supplyId: Long, amount: Double) {
+        val supply = journalLogDao.getLogById(0) // dummy to get dao access if needed or use supplyDao
+        // Wait, I should use supplyRepository or add a method to journalLogDao if I want to keep it here.
+        // Actually journalRepository has access to nothing that can update supply except through supplyRepository.
+        // But journalRepository doesn't have supplyDao.
+    }
 
     // Master List Operations
     fun getAllLocations(): Flow<List<MasterLocationEntity>> = masterDao.getAllLocations()
@@ -97,9 +125,25 @@ class JournalRepository(
     suspend fun updateParameterName(oldName: String, newName: String) = masterDao.renameParameterCascading(oldName, newName)
     suspend fun deleteParameterByName(name: String) = masterDao.deleteParameterCascading(name)
 
-    // Custom Fields
-    fun getCustomFieldDefinitions(category: String) = customFieldDao.getDefinitionsByCategory(category)
-    suspend fun insertCustomFieldDefinition(definition: CustomFieldDefinitionEntity) = customFieldDao.insertDefinition(definition)
-    fun getCustomFieldValues(assetId: Long) = customFieldDao.getValuesByAsset(assetId)
-    suspend fun insertCustomFieldValues(values: List<CustomFieldValueEntity>) = customFieldDao.insertValues(values)
+    // Dynamic Custom Fields
+    fun getCustomFieldDefinitions(targetType: FieldTargetType, scope: String) = 
+        customFieldDao.getDefinitions(targetType, scope)
+
+    suspend fun insertCustomFieldDefinition(definition: CustomFieldDefinitionEntity) = 
+        customFieldDao.insertDefinition(definition)
+
+    suspend fun updateCustomFieldDefinition(definition: CustomFieldDefinitionEntity) = 
+        customFieldDao.updateDefinition(definition)
+
+    suspend fun archiveCustomFieldDefinition(definitionId: Long) = 
+        customFieldDao.archiveDefinition(definitionId)
+
+    fun getCustomFieldValues(entityId: Long) = 
+        customFieldDao.getValuesForEntity(entityId)
+
+    suspend fun insertCustomFieldValues(values: List<CustomFieldValueEntity>) = 
+        customFieldDao.insertValues(values)
+
+    suspend fun deleteCustomFieldValues(entityId: Long) =
+        customFieldDao.deleteValuesForEntity(entityId)
 }

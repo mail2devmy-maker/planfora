@@ -25,27 +25,34 @@ data class DiySupplyEntity(
     val formulationCode: String? = null, // SL, SC, EC, WP, WG, SP, GR
     val notes: String = "",
     val phiDays: Int? = null,
+    val reiHours: Int? = null,
     val stockQuantity: Float? = null,
     val stockUnit: String? = null,
     val imageUris: String = "",
     val audioPath: String? = null,
     val locationNote: String = "",
-    val tags: String = ""
+    val tags: String = "",
+    val subCategory: String? = null,
+    val containerId: String = "", // Added in v24 for Vessel/Jar ID
+    val materialList: String = "", // Added in v24 for Recipe/BOM
+    val displayId: String = "" // Added in v25 for FPJ01, JMS02 style
 )
+
+val DiySupplyEntity.displayName: String
+    get() = when {
+        name.isNotBlank() && batchCode.isNotBlank() && name != batchCode -> "$name ($batchCode)"
+        name.isNotBlank() -> name
+        batchCode.isNotBlank() -> batchCode
+        else -> "Unnamed Supply"
+    }
 
 enum class SupplyCategory(val displayName: String) {
     INSECTICIDE("Insecticides"),
     FUNGICIDE("Fungicides"),
     HERBICIDE("Herbicides"),
-    RODENTICIDE("Rodenticides"),
-    MITICIDE("Miticides"),
-    NEMATICIDE("Nematicides"),
-    MOLLUSCICIDE("Molluscicides"),
-    BACTERICIDE("Bactericides"),
     FERTILIZER("Fertilizer"),
-    SUBSTRATE("Substrate"),
-    HARDWARE("Hardware"),
-    OTHER("Other")
+    DIY("DIY"),
+    SUPPLIES_TOOLS("Supplies & Tools")
 }
 
 enum class SupplyFormType(val displayName: String) {

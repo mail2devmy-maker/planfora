@@ -12,28 +12,47 @@ enum class SupplyCategory(val displayName: String) {
     INSECTICIDE("Insecticides"),
     FUNGICIDE("Fungicides"),
     HERBICIDE("Herbicides"),
-    RODENTICIDE("Rodenticides"),
-    MITICIDE("Miticides"),
-    NEMATICIDE("Nematicides"),
-    MOLLUSCICIDE("Molluscicides"),
-    BACTERICIDE("Bactericides"),
     FERTILIZER("Fertilizer"),
-    SUBSTRATE("Substrate"),
-    HARDWARE("Hardware"),
-    OTHER("Other")
+    DIY("DIY"),
+    SUPPLIES_TOOLS("Supplies & Tools")
 }
 
+enum class SupplyTab { INVENTORY, DIY_LAB, TOOLBOX }
+
 class SuppliesViewModel(private val repository: SupplyRepository) : ViewModel() {
+
+    private val _selectedTab = MutableStateFlow(SupplyTab.INVENTORY)
+    val selectedTab: StateFlow<SupplyTab> = _selectedTab.asStateFlow()
 
     private val _selectedCategory = MutableStateFlow(SupplyCategory.ALL)
     val selectedCategory: StateFlow<SupplyCategory> = _selectedCategory.asStateFlow()
 
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
     val supplies: StateFlow<List<DiySupplyEntity>> = repository.getAllSupplies()
-        .combine(_selectedCategory) { supplies, category ->
+        .combine(_selectedTab) { list, tab ->
+            when (tab) {
+                SupplyTab.INVENTORY -> list.filter { it.category != "DIY" || it.isArchived }
+                SupplyTab.DIY_LAB -> list.filter { it.category == "DIY" && !it.isArchived }
+                SupplyTab.TOOLBOX -> emptyList()
+            }
+        }
+        .combine(_selectedCategory) { list, category ->
             if (category == SupplyCategory.ALL) {
-                supplies
+                list
             } else {
-                supplies.filter { it.category == category.displayName }
+                list.filter { it.category == category.displayName }
+            }
+        }.combine(_searchQuery) { filtered, query ->
+            if (query.isBlank()) {
+                filtered
+            } else {
+                filtered.filter { 
+                    it.name.contains(query, ignoreCase = true) || 
+                    it.category.contains(query, ignoreCase = true) ||
+                    it.batchCode.contains(query, ignoreCase = true)
+                }
             }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -41,12 +60,62 @@ class SuppliesViewModel(private val repository: SupplyRepository) : ViewModel() 
     private val _showAddBottomSheet = MutableStateFlow(false)
     val showAddBottomSheet: StateFlow<Boolean> = _showAddBottomSheet.asStateFlow()
 
+    val measurementTools: StateFlow<List<com.mail2dev.planfora.data.local.entity.MeasurementToolEntity>> = repository.getAllTools()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun setTab(tab: SupplyTab) {
+        _selectedTab.value = tab
+        // When switching to DIY Lab or Toolbox, reset category to ALL
+        if (tab == SupplyTab.DIY_LAB || tab == SupplyTab.TOOLBOX) {
+            _selectedCategory.value = SupplyCategory.ALL
+        }
+    }
+
+    fun addMeasurementTool(name: String, capacity: Double, unit: String) {
+        viewModelScope.launch {
+            repository.insertTool(com.mail2dev.planfora.data.local.entity.MeasurementToolEntity(
+                name = name,
+                capacity = capacity,
+                unit = unit
+            ))
+        }
+    }
+
+    fun updateMeasurementTool(tool: com.mail2dev.planfora.data.local.entity.MeasurementToolEntity) {
+        viewModelScope.launch {
+            repository.updateTool(tool)
+        }
+    }
+
+    fun deleteMeasurementTool(tool: com.mail2dev.planfora.data.local.entity.MeasurementToolEntity) {
+        viewModelScope.launch {
+            repository.deleteTool(tool)
+        }
+    }
+
     fun setShowAddBottomSheet(show: Boolean) {
         _showAddBottomSheet.value = show
     }
 
+    fun setSearchQuery(query: String) {
+        _searchQuery.value = query
+    }
+
     fun setCategory(category: SupplyCategory) {
         _selectedCategory.value = category
+    }
+
+    fun finalizeBatch(supply: DiySupplyEntity, yieldVolume: Double) {
+        viewModelScope.launch {
+            repository.updateSupply(
+                supply.copy(
+                    isArchived = true,
+                    currentVolume = yieldVolume,
+                    originalVolume = yieldVolume,
+                    stockQuantity = yieldVolume.toFloat()
+                )
+            )
+        }
     }
 
     fun deleteSupply(supply: DiySupplyEntity) {

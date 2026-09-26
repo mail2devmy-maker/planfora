@@ -9,12 +9,24 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = ForestGreen,
+    onPrimary = Color.White,
+    primaryContainer = ForestGreen.copy(alpha = 0.7f),
+    onPrimaryContainer = Color.White,
+    secondary = SlateTextSecondary,
+    onSecondary = Color.White,
+    background = SlateDarkBackground,
+    onBackground = SlateTextPrimary,
+    surface = SlateSurface,
+    onSurface = SlateTextPrimary,
+    surfaceVariant = SlateSurface,
+    onSurfaceVariant = SlateTextSecondary,
+    outline = SlateBorder,
+    outlineVariant = SlateBorder.copy(alpha = 0.5f)
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -37,7 +49,7 @@ private val LightColorScheme = lightColorScheme(
 fun PlanForaTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {

@@ -7,12 +7,31 @@ import com.mail2dev.planfora.data.repository.JournalRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
-enum class AssetCategory(val displayName: String, val description: String = "", val icon: String = "") {
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Folder
+import androidx.compose.material.icons.rounded.Grass
+import androidx.compose.material.icons.rounded.Place
+import androidx.compose.ui.graphics.vector.ImageVector
+import com.mail2dev.planfora.R
+
+enum class AssetCategory(val displayName: String, val description: String = "", val icon: String = "", val iconVector: ImageVector? = null) {
     ALL("All", "", "📁"),
     TREE("Tree", "For old orchard trees, mature perennials", "🌳"),
-    CROP_OR_VEGGIE("Crop/Veggie", "For short-term produce, vegetable beds, row crops", "🌽"),
+    CROP("Crop", "For short-term produce, vegetable beds, row crops", "", Icons.Rounded.Grass),
     SEEDLING("Seedling", "For seeds, germination trays, young nursery stock", "🌱"),
-    CUTTING("Cutting", "For marcots, air layers, clones, stem pieces", "✂️")
+    CUTTING("Cutting", "For marcots, air layers, clones, stem pieces", "✂️");
+
+    companion object {
+        fun fromDatabase(name: String?): AssetCategory {
+            return when (name) {
+                "Crop/Veggie", "Crop" -> CROP
+                "Tree" -> TREE
+                "Seedling" -> SEEDLING
+                "Cutting" -> CUTTING
+                else -> TREE
+            }
+        }
+    }
 }
 
 class AssetsViewModel(private val repository: JournalRepository) : ViewModel() {
@@ -32,9 +51,23 @@ class AssetsViewModel(private val repository: JournalRepository) : ViewModel() {
     private val _showAddBottomSheet = MutableStateFlow(false)
     val showAddBottomSheet: StateFlow<Boolean> = _showAddBottomSheet.asStateFlow()
 
+    private val _selectedLocation = MutableStateFlow<String?>(null)
+    val selectedLocation: StateFlow<String?> = _selectedLocation.asStateFlow()
+
+    val availableLocations: StateFlow<List<String>> = repository.getAllAssets()
+        .map { assets ->
+            assets.map { it.locationNote.trim().ifBlank { "Unassigned" } }
+                .distinctBy { it.lowercase() }
+                .sorted()
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     val assets: StateFlow<List<PlantAssetEntity>> = repository.getAllAssets()
         .combine(_selectedCategory) { assets, category ->
-            if (category == AssetCategory.ALL) assets else assets.filter { it.category == category.displayName }
+            if (category == AssetCategory.ALL) assets else assets.filter { AssetCategory.fromDatabase(it.category) == category }
+        }
+        .combine(_selectedLocation) { assets, location ->
+            if (location == null) assets else assets.filter { it.locationNote.ifBlank { "Unassigned" } == location }
         }
         .combine(_searchQuery) { assets, query ->
             if (query.isBlank()) assets else {
@@ -51,12 +84,21 @@ class AssetsViewModel(private val repository: JournalRepository) : ViewModel() {
     val allLogs: StateFlow<List<com.mail2dev.planfora.data.local.entity.JournalLogEntity>> = repository.getAllLogs()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val groupedAssets: StateFlow<Map<String, List<PlantAssetEntity>>> = assets
-        .map { list -> list.groupBy { it.locationNote.ifBlank { "Unassigned" } } }
+    val hierarchicalAssets: StateFlow<Map<String, Map<String, List<PlantAssetEntity>>>> = assets
+        .map { list -> 
+            list.groupBy { it.locationNote.ifBlank { "Unassigned" } }
+                .mapValues { entry -> 
+                    entry.value.groupBy { it.subLocation.uppercase().ifBlank { "Unassigned Zone" } }
+                }
+        }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
     fun setCategory(category: AssetCategory) {
         _selectedCategory.value = category
+    }
+
+    fun setLocation(location: String?) {
+        _selectedLocation.value = location
     }
 
     fun setSearchQuery(query: String) {

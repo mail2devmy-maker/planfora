@@ -1,8 +1,11 @@
 package com.mail2dev.planfora.data.repository
 
 import com.mail2dev.planfora.data.local.dao.DiySupplyDao
+import com.mail2dev.planfora.data.local.dao.MeasurementToolDao
 import com.mail2dev.planfora.data.local.entity.DiySupplyEntity
+import com.mail2dev.planfora.data.local.entity.MeasurementToolEntity
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -21,9 +24,18 @@ class SupplyRepositoryTest {
         override suspend fun getMaxBatchNumber(supplyTypeName: String): Int? {
             return if (supplyTypeName == "FPJ") 12 else null
         }
+        override fun getDistinctActiveIngredients(): Flow<List<String>> = flowOf(emptyList())
     }
 
-    private val repository = SupplyRepository(fakeDao)
+    private val fakeToolDao = object : MeasurementToolDao {
+        override fun getAllTools(): Flow<List<MeasurementToolEntity>> = flowOf(emptyList())
+        override suspend fun insertTool(tool: MeasurementToolEntity) {}
+        override suspend fun updateTool(tool: MeasurementToolEntity) {}
+        override suspend fun deleteTool(tool: MeasurementToolEntity) {}
+        override suspend fun getToolById(id: Long): MeasurementToolEntity? = null
+    }
+
+    private val repository = SupplyRepository(fakeDao, fakeToolDao)
 
     @Test
     fun testGenerateNextBatchName() = runBlocking {

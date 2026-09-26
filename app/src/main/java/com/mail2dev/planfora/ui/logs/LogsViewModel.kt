@@ -5,6 +5,9 @@ import androidx.lifecycle.viewModelScope
 import com.mail2dev.planfora.data.local.entity.JournalLogEntity
 import com.mail2dev.planfora.data.local.entity.DiySupplyEntity
 import com.mail2dev.planfora.data.local.entity.PlantAssetEntity
+import com.mail2dev.planfora.data.local.entity.CustomFieldDefinitionEntity
+import com.mail2dev.planfora.data.local.entity.CustomFieldValueEntity
+import com.mail2dev.planfora.data.local.entity.FieldTargetType
 import com.mail2dev.planfora.data.repository.JournalRepository
 import com.mail2dev.planfora.data.repository.SupplyRepository
 import kotlinx.coroutines.flow.*
@@ -31,6 +34,12 @@ class LogsViewModel(
     private val _locationFilter = MutableStateFlow<String?>(null)
     val locationFilter: StateFlow<String?> = _locationFilter.asStateFlow()
 
+    private val _activityTypeFilter = MutableStateFlow<String?>(null)
+    val activityTypeFilter: StateFlow<String?> = _activityTypeFilter.asStateFlow()
+
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
     private val _phiFilterActive = MutableStateFlow(false)
     val phiFilterActive: StateFlow<Boolean> = _phiFilterActive.asStateFlow()
 
@@ -40,16 +49,19 @@ class LogsViewModel(
     val supplies: StateFlow<List<DiySupplyEntity>> = supplyRepository.getAllSupplies()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val measurementTools: StateFlow<List<com.mail2dev.planfora.data.local.entity.MeasurementToolEntity>> = supplyRepository.getAllTools()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     val masterLocations: StateFlow<List<String>> = repository.getAllLocations()
-        .map { list -> list.map { it.name } }
+        .map { list -> list.map { it.name.trim() }.filter { it.isNotBlank() }.distinctBy { it.lowercase() } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val masterTags: StateFlow<List<String>> = repository.getTagsByScope("ASSET")
-        .map { list -> list.map { it.name } }
+        .map { list -> list.map { it.name.trim() }.filter { it.isNotBlank() }.distinctBy { it.lowercase() } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val masterParameters: StateFlow<List<String>> = repository.getAllParameters()
-        .map { list -> list.map { it.name } }
+        .map { list -> list.map { it.name.trim() }.filter { it.isNotBlank() }.distinctBy { it.lowercase() } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _allLogs = repository.getAllLogs()
@@ -59,13 +71,31 @@ class LogsViewModel(
         _allLogs, 
         _selectedDate, 
         _locationFilter, 
+        _activityTypeFilter,
+        _searchQuery,
         _phiFilterActive
-    ) { logs, date, location, phiOnly ->
+    ) { args ->
+        val logs = args[0] as List<JournalLogEntity>
+        val date = args[1] as Long
+        val location = args[2] as String?
+        val activityType = args[3] as String?
+        val query = args[4] as String
+        val phiOnly = args[5] as Boolean
+
         logs.filter { log -> 
+            // Exclude pure DIY Production logs from the main timeline
+            val isPureProduction = log.supplyId != null && log.assetId == null
+            if (isPureProduction) return@filter false
+
             val dateMatch = isSameDay(log.timestamp, date)
             val locationMatch = location == null || assets.value.find { it.id == log.assetId }?.locationNote == location
+            val activityMatch = activityType == null || log.activityType == activityType
+            val queryMatch = query.isBlank() || 
+                log.title.contains(query, ignoreCase = true) || 
+                log.note.contains(query, ignoreCase = true) || 
+                log.displayId.contains(query, ignoreCase = true)
             val phiMatch = !phiOnly || isPhiActive(log)
-            dateMatch && locationMatch && phiMatch
+            dateMatch && locationMatch && activityMatch && queryMatch && phiMatch
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -83,6 +113,16 @@ class LogsViewModel(
 
     val allLogs: StateFlow<List<JournalLogEntity>> = _allLogs
 
+    val diyLogs: StateFlow<List<JournalLogEntity>> = combine(_allLogs, supplies) { logs, supplyList ->
+        logs.filter { log ->
+            val supply = supplyList.find { it.id == log.supplyId }
+            log.supplyId != null && 
+            log.assetId == null && 
+            supply?.category == "DIY" &&
+            log.activityType == "PRODUCTION"
+        }.sortedByDescending { it.timestamp }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     private val _showAddBottomSheet = MutableStateFlow(false)
     val showAddBottomSheet: StateFlow<Boolean> = _showAddBottomSheet.asStateFlow()
 
@@ -90,6 +130,8 @@ class LogsViewModel(
     fun setLayoutMode(mode: LayoutMode) { _layoutMode.value = mode }
     fun setSelectedDate(timestamp: Long) { _selectedDate.value = timestamp }
     fun setLocationFilter(location: String?) { _locationFilter.value = location }
+    fun setActivityTypeFilter(type: String?) { _activityTypeFilter.value = type }
+    fun setSearchQuery(query: String) { _searchQuery.value = query }
     fun togglePhiFilter() { _phiFilterActive.value = !_phiFilterActive.value }
     fun setShowAddBottomSheet(show: Boolean) { _showAddBottomSheet.value = show }
 
@@ -129,6 +171,30 @@ class LogsViewModel(
         }
     }
 
+    // Dynamic Custom Fields
+    fun getCustomFieldDefinitions(targetType: FieldTargetType, scope: String) = 
+        repository.getCustomFieldDefinitions(targetType, scope)
+
+    fun addCustomFieldDefinition(definition: CustomFieldDefinitionEntity) {
+        viewModelScope.launch {
+            repository.insertCustomFieldDefinition(definition)
+        }
+    }
+
+    fun archiveCustomFieldDefinition(definitionId: Long) {
+        viewModelScope.launch {
+            repository.archiveCustomFieldDefinition(definitionId)
+        }
+    }
+
+    fun updateCustomFieldDefinition(definition: CustomFieldDefinitionEntity) {
+        viewModelScope.launch {
+            repository.updateCustomFieldDefinition(definition)
+        }
+    }
+
+    fun getCustomFieldValues(entityId: Long) = repository.getCustomFieldValues(entityId)
+
     suspend fun getLogById(id: Long): JournalLogEntity? {
         return repository.getLogById(id)
     }
@@ -147,9 +213,40 @@ class LogsViewModel(
         }
     }
 
-    fun updateLog(log: JournalLogEntity) {
+    fun addMasterLocation(loc: String) {
+        viewModelScope.launch {
+            repository.insertLocation(com.mail2dev.planfora.data.local.entity.MasterLocationEntity(loc, "ASSET"))
+        }
+    }
+
+    fun updateMasterLocation(oldName: String, newName: String) {
+        viewModelScope.launch {
+            repository.updateLocationName(oldName, newName, "ASSET")
+        }
+    }
+
+    fun deleteMasterLocation(name: String) {
+        viewModelScope.launch {
+            repository.deleteLocationByName(name, "ASSET")
+        }
+    }
+
+    fun updateLog(log: JournalLogEntity, customFieldValues: Map<Long, String> = emptyMap()) {
         viewModelScope.launch {
             repository.updateLog(log)
+            
+            // Update dynamic values (delete old ones and insert new ones for simplicity)
+            repository.deleteCustomFieldValues(log.id)
+            val values = customFieldValues.map { (defId, value) ->
+                CustomFieldValueEntity(entityId = log.id, fieldDefId = defId, value = value)
+            }
+            repository.insertCustomFieldValues(values)
+        }
+    }
+
+    fun updateSupply(supply: DiySupplyEntity) {
+        viewModelScope.launch {
+            supplyRepository.updateSupply(supply)
         }
     }
 
@@ -171,7 +268,7 @@ class LogsViewModel(
     }
 
     fun addJournalLog(
-        assetId: Long,
+        assetId: Long?,
         title: String,
         note: String,
         photoPath: String?,
@@ -187,7 +284,8 @@ class LogsViewModel(
         supplyId: Long? = null,
         customInputName: String? = null,
         batchGroupId: String? = null,
-        targetZones: String? = null
+        targetZones: String? = null,
+        customFieldValues: Map<Long, String> = emptyMap()
     ) {
         viewModelScope.launch {
             val log = JournalLogEntity(
@@ -209,7 +307,25 @@ class LogsViewModel(
                 batchGroupId = batchGroupId,
                 targetZones = targetZones
             )
-            repository.insertLog(log)
+            val logId = repository.insertLog(log)
+            
+            // Deduct stock if supply is selected and activity is Weeding/Pest/Feeding
+            if (supplyId != null && parameters.contains("used_qty:")) {
+                val usedQty = parameters.split("|")
+                    .find { it.startsWith("used_qty:") }
+                    ?.substringAfter(":")
+                    ?.toDoubleOrNull() ?: 0.0
+                if (usedQty > 0.0) {
+                    supplyRepository.deductStock(supplyId, usedQty)
+                }
+            }
+
+            // Save dynamic values
+            val values = customFieldValues.map { (defId, value) ->
+                CustomFieldValueEntity(entityId = logId, fieldDefId = defId, value = value)
+            }
+            repository.insertCustomFieldValues(values)
+
             setShowAddBottomSheet(false)
         }
     }

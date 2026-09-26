@@ -5,7 +5,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mail2dev.planfora.data.local.entity.DiySupplyEntity
 import com.mail2dev.planfora.data.local.entity.CustomFieldDefinitionEntity
+import com.mail2dev.planfora.data.local.entity.CustomFieldValueEntity
+import com.mail2dev.planfora.data.local.entity.FieldTargetType
 import com.mail2dev.planfora.data.local.entity.MasterTagEntity
+import com.mail2dev.planfora.data.local.entity.SupplyCategory
 import com.mail2dev.planfora.data.repository.JournalRepository
 import com.mail2dev.planfora.data.repository.SupplyRepository
 import kotlinx.coroutines.flow.*
@@ -20,6 +23,18 @@ class AddSupplyViewModel(
 
     private val _category = MutableStateFlow(SupplyCategory.INSECTICIDE)
     val category = _category.asStateFlow()
+
+    private val _subCategory = MutableStateFlow("")
+    val subCategory = _subCategory.asStateFlow()
+
+    private val _maturityDays = MutableStateFlow("")
+    val maturityDays = _maturityDays.asStateFlow()
+
+    private val _containerId = MutableStateFlow("")
+    val containerId = _containerId.asStateFlow()
+
+    private val _materialLedger = MutableStateFlow<List<Pair<String, String>>>(emptyList())
+    val materialLedger = _materialLedger.asStateFlow()
 
     private val _formType = MutableStateFlow(com.mail2dev.planfora.data.local.entity.SupplyFormType.LIQUID)
     val formType = _formType.asStateFlow()
@@ -47,7 +62,7 @@ class AddSupplyViewModel(
 
     // Custom Fields State (Scoped to SUPPLY)
     private val _customFieldDefinitions = _category.flatMapLatest { cat ->
-        journalRepository.getCustomFieldDefinitions("SUPPLY_${cat.name}")
+        journalRepository.getCustomFieldDefinitions(FieldTargetType.SUPPLY_CATEGORY, cat.displayName)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     val customFieldDefinitions = _customFieldDefinitions
 
@@ -61,6 +76,9 @@ class AddSupplyViewModel(
     private val _phiDays = MutableStateFlow("")
     val phiDays = _phiDays.asStateFlow()
 
+    private val _reiHours = MutableStateFlow("")
+    val reiHours = _reiHours.asStateFlow()
+
     private val _stockQuantity = MutableStateFlow("")
     val stockQuantity = _stockQuantity.asStateFlow()
 
@@ -70,44 +88,285 @@ class AddSupplyViewModel(
     private val _editingSupplyId = MutableStateFlow<Long?>(null)
     val editingSupplyId = _editingSupplyId.asStateFlow()
 
+    private val _isLabMode = MutableStateFlow(false)
+    val isLabMode = _isLabMode.asStateFlow()
+
+    private var stockDraft = SupplyDraft(category = SupplyCategory.INSECTICIDE, draftIsLab = false)
+    private var labDraft = SupplyDraft(category = SupplyCategory.DIY, draftIsLab = true)
+
+    fun updateLabMode(isLab: Boolean) {
+        if (_isLabMode.value == isLab) return
+
+        // 1. Save current state flows to the old slot
+        val currentDraft = SupplyDraft(
+            name = _name.value,
+            category = _category.value,
+            subCategory = _subCategory.value,
+            maturityDays = _maturityDays.value,
+            containerId = _containerId.value,
+            materialLedger = _materialLedger.value,
+            formType = _formType.value,
+            formulationCode = _formulationCode.value,
+            notes = _notes.value,
+            location = _location.value,
+            selectedTags = _selectedTags.value,
+            imageUris = _imageUris.value,
+            audioPath = _audioPath.value,
+            visibleOptionalFields = _visibleOptionalFields.value,
+            customFieldValues = _customFieldValues.value,
+            activeIngredient = _activeIngredient.value,
+            phiDays = _phiDays.value,
+            reiHours = _reiHours.value,
+            stockQuantity = _stockQuantity.value,
+            stockUnit = _stockUnit.value,
+            customTimestamp = _customTimestamp.value,
+            editingSupplyId = _editingSupplyId.value,
+            isProductionUpdate = _isProductionUpdate.value,
+            historicalMaterialCount = _historicalMaterialCount.value,
+            draftIsLab = _draftIsLab.value
+        )
+
+        if (_isLabMode.value) {
+            labDraft = currentDraft
+        } else {
+            stockDraft = currentDraft
+        }
+
+        // 2. Change the mode
+        _isLabMode.value = isLab
+
+        // 3. Restore state flows from the new slot
+        val nextDraft = if (isLab) labDraft else stockDraft
+        _name.value = nextDraft.name
+        _category.value = nextDraft.category
+        _subCategory.value = nextDraft.subCategory
+        _maturityDays.value = nextDraft.maturityDays
+        _containerId.value = nextDraft.containerId
+        _materialLedger.value = nextDraft.materialLedger
+        _formType.value = nextDraft.formType
+        _formulationCode.value = nextDraft.formulationCode
+        _notes.value = nextDraft.notes
+        _location.value = nextDraft.location
+        _selectedTags.value = nextDraft.selectedTags
+        _imageUris.value = nextDraft.imageUris
+        _audioPath.value = nextDraft.audioPath
+        _visibleOptionalFields.value = nextDraft.visibleOptionalFields
+        _customFieldValues.value = nextDraft.customFieldValues.toMutableMap()
+        _activeIngredient.value = nextDraft.activeIngredient
+        _phiDays.value = nextDraft.phiDays
+        _reiHours.value = nextDraft.reiHours
+        _stockQuantity.value = nextDraft.stockQuantity
+        _stockUnit.value = nextDraft.stockUnit
+        _customTimestamp.value = nextDraft.customTimestamp
+        _editingSupplyId.value = nextDraft.editingSupplyId
+        _isProductionUpdate.value = nextDraft.isProductionUpdate
+        _historicalMaterialCount.value = nextDraft.historicalMaterialCount
+        _draftIsLab.value = nextDraft.draftIsLab
+    }
+
+    private val _draftIsLab = MutableStateFlow<Boolean?>(null)
+    val draftIsLab = _draftIsLab.asStateFlow()
+
+    private fun markDraftStarted() {
+        if (_editingSupplyId.value == null && _draftIsLab.value == null) {
+            _draftIsLab.value = _isLabMode.value
+        }
+    }
+
+    private val _isProductionUpdate = MutableStateFlow(false)
+    val isProductionUpdate = _isProductionUpdate.asStateFlow()
+
+    private val _historicalMaterialCount = MutableStateFlow(0)
+    val historicalMaterialCount = _historicalMaterialCount.asStateFlow()
+
+    private val _customTimestamp = MutableStateFlow(System.currentTimeMillis())
+    val customTimestamp = _customTimestamp.asStateFlow()
+
+    val hasDraftData = combine(
+        _name, _notes, _materialLedger, _imageUris, _location, _editingSupplyId, _draftIsLab, _isLabMode
+    ) { args ->
+        val name = args[0] as String
+        val notes = args[1] as String
+        val ledger = args[2] as List<*>
+        val uris = args[3] as List<*>
+        val loc = args[4] as String
+        val editingId = args[5] as Long?
+        val draftWasLab = args[6] as Boolean?
+        val currentIsLab = args[7] as Boolean
+        
+        // Contextual check: draft origin must match current mode
+        editingId == null && 
+                draftWasLab != null && 
+                draftWasLab == currentIsLab && 
+                (name.isNotBlank() || notes.isNotBlank() || ledger.isNotEmpty() ||
+                        uris.isNotEmpty() || loc.isNotBlank())
+    }.combine(_selectedTags) { hasBaseDraft, tags ->
+        hasBaseDraft || (tags.isNotEmpty() && _draftIsLab.value == _isLabMode.value)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    fun updateCustomTimestamp(v: Long) {
+        _customTimestamp.value = v
+    }
+
     val masterTags: StateFlow<List<String>> = journalRepository.getTagsByScope("SUPPLY")
-        .map { list -> list.map { it.name } }
+        .map { list -> list.map { it.name.trim() }.filter { it.isNotBlank() }.distinctBy { it.lowercase() } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val masterLocations: StateFlow<List<String>> = journalRepository.getLocationsByScope("SUPPLY")
-        .map { list -> list.map { it.name } }
+        .map { list -> list.map { it.name.trim() }.filter { it.isNotBlank() }.distinctBy { it.lowercase() } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val masterIngredients: StateFlow<List<String>> = journalRepository.getAllIngredients()
-        .map { list -> list.map { it.name } }
+        .map { list -> list.map { it.name.trim() }.filter { it.isNotBlank() }.distinctBy { it.lowercase() } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun updateName(v: String) { _name.value = v }
+    val activeDiyBatches: StateFlow<List<DiySupplyEntity>> = repository.getAllSupplies()
+        .map { list -> 
+            list.filter { it.category == "DIY" && !it.isArchived }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun importFromDiyBatch(batch: DiySupplyEntity) {
+        _name.value = batch.name
+        _category.value = SupplyCategory.DIY
+        _subCategory.value = batch.subCategory ?: ""
+        _containerId.value = batch.containerId
+        _stockQuantity.value = batch.currentVolume.toString()
+        _stockUnit.value = batch.unit
+        _location.value = batch.locationNote
+        _selectedTags.value = batch.tags.split(",").filter { it.isNotBlank() }.toSet()
+        _isLabMode.value = false
+        
+        // Parse material list into ledger
+        val materials = batch.materialList.split("|").filter { it.contains(":") }.map { 
+            val parts = it.split(":")
+            parts[0] to parts[1]
+        }
+        _materialLedger.value = materials
+        
+        // Mark as production update of the same ID so saving updates the existing one to archived stock
+        _editingSupplyId.value = batch.id
+        _isProductionUpdate.value = true
+    }
+
+    fun updateName(v: String) { 
+        _name.value = v 
+        markDraftStarted()
+        
+        // Smart Formulation Detection from Product Name
+        val uppercaseName = v.uppercase()
+        
+        // Check Liquids
+        val liquidCodes = listOf("SL", "SC", "EC")
+        val matchedLiquidCode = liquidCodes.find { code ->
+            uppercaseName.contains(code) || uppercaseName.contains("\\b$code\\b".toRegex()) || uppercaseName.contains("[0-9]$code".toRegex())
+        }
+        val hasLiquidText = uppercaseName.contains("LIQUID") || uppercaseName.contains("FLOWABLE")
+        
+        // Check Powders/Granules/Solids
+        val powderCodes = listOf("WP", "SP")
+        val granularCodes = listOf("WG", "GR")
+        val matchedPowderCode = powderCodes.find { code ->
+            uppercaseName.contains(code) || uppercaseName.contains("\\b$code\\b".toRegex()) || uppercaseName.contains("[0-9]$code".toRegex())
+        }
+        val matchedGranularCode = granularCodes.find { code ->
+            uppercaseName.contains(code) || uppercaseName.contains("\\b$code\\b".toRegex()) || uppercaseName.contains("[0-9]$code".toRegex())
+        }
+        val hasPowderText = uppercaseName.contains("POWDER")
+        val hasGranularText = uppercaseName.contains("GRANULAR")
+        val hasSolidText = uppercaseName.contains("SOLID")
+
+        when {
+            matchedLiquidCode != null -> {
+                _formType.value = com.mail2dev.planfora.data.local.entity.SupplyFormType.LIQUID
+                _formulationCode.value = matchedLiquidCode
+                _stockUnit.value = "L"
+            }
+            hasLiquidText -> {
+                _formType.value = com.mail2dev.planfora.data.local.entity.SupplyFormType.LIQUID
+                _formulationCode.value = "Other"
+                _stockUnit.value = "L"
+            }
+            matchedPowderCode != null -> {
+                _formType.value = com.mail2dev.planfora.data.local.entity.SupplyFormType.POWDER
+                _formulationCode.value = matchedPowderCode
+                _stockUnit.value = "kg"
+            }
+            hasPowderText -> {
+                _formType.value = com.mail2dev.planfora.data.local.entity.SupplyFormType.POWDER
+                _formulationCode.value = "Other"
+                _stockUnit.value = "kg"
+            }
+            matchedGranularCode != null -> {
+                _formType.value = com.mail2dev.planfora.data.local.entity.SupplyFormType.GRANULAR
+                _formulationCode.value = matchedGranularCode
+                _stockUnit.value = "kg"
+            }
+            hasGranularText -> {
+                _formType.value = com.mail2dev.planfora.data.local.entity.SupplyFormType.GRANULAR
+                _formulationCode.value = "Other"
+                _stockUnit.value = "kg"
+            }
+            hasSolidText -> {
+                _formType.value = com.mail2dev.planfora.data.local.entity.SupplyFormType.SOLID
+                _formulationCode.value = "Other"
+                _stockUnit.value = "kg"
+            }
+        }
+    }
     fun updateCategory(v: SupplyCategory) { _category.value = v }
+    fun updateSubCategory(v: String) { 
+        _subCategory.value = v 
+        if (_name.value.isBlank()) {
+            _name.value = v
+        }
+    }
+    fun updateMaturityDays(v: String) { _maturityDays.value = v }
+    fun updateContainerId(v: String) { _containerId.value = v }
+
+    fun addMaterialToLedger() {
+        markDraftStarted()
+        _materialLedger.update { it + ("" to "") }
+    }
+
+    fun updateMaterialInLedger(index: Int, name: String, amount: String) {
+        _materialLedger.update { list ->
+            list.toMutableList().apply {
+                this[index] = name to amount
+            }
+        }
+    }
+
+    fun removeMaterialFromLedger(index: Int) {
+        _materialLedger.update { list ->
+            list.toMutableList().apply { removeAt(index) }
+        }
+    }
+
     fun updateFormType(v: com.mail2dev.planfora.data.local.entity.SupplyFormType) { 
         _formType.value = v 
         // Smart unit defaults based on form type
         when (v) {
             com.mail2dev.planfora.data.local.entity.SupplyFormType.LIQUID -> {
-                updateStockUnit("L")
+                _stockUnit.value = "L"
                 if (_formulationCode.value !in listOf("SL", "SC", "EC", "Other")) {
                     _formulationCode.value = null
                 }
             }
             com.mail2dev.planfora.data.local.entity.SupplyFormType.POWDER -> {
-                updateStockUnit("kg")
+                _stockUnit.value = "kg"
                 if (_formulationCode.value !in listOf("WP", "SP", "Other")) {
                     _formulationCode.value = null
                 }
             }
             com.mail2dev.planfora.data.local.entity.SupplyFormType.GRANULAR -> {
-                updateStockUnit("kg")
+                _stockUnit.value = "kg"
                 if (_formulationCode.value !in listOf("WG", "GR", "Other")) {
                     _formulationCode.value = null
                 }
             }
             com.mail2dev.planfora.data.local.entity.SupplyFormType.SOLID -> {
-                updateStockUnit("kg")
+                _stockUnit.value = "kg"
                 if (_formulationCode.value != "Other") {
                     _formulationCode.value = null
                 }
@@ -132,11 +391,18 @@ class AddSupplyViewModel(
             }
         }
     }
-    fun updateNotes(v: String) { _notes.value = v }
-    fun updateLocation(v: String) { _location.value = v }
+    fun updateNotes(v: String) { 
+        _notes.value = v 
+        markDraftStarted()
+    }
+    fun updateLocation(v: String) { 
+        _location.value = v 
+        markDraftStarted()
+    }
     
     fun toggleTag(tag: String) {
         _selectedTags.update { tags ->
+            markDraftStarted()
             if (tags.contains(tag)) tags - tag else tags + tag
         }
     }
@@ -185,14 +451,26 @@ class AddSupplyViewModel(
         }
     }
 
-    fun startNewSupply() {
+    fun startNewSupply(defaultCategory: SupplyCategory = SupplyCategory.INSECTICIDE, isLab: Boolean = false) {
         _editingSupplyId.value = null
+        _isProductionUpdate.value = false
+        _isLabMode.value = isLab
+        _draftIsLab.value = null // Reset draft context until user types
+        _historicalMaterialCount.value = 0
+        _customTimestamp.value = System.currentTimeMillis()
         reset()
+        _category.value = if (isLab) SupplyCategory.DIY else defaultCategory
     }
 
-    fun addImageUri(uri: Uri) { _imageUris.update { it + uri } }
+    fun addImageUri(uri: Uri) { 
+        markDraftStarted()
+        _imageUris.update { it + uri } 
+    }
     fun removeImageUri(uri: Uri) { _imageUris.update { it - uri } }
-    fun setAudioPath(path: String?) { _audioPath.value = path }
+    fun setAudioPath(path: String?) { 
+        if (path != null) markDraftStarted()
+        _audioPath.value = path 
+    }
 
     fun toggleOptionalField(field: OptionalSupplyField) {
         _visibleOptionalFields.update { fields ->
@@ -224,33 +502,68 @@ class AddSupplyViewModel(
     }
 
     fun updatePhiDays(v: String) { _phiDays.value = v }
+    fun updateReiHours(v: String) { _reiHours.value = v }
     fun updateStockQuantity(v: String) { _stockQuantity.value = v }
     fun updateStockUnit(v: String) { _stockUnit.value = v }
 
-    fun loadSupply(supplyId: Long) {
+    fun loadSupply(supplyId: Long, isProductionUpdate: Boolean = false) {
+        // Reset state synchronously to avoid "state leakage" from previous sessions
+        reset()
+        _isProductionUpdate.value = isProductionUpdate
+        _editingSupplyId.value = supplyId
+        _customTimestamp.value = System.currentTimeMillis()
+
         viewModelScope.launch {
             repository.getAllSupplies().firstOrNull()?.find { it.id == supplyId }?.let { supply ->
-                _editingSupplyId.value = supplyId
                 _name.value = supply.name
-                _category.value = SupplyCategory.entries.find { it.displayName == supply.category } ?: SupplyCategory.OTHER
+                val cat = SupplyCategory.entries.find { it.displayName == supply.category } ?: SupplyCategory.DIY
+                _category.value = cat
+                _isLabMode.value = cat == SupplyCategory.DIY && !supply.isArchived
+                _subCategory.value = supply.subCategory ?: ""
+                _containerId.value = supply.containerId
+                
+                // Parse material list into ledger
+                val materials = supply.materialList.split("|").filter { it.contains(":") }.map { 
+                    val parts = it.split(":")
+                    parts[0] to parts[1]
+                }
+                _materialLedger.value = materials
+                _historicalMaterialCount.value = if (isProductionUpdate) materials.size else 0
+
+                if (supply.targetMaturityDate > supply.startDate) {
+                    val days = (supply.targetMaturityDate - supply.startDate) / (24L * 60 * 60 * 1000)
+                    _maturityDays.value = days.toString()
+                } else {
+                    _maturityDays.value = ""
+                }
                 _formType.value = com.mail2dev.planfora.data.local.entity.SupplyFormType.entries.find { it.name == supply.formType } ?: com.mail2dev.planfora.data.local.entity.SupplyFormType.LIQUID
                 _formulationCode.value = supply.formulationCode
-                _notes.value = supply.notes
+                _notes.value = "" // Fresh notes for the update entry
                 _activeIngredient.value = supply.activeIngredient ?: ""
                 _phiDays.value = supply.phiDays?.toString() ?: ""
+                _reiHours.value = supply.reiHours?.toString() ?: ""
                 _stockQuantity.value = supply.stockQuantity?.toString() ?: ""
                 _stockUnit.value = supply.stockUnit ?: "L"
-                _audioPath.value = supply.audioPath
-                _imageUris.value = supply.imageUris.split(",").filter { it.isNotBlank() }.map { Uri.parse(it) }
+                
+                // Media is only loaded for "Edit Profile", not for "Update Progress" (Research Diary style)
+                if (!isProductionUpdate) {
+                    _audioPath.value = supply.audioPath
+                    _imageUris.value = supply.imageUris.split(",").filter { it.isNotBlank() }.map { Uri.parse(it) }
+                }
+
                 _location.value = supply.locationNote
                 _selectedTags.value = supply.tags.split(",").filter { it.isNotBlank() }.toSet()
                 
-                // Parse tags if needed
+                // Load custom field values
+                journalRepository.getCustomFieldValues(supplyId).firstOrNull()?.let { values ->
+                    _customFieldValues.value = values.associate { it.fieldDefId to it.value }.toMutableMap()
+                }
             }
         }
     }
 
     fun updateCustomFieldValue(fieldDefId: Long, value: String) {
+        markDraftStarted()
         _customFieldValues.update { map ->
             val newMap = map.toMutableMap()
             newMap[fieldDefId] = value
@@ -258,53 +571,136 @@ class AddSupplyViewModel(
         }
     }
 
-    fun addCustomFieldDefinition(name: String, type: String, optionsJson: String?, isGlobal: Boolean) {
+    fun addCustomFieldDefinition(definition: CustomFieldDefinitionEntity) {
         viewModelScope.launch {
-            journalRepository.insertCustomFieldDefinition(
-                CustomFieldDefinitionEntity(
-                    category = if (isGlobal) "SUPPLY_Global" else "SUPPLY_${_category.value.name}",
-                    fieldName = name,
-                    fieldType = type,
-                    radioOptionsJson = optionsJson
-                )
-            )
+            journalRepository.insertCustomFieldDefinition(definition)
+        }
+    }
+
+    fun archiveCustomFieldDefinition(definitionId: Long) {
+        viewModelScope.launch {
+            journalRepository.archiveCustomFieldDefinition(definitionId)
+        }
+    }
+
+    fun updateCustomFieldDefinition(definition: CustomFieldDefinitionEntity) {
+        viewModelScope.launch {
+            journalRepository.updateCustomFieldDefinition(definition)
         }
     }
 
     fun saveSupply() {
         viewModelScope.launch {
+            val chosenTime = _customTimestamp.value
+            val days = _maturityDays.value.toLongOrNull() ?: 0L
+            val targetMaturity = if (days > 0) chosenTime + (days * 24 * 60 * 60 * 1000) else 0L
+            
+            val newMaterialList = _materialLedger.value.joinToString("|") { "${it.first}:${it.second}" }
+            
+            // Fetch previous state for logging
+            val previousSupply = _editingSupplyId.value?.let { repository.getAllSupplies().firstOrNull()?.find { s -> s.id == it } }
+
             val entity = DiySupplyEntity(
                 id = _editingSupplyId.value ?: 0,
                 name = _name.value,
                 category = _category.value.displayName,
+                subCategory = if (_category.value == SupplyCategory.DIY) _subCategory.value else null,
+                containerId = _containerId.value,
+                materialList = newMaterialList,
                 formType = _formType.value.name,
                 formulationCode = _formulationCode.value,
-                notes = _notes.value,
+                notes = if (_isProductionUpdate.value) (previousSupply?.notes ?: "") else _notes.value,
                 activeIngredient = _activeIngredient.value.ifBlank { null },
                 phiDays = _phiDays.value.toIntOrNull(),
+                reiHours = _reiHours.value.toIntOrNull(),
                 stockQuantity = _stockQuantity.value.toFloatOrNull(),
                 stockUnit = _stockUnit.value,
-                batchCode = _name.value,
-                imageUris = _imageUris.value.joinToString(",") { it.toString() },
-                audioPath = _audioPath.value,
+                batchCode = if (_editingSupplyId.value == null) "" else _name.value,
+                startDate = previousSupply?.startDate ?: chosenTime,
+                targetMaturityDate = if (_editingSupplyId.value == null) targetMaturity else previousSupply?.targetMaturityDate ?: 0L,
+                imageUris = if (_isProductionUpdate.value) (previousSupply?.imageUris ?: "") else _imageUris.value.joinToString(",") { it.toString() },
+                audioPath = if (_isProductionUpdate.value) (previousSupply?.audioPath) else _audioPath.value,
                 locationNote = _location.value,
                 tags = _selectedTags.value.joinToString(",")
             )
             
-            if (_editingSupplyId.value == null) {
+            val supplyId = if (_editingSupplyId.value == null) {
                 repository.insertSupply(entity)
             } else {
                 repository.updateSupply(entity)
+                _editingSupplyId.value!!
             }
+
+            // --- RESEARCH LOGGING LOGIC ---
+            val isNewProject = _editingSupplyId.value == null
+            val logTitle = if (isNewProject) "Project Started: ${_subCategory.value ?: "DIY"}" else "Production Update"
+            
+            // Build log notes based on what changed/was added
+            val logNoteBuilder = StringBuilder()
+            if (isNewProject) {
+                logNoteBuilder.append("Started batch with: \n")
+                _materialLedger.value.forEach { logNoteBuilder.append("• ${it.first}: ${it.second}\n") }
+            } else {
+                // Find new materials added in this update
+                val oldMaterials = previousSupply?.materialList?.split("|")?.toSet() ?: emptySet()
+                val newlyAdded = _materialLedger.value.filter { "${it.first}:${it.second}" !in oldMaterials }
+                if (newlyAdded.isNotEmpty()) {
+                    logNoteBuilder.append("Added materials: \n")
+                    newlyAdded.forEach { logNoteBuilder.append("• ${it.first}: ${it.second}\n") }
+                }
+                
+                if (previousSupply?.containerId != _containerId.value) {
+                    logNoteBuilder.append("Moved to vessel: ${_containerId.value}\n")
+                }
+            }
+            
+            if (_notes.value.isNotBlank()) {
+                logNoteBuilder.append("\nNote: ${_notes.value}")
+            }
+
+            journalRepository.insertLog(
+                com.mail2dev.planfora.data.local.entity.JournalLogEntity(
+                    assetId = null,
+                    supplyId = supplyId,
+                    title = logTitle,
+                    note = logNoteBuilder.toString(),
+                    timestamp = chosenTime,
+                    imageUris = _imageUris.value.joinToString(",") { it.toString() },
+                    audioFilePath = _audioPath.value,
+                    activityType = "PRODUCTION",
+                    photoPath = null,
+                    ecValue = null,
+                    phValue = null
+                )
+            )
+
+            // Save custom field values
+            journalRepository.deleteCustomFieldValues(supplyId)
+            val values = _customFieldValues.value.map { (defId, value) ->
+                CustomFieldValueEntity(entityId = supplyId, fieldDefId = defId, value = value)
+            }
+            journalRepository.insertCustomFieldValues(values)
+
             reset()
         }
     }
 
+    fun discardDraft() {
+        reset()
+        _editingSupplyId.value = null
+        _isProductionUpdate.value = false
+    }
+
     private fun reset() {
         _name.value = ""
+        _subCategory.value = ""
+        _maturityDays.value = ""
+        _containerId.value = ""
+        _materialLedger.value = emptyList()
         _notes.value = ""
         _activeIngredient.value = ""
         _phiDays.value = ""
+        _reiHours.value = ""
         _stockQuantity.value = ""
         _stockUnit.value = "L"
         _location.value = ""
@@ -313,14 +709,53 @@ class AddSupplyViewModel(
         _audioPath.value = null
         _customFieldValues.value = mutableMapOf()
         _visibleOptionalFields.value = emptySet()
+        _formulationCode.value = null
+        _formType.value = com.mail2dev.planfora.data.local.entity.SupplyFormType.LIQUID
+        _customTimestamp.value = System.currentTimeMillis()
+        _historicalMaterialCount.value = 0
+        _draftIsLab.value = null
+
+        if (_isLabMode.value) {
+            labDraft = SupplyDraft(category = SupplyCategory.DIY, draftIsLab = true)
+        } else {
+            stockDraft = SupplyDraft(category = SupplyCategory.INSECTICIDE, draftIsLab = false)
+        }
     }
 }
+
+data class SupplyDraft(
+    val name: String = "",
+    val category: SupplyCategory = SupplyCategory.INSECTICIDE,
+    val subCategory: String = "",
+    val maturityDays: String = "",
+    val containerId: String = "",
+    val materialLedger: List<Pair<String, String>> = emptyList(),
+    val formType: com.mail2dev.planfora.data.local.entity.SupplyFormType = com.mail2dev.planfora.data.local.entity.SupplyFormType.LIQUID,
+    val formulationCode: String? = null,
+    val notes: String = "",
+    val location: String = "",
+    val selectedTags: Set<String> = emptySet(),
+    val imageUris: List<Uri> = emptyList(),
+    val audioPath: String? = null,
+    val visibleOptionalFields: Set<OptionalSupplyField> = emptySet(),
+    val customFieldValues: Map<Long, String> = emptyMap(),
+    val activeIngredient: String = "",
+    val phiDays: String = "",
+    val reiHours: String = "",
+    val stockQuantity: String = "",
+    val stockUnit: String = "L",
+    val customTimestamp: Long = System.currentTimeMillis(),
+    val editingSupplyId: Long? = null,
+    val isProductionUpdate: Boolean = false,
+    val historicalMaterialCount: Int = 0,
+    val draftIsLab: Boolean? = null
+)
 
 enum class OptionalSupplyField(val displayName: String) {
     AI("Active Ingredient (A.I.)"),
     PHI("Pre-Harvest Interval (PHI)"),
     STOCK("Stock & Inventory"),
-    REI("REI Days"),
+    REI("Re-Entry Interval (REI)"),
     NPK("NPK Ratio"),
     DILUTION("Dilution Rate"),
     TARGET_PESTS("Target Pests")

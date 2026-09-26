@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 18,
-    "identityHash": "cdaf309a92d942a33a62541a85e3fa6c",
+    "identityHash": "7d41b3272835169c5ff76bf1ad165baa",
     "entities": [
       {
         "tableName": "diy_supplies",
@@ -509,7 +509,7 @@
       },
       {
         "tableName": "custom_field_definitions",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `category` TEXT NOT NULL, `fieldName` TEXT NOT NULL, `fieldType` TEXT NOT NULL, `radioOptionsJson` TEXT)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `targetType` TEXT NOT NULL, `scope` TEXT NOT NULL, `fieldName` TEXT NOT NULL, `fieldType` TEXT NOT NULL, `optionsJson` TEXT, `isArchived` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -518,8 +518,14 @@
             "notNull": true
           },
           {
-            "fieldPath": "category",
-            "columnName": "category",
+            "fieldPath": "targetType",
+            "columnName": "targetType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "scope",
+            "columnName": "scope",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -536,9 +542,15 @@
             "notNull": true
           },
           {
-            "fieldPath": "radioOptionsJson",
-            "columnName": "radioOptionsJson",
+            "fieldPath": "optionsJson",
+            "columnName": "optionsJson",
             "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "isArchived",
+            "columnName": "isArchived",
+            "affinity": "INTEGER",
+            "notNull": true
           }
         ],
         "primaryKey": {
@@ -550,7 +562,7 @@
       },
       {
         "tableName": "custom_field_values",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `assetId` INTEGER NOT NULL, `fieldDefId` INTEGER NOT NULL, `value` TEXT NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `entityId` INTEGER NOT NULL, `fieldDefId` INTEGER NOT NULL, `value` TEXT NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -559,8 +571,8 @@
             "notNull": true
           },
           {
-            "fieldPath": "assetId",
-            "columnName": "assetId",
+            "fieldPath": "entityId",
+            "columnName": "entityId",
             "affinity": "INTEGER",
             "notNull": true
           },
@@ -587,7 +599,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'cdaf309a92d942a33a62541a85e3fa6c')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '7d41b3272835169c5ff76bf1ad165baa')"
     ]
   }
 }

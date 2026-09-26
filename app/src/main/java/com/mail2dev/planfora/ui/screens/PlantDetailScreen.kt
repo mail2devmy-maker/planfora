@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.res.painterResource
 import com.mail2dev.planfora.data.local.entity.JournalLogEntity
 import com.mail2dev.planfora.data.local.entity.PlantAssetEntity
 import com.mail2dev.planfora.ui.assets.AssetCategory
@@ -25,7 +26,6 @@ import com.mail2dev.planfora.ui.logs.LogsViewModel
 import com.mail2dev.planfora.ui.navigation.Screen
 import com.mail2dev.planfora.ui.theme.DarkBackground
 import com.mail2dev.planfora.ui.theme.ForestGreen
-import com.mail2dev.planfora.ui.theme.SageGreen
 import androidx.compose.foundation.BorderStroke
 import java.text.SimpleDateFormat
 import java.util.*
@@ -46,6 +46,9 @@ fun PlantDetailScreen(
     val use24HourFormat by profileViewModel.use24HourFormat.collectAsState()
     val showEditSheet by assetsViewModel.showAddBottomSheet.collectAsState()
     
+    val customFieldValues by logsViewModel.getCustomFieldValues(plantId).collectAsState(emptyList())
+    val customFieldDefinitions by logsViewModel.getCustomFieldDefinitions(com.mail2dev.planfora.data.local.entity.FieldTargetType.ASSET_CATEGORY, AssetCategory.fromDatabase(assets.find { a -> a.id == plantId }?.category).displayName).collectAsState(emptyList())
+
     val plant = assets.find { it.id == plantId }
     val plantLogs = allLogs.filter { it.assetId == plantId }.sortedByDescending { it.timestamp }
 
@@ -108,7 +111,7 @@ fun PlantDetailScreen(
                 actions = {
                     var showMenu by remember { mutableStateOf(false) }
                     IconButton(onClick = { showMenu = true }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "More", tint = SageGreen)
+                        Icon(Icons.Default.MoreVert, contentDescription = "More", tint = MaterialTheme.colorScheme.primary)
                     }
                     DropdownMenu(
                         expanded = showMenu,
@@ -116,14 +119,14 @@ fun PlantDetailScreen(
                         modifier = Modifier.background(Color(0xFF1E2120))
                     ) {
                         DropdownMenuItem(
-                            text = { Text("🎓 Promote Category", color = Color.White) },
+                            text = { Text("Promote Category", color = Color.White) },
                             onClick = { 
                                 showMenu = false
                                 showPromoteDialog = true 
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("✏️ Edit Asset", color = Color.White) },
+                            text = { Text("Edit", color = Color.White) },
                             onClick = { 
                                 showMenu = false
                                 addAssetViewModel.loadAsset(plantId)
@@ -131,7 +134,7 @@ fun PlantDetailScreen(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("🗑️ Delete Asset", color = Color.Red) },
+                            text = { Text("Delete", color = Color.Red) },
                             onClick = { 
                                 showMenu = false
                                 showDeleteConfirm = true
@@ -176,7 +179,7 @@ fun PlantDetailScreen(
                 contentPadding = PaddingValues(bottom = 80.dp)
             ) {
                 item {
-                    AssetPassportHeader(plant)
+                    AssetPassportHeader(plant, customFieldValues, customFieldDefinitions)
                 }
 
                 if (zonesList.isNotEmpty()) {
@@ -195,7 +198,7 @@ fun PlantDetailScreen(
                     Text(
                         text = "Linked Log History",
                         style = MaterialTheme.typography.titleSmall,
-                        color = SageGreen,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(top = 8.dp)
                     )
@@ -262,7 +265,7 @@ fun PlantDetailScreen(
                                 assetsViewModel.promoteAssetCategory(plant, category)
                                 showPromoteDialog = false
                             },
-                            color = if (plant.category == category.displayName) SageGreen.copy(alpha = 0.2f) else Color.Transparent,
+                            color = if (plant.category == category.displayName) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else Color.Transparent,
                             shape = RoundedCornerShape(8.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
@@ -270,7 +273,16 @@ fun PlantDetailScreen(
                                 modifier = Modifier.padding(12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(category.icon, fontSize = 20.sp)
+                                if (category.iconVector != null) {
+                                    Icon(
+                                        imageVector = category.iconVector,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(20.dp),
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                } else {
+                                    Text(category.icon, fontSize = 20.sp)
+                                }
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Text(category.displayName, color = Color.White, fontWeight = FontWeight.Medium)
                             }
@@ -288,8 +300,12 @@ fun PlantDetailScreen(
 }
 
 @Composable
-fun AssetPassportHeader(plant: PlantAssetEntity) {
-    val category = AssetCategory.entries.find { it.displayName == plant.category } ?: AssetCategory.TREE
+fun AssetPassportHeader(
+    plant: PlantAssetEntity, 
+    customFieldValues: List<com.mail2dev.planfora.data.local.entity.CustomFieldValueEntity> = emptyList(),
+    customFieldDefinitions: List<com.mail2dev.planfora.data.local.entity.CustomFieldDefinitionEntity> = emptyList()
+) {
+    val category = AssetCategory.fromDatabase(plant.category)
     
     Card(
         colors = CardDefaults.cardColors(containerColor = Color(0xFF1E2120)),
@@ -300,15 +316,24 @@ fun AssetPassportHeader(plant: PlantAssetEntity) {
         Column(modifier = Modifier.padding(20.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Surface(
-                    color = SageGreen.copy(alpha = 0.1f),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text(category.icon, fontSize = 28.sp, modifier = Modifier.padding(8.dp))
+                    if (category.iconVector != null) {
+                        Icon(
+                            imageVector = category.iconVector,
+                            contentDescription = null,
+                            modifier = Modifier.size(32.dp).padding(8.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    } else {
+                        Text(category.icon, fontSize = 28.sp, modifier = Modifier.padding(8.dp))
+                    }
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 Column {
                     Text(plant.name, style = MaterialTheme.typography.headlineSmall, color = Color.White, fontWeight = FontWeight.Bold)
-                    Text("${category.displayName} • 📍 ${plant.locationNote.ifBlank { "Unassigned" }}", color = SageGreen, fontSize = 13.sp)
+                    Text("${category.displayName} • 📍 ${plant.locationNote.ifBlank { "Unassigned" }}", color = MaterialTheme.colorScheme.primary, fontSize = 13.sp)
                 }
             }
 
@@ -319,6 +344,23 @@ fun AssetPassportHeader(plant: PlantAssetEntity) {
             Spacer(modifier = Modifier.height(16.dp))
 
             MetadataGrid(plant)
+
+            if (customFieldValues.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    customFieldValues.forEach { value ->
+                        val def = customFieldDefinitions.find { it.id == value.fieldDefId }
+                        if (def != null && value.value.isNotBlank()) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Adjust, null, tint = Color.Gray, modifier = Modifier.size(14.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(text = "${def.fieldName}: ", color = Color.Gray, fontSize = 13.sp)
+                                Text(text = value.value, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+            }
 
             if (plant.notes.isNotBlank()) {
                 Spacer(modifier = Modifier.height(16.dp))
@@ -334,7 +376,7 @@ fun AssetPassportHeader(plant: PlantAssetEntity) {
                             color = ForestGreen.copy(alpha = 0.2f),
                             shape = RoundedCornerShape(4.dp)
                         ) {
-                            Text("#$tag", color = SageGreen, fontSize = 11.sp, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                            Text("#$tag", color = MaterialTheme.colorScheme.primary, fontSize = 11.sp, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                         }
                     }
                 }
@@ -355,7 +397,7 @@ fun YieldComplianceCard(
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("Zone Compliance & Yield", style = MaterialTheme.typography.titleSmall, color = SageGreen, fontWeight = FontWeight.Bold)
+            Text("Zone Compliance & Yield", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(12.dp))
 
             zones.forEachIndexed { index, zone ->
@@ -392,7 +434,7 @@ fun YieldComplianceCard(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(zone, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                         if (totalYield > 0) {
-                            Text("Cumulative: $totalYield $yieldUnit", color = SageGreen, fontSize = 11.sp)
+                            Text("Cumulative: $totalYield $yieldUnit", color = MaterialTheme.colorScheme.primary, fontSize = 11.sp)
                         }
                     }
                     
@@ -416,7 +458,7 @@ fun YieldComplianceCard(
                         ) {
                             Text(
                                 "Safe",
-                                color = SageGreen,
+                                color = MaterialTheme.colorScheme.primary,
                                 fontSize = 10.sp,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                                 fontWeight = FontWeight.Bold
@@ -434,7 +476,7 @@ fun YieldComplianceCard(
 
 @Composable
 fun MetadataGrid(plant: PlantAssetEntity) {
-    val category = AssetCategory.entries.find { it.displayName == plant.category } ?: AssetCategory.TREE
+    val category = AssetCategory.fromDatabase(plant.category)
     
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         when (category) {
@@ -461,7 +503,7 @@ fun MetadataGrid(plant: PlantAssetEntity) {
                     MetadataItem(Icons.Default.CalendarToday, "Planted Date", plantedDateStr, Modifier.weight(1f))
                 }
             }
-            AssetCategory.CROP_OR_VEGGIE -> {
+            AssetCategory.CROP -> {
                 Row(modifier = Modifier.fillMaxWidth()) {
                     MetadataItem(Icons.Default.GridOn, "Plot / Row ID", plant.tags.split(",").find { it.startsWith("Plot:") }?.substringAfter(":") ?: "N/A", Modifier.weight(1f))
                     MetadataItem(Icons.Default.Event, "Exp. Harvest", plant.tags.split(",").find { it.startsWith("ExpHarv:") }?.substringAfter(":") ?: "N/A", Modifier.weight(1f))

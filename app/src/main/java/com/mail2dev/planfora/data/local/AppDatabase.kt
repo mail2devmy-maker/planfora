@@ -11,7 +11,9 @@ import com.mail2dev.planfora.data.local.dao.DiySupplyDao
 import com.mail2dev.planfora.data.local.dao.JournalLogDao
 import com.mail2dev.planfora.data.local.dao.MasterDao
 import com.mail2dev.planfora.data.local.dao.PlantAssetDao
+import com.mail2dev.planfora.data.local.dao.MeasurementToolDao
 import com.mail2dev.planfora.data.local.entity.*
+import androidx.room.TypeConverters
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -26,21 +28,159 @@ import kotlinx.coroutines.launch
         MasterIngredientEntity::class,
         MasterParameterEntity::class,
         CustomFieldDefinitionEntity::class,
-        CustomFieldValueEntity::class
+        CustomFieldValueEntity::class,
+        MeasurementToolEntity::class
     ],
-    version = 18,
+    version = 28,
     exportSchema = true
 )
+@TypeConverters(RoomTypeConverters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun diySupplyDao(): DiySupplyDao
     abstract fun plantAssetDao(): PlantAssetDao
     abstract fun journalLogDao(): JournalLogDao
     abstract fun masterDao(): MasterDao
     abstract fun customFieldDao(): CustomFieldDao
+    abstract fun measurementToolDao(): MeasurementToolDao
 
     companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null
+
+        val MIGRATION_27_28 = object : Migration(27, 28) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `measurement_tools` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                        `name` TEXT NOT NULL, 
+                        `capacity` REAL NOT NULL, 
+                        `unit` TEXT NOT NULL
+                    )
+                """.trimIndent())
+            }
+        }
+
+        val MIGRATION_26_27 = object : Migration(26, 27) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Drop targetBenefit column by recreating the table
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `diy_supplies_new` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                        `name` TEXT NOT NULL, 
+                        `category` TEXT NOT NULL, 
+                        `batchNumber` INTEGER NOT NULL, 
+                        `batchCode` TEXT NOT NULL, 
+                        `startDate` INTEGER NOT NULL, 
+                        `targetMaturityDate` INTEGER NOT NULL, 
+                        `currentVolume` REAL NOT NULL, 
+                        `originalVolume` REAL NOT NULL, 
+                        `unit` TEXT NOT NULL, 
+                        `notifyOnMaturity` INTEGER NOT NULL, 
+                        `isArchived` INTEGER NOT NULL, 
+                        `activeIngredient` TEXT, 
+                        `activePercentage` TEXT, 
+                        `formType` TEXT NOT NULL DEFAULT 'LIQUID', 
+                        `formulationCode` TEXT, 
+                        `notes` TEXT NOT NULL DEFAULT '', 
+                        `phiDays` INTEGER, 
+                        `reiHours` INTEGER, 
+                        `stockQuantity` REAL, 
+                        `stockUnit` TEXT, 
+                        `imageUris` TEXT NOT NULL DEFAULT '', 
+                        `audioPath` TEXT, 
+                        `locationNote` TEXT NOT NULL DEFAULT '', 
+                        `tags` TEXT NOT NULL DEFAULT '', 
+                        `subCategory` TEXT, 
+                        `containerId` TEXT NOT NULL DEFAULT '', 
+                        `materialList` TEXT NOT NULL DEFAULT '', 
+                        `displayId` TEXT NOT NULL DEFAULT ''
+                    )
+                """.trimIndent())
+
+                db.execSQL("""
+                    INSERT INTO diy_supplies_new (id, name, category, batchNumber, batchCode, startDate, targetMaturityDate, currentVolume, originalVolume, unit, notifyOnMaturity, isArchived, activeIngredient, activePercentage, formType, formulationCode, notes, phiDays, reiHours, stockQuantity, stockUnit, imageUris, audioPath, locationNote, tags, subCategory, containerId, materialList, displayId)
+                    SELECT id, name, category, batchNumber, batchCode, startDate, targetMaturityDate, currentVolume, originalVolume, unit, notifyOnMaturity, isArchived, activeIngredient, activePercentage, formType, formulationCode, notes, phiDays, reiHours, stockQuantity, stockUnit, imageUris, audioPath, locationNote, tags, subCategory, containerId, materialList, displayId FROM diy_supplies
+                """.trimIndent())
+
+                db.execSQL("DROP TABLE diy_supplies")
+                db.execSQL("ALTER TABLE diy_supplies_new RENAME TO diy_supplies")
+            }
+        }
+
+        val MIGRATION_25_26 = object : Migration(25, 26) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Recreate journal_logs to make assetId nullable
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `journal_logs_new` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                        `assetId` INTEGER, 
+                        `title` TEXT NOT NULL, 
+                        `note` TEXT NOT NULL, 
+                        `timestamp` INTEGER NOT NULL, 
+                        `photoPath` TEXT, 
+                        `audioFilePath` TEXT, 
+                        `ecValue` REAL, 
+                        `phValue` REAL, 
+                        `tags` TEXT NOT NULL DEFAULT '', 
+                        `parameters` TEXT NOT NULL DEFAULT '', 
+                        `imageUris` TEXT NOT NULL DEFAULT '', 
+                        `activityType` TEXT NOT NULL DEFAULT 'Observation', 
+                        `parentLogId` INTEGER, 
+                        `supplyId` INTEGER, 
+                        `customInputName` TEXT, 
+                        `batchGroupId` TEXT, 
+                        `targetZones` TEXT, 
+                        `displayId` TEXT NOT NULL DEFAULT '', 
+                        FOREIGN KEY(`assetId`) REFERENCES `plant_assets`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL, 
+                        FOREIGN KEY(`parentLogId`) REFERENCES `journal_logs`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL, 
+                        FOREIGN KEY(`supplyId`) REFERENCES `diy_supplies`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL 
+                    )
+                """.trimIndent())
+
+                db.execSQL("""
+                    INSERT INTO journal_logs_new (id, assetId, title, note, timestamp, photoPath, audioFilePath, ecValue, phValue, tags, parameters, imageUris, activityType, parentLogId, supplyId, customInputName, batchGroupId, targetZones, displayId)
+                    SELECT id, assetId, title, note, timestamp, photoPath, audioFilePath, ecValue, phValue, tags, parameters, imageUris, activityType, parentLogId, supplyId, customInputName, batchGroupId, targetZones, displayId FROM journal_logs
+                """.trimIndent())
+
+                db.execSQL("DROP TABLE journal_logs")
+                db.execSQL("ALTER TABLE journal_logs_new RENAME TO journal_logs")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_journal_logs_assetId` ON `journal_logs` (`assetId`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_journal_logs_parentLogId` ON `journal_logs` (`parentLogId`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_journal_logs_supplyId` ON `journal_logs` (`supplyId`)")
+            }
+        }
+
+        val MIGRATION_24_25 = object : Migration(24, 25) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE diy_supplies ADD COLUMN displayId TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE diy_supplies ADD COLUMN targetBenefit TEXT")
+            }
+        }
+
+        val MIGRATION_23_24 = object : Migration(23, 24) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE diy_supplies ADD COLUMN containerId TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE diy_supplies ADD COLUMN materialList TEXT NOT NULL DEFAULT ''")
+            }
+        }
+
+        val MIGRATION_22_23 = object : Migration(22, 23) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE plant_assets ADD COLUMN totalPlants INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
+        val MIGRATION_21_22 = object : Migration(21, 22) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE plant_assets ADD COLUMN subLocation TEXT NOT NULL DEFAULT ''")
+            }
+        }
+
+        val MIGRATION_20_21 = object : Migration(20, 21) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE journal_logs ADD COLUMN displayId TEXT NOT NULL DEFAULT ''")
+            }
+        }
 
         val MIGRATION_17_18 = object : Migration(17, 18) {
             override fun migrate(db: SupportSQLiteDatabase) {
@@ -301,7 +441,8 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "planfora_database"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28)
+                    .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
                 instance

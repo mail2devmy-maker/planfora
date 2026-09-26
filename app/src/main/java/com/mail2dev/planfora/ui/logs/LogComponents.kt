@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.mail2dev.planfora.data.local.entity.JournalLogEntity
+import com.mail2dev.planfora.data.local.entity.displayName
 import com.mail2dev.planfora.ui.components.InlineAudioPlayer
 import com.mail2dev.planfora.ui.theme.DarkBackground
 import com.mail2dev.planfora.ui.theme.ForestGreen
@@ -115,6 +116,22 @@ fun ExpandedLogCard(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                if (log.displayId.isNotBlank()) {
+                    Surface(
+                        color = Color.White.copy(alpha = 0.1f),
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text(
+                            text = log.displayId,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+
                 Surface(
                     color = SageGreen.copy(alpha = 0.2f),
                     shape = RoundedCornerShape(4.dp)
@@ -177,20 +194,21 @@ fun ExpandedLogCard(
                         Icon(Icons.Default.MoreVert, null, tint = Color.Gray, modifier = Modifier.size(16.dp))
                     }
                     DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }, modifier = Modifier.background(Color(0xFF1E2120))) {
-                        DropdownMenuItem(text = { Text("✏️ Edit Log", color = Color.White) }, onClick = { showMenu = false; onEditClick() })
-                        DropdownMenuItem(text = { Text("🗑️ Delete Log", color = Color.Red) }, onClick = { showMenu = false; onDeleteClick() })
+                        DropdownMenuItem(text = { Text("Edit", color = Color.White) }, onClick = { showMenu = false; onEditClick() })
+                        DropdownMenuItem(text = { Text("Delete", color = Color.Red) }, onClick = { showMenu = false; onDeleteClick() })
                     }
                 }
             }
             
             PhiBadge(log)
+            ReiBadge(log)
             
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = log.title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
             
             if (log.supplyId != null || !log.customInputName.isNullOrBlank()) {
                 val supplyName = if (log.supplyId != null) {
-                    supplies.find { it.id == log.supplyId }?.batchCode ?: "Deleted Supply"
+                    supplies.find { it.id == log.supplyId }?.displayName ?: "Deleted Supply"
                 } else {
                     log.customInputName
                 }
@@ -289,13 +307,24 @@ fun ExpandedLogCard(
             Spacer(modifier = Modifier.height(8.dp))
             
             TextButton(
-                onClick = onFollowUpClick,
+                onClick = {
+                    if (log.activityType == "PRODUCTION" || log.activityType == "Production") {
+                        onEditClick()
+                    } else {
+                        onFollowUpClick()
+                    }
+                },
                 modifier = Modifier.align(Alignment.End),
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
             ) {
                 Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp), tint = SageGreen)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Log Update", color = SageGreen, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    text = if (log.activityType == "PRODUCTION" || log.activityType == "Production") "Log Update" else "Add Follow-up", 
+                    color = SageGreen, 
+                    fontSize = 12.sp, 
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
     }
@@ -320,6 +349,22 @@ fun FollowUpLogCard(
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                if (log.displayId.isNotBlank()) {
+                    Surface(
+                        color = Color.White.copy(alpha = 0.1f),
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text(
+                            text = log.displayId,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+
                 Surface(
                     color = ForestGreen.copy(alpha = 0.2f),
                     shape = RoundedCornerShape(4.dp)
@@ -343,18 +388,19 @@ fun FollowUpLogCard(
                         Icon(Icons.Default.MoreVert, null, tint = Color.Gray, modifier = Modifier.size(16.dp))
                     }
                     DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }, modifier = Modifier.background(Color(0xFF1E2120))) {
-                        DropdownMenuItem(text = { Text("✏️ Edit Log", color = Color.White) }, onClick = { showMenu = false; onEditClick() })
-                        DropdownMenuItem(text = { Text("🗑️ Delete Log", color = Color.Red) }, onClick = { showMenu = false; onDeleteClick() })
+                        DropdownMenuItem(text = { Text("Edit", color = Color.White) }, onClick = { showMenu = false; onEditClick() })
+                        DropdownMenuItem(text = { Text("Delete", color = Color.Red) }, onClick = { showMenu = false; onDeleteClick() })
                     }
                 }
             }
             PhiBadge(log)
+            ReiBadge(log)
             Spacer(modifier = Modifier.height(6.dp))
             Text(text = log.title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
             
             if (log.supplyId != null || !log.customInputName.isNullOrBlank()) {
                 val supplyName = if (log.supplyId != null) {
-                    supplies.find { it.id == log.supplyId }?.batchCode ?: "Deleted Supply"
+                    supplies.find { it.id == log.supplyId }?.displayName ?: "Deleted Supply"
                 } else {
                     log.customInputName
                 }
@@ -388,24 +434,98 @@ fun FollowUpLogCard(
 }
 
 @Composable
+fun CompactActivityThread(
+    parentLog: JournalLogEntity,
+    followUps: List<JournalLogEntity>,
+    assetName: String,
+    use24Hour: Boolean,
+    onDeleteLog: (JournalLogEntity) -> Unit,
+    onEditLog: (JournalLogEntity) -> Unit,
+    onClick: (JournalLogEntity) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFF1E2120), RoundedCornerShape(12.dp))
+            .padding(4.dp)
+    ) {
+        CompactLogItem(
+            log = parentLog,
+            assetName = assetName,
+            use24Hour = use24Hour,
+            onDeleteClick = { onDeleteLog(parentLog) },
+            onEditClick = { onEditLog(parentLog) },
+            onClick = { onClick(parentLog) },
+            elevation = 0.dp,
+            backgroundColor = Color.Transparent
+        )
+
+        followUps.forEach { childLog ->
+            Row(
+                modifier = Modifier
+                    .padding(start = 24.dp)
+                    .height(IntrinsicSize.Min)
+            ) {
+                // Visual Connector for List View
+                Box(
+                    modifier = Modifier
+                        .width(1.5.dp)
+                        .fillMaxHeight()
+                        .background(SageGreen.copy(alpha = 0.2f))
+                )
+                
+                CompactLogItem(
+                    log = childLog,
+                    assetName = "↳ Follow-up",
+                    use24Hour = use24Hour,
+                    onDeleteClick = { onDeleteLog(childLog) },
+                    onEditClick = { onEditLog(childLog) },
+                    onClick = { onClick(childLog) },
+                    elevation = 0.dp,
+                    backgroundColor = Color.Transparent
+                )
+            }
+        }
+    }
+}
+
+@Composable
 fun CompactLogItem(
     log: JournalLogEntity, 
     assetName: String, 
     use24Hour: Boolean,
     onDeleteClick: (() -> Unit)? = null,
     onEditClick: (() -> Unit)? = null,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
+    elevation: androidx.compose.ui.unit.Dp = 0.dp,
+    backgroundColor: Color = Color(0xFF1E2120)
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color(0xFF1E2120), RoundedCornerShape(8.dp))
+            .background(backgroundColor, RoundedCornerShape(8.dp))
             .clickable { onClick() }
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        if (log.displayId.isNotBlank()) {
+            Surface(
+                color = Color.White.copy(alpha = 0.1f),
+                shape = RoundedCornerShape(4.dp),
+                modifier = Modifier.padding(end = 12.dp)
+            ) {
+                Text(
+                    text = log.displayId,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+
         Column(modifier = Modifier.weight(1f)) {
             Text(text = log.title, color = Color.White, fontWeight = FontWeight.Medium, fontSize = 14.sp)
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -416,6 +536,17 @@ fun CompactLogItem(
                     val isExpired = System.currentTimeMillis() >= (phiExpiryStr.toLongOrNull() ?: 0L)
                     Text(
                         text = if (isExpired) "✅ PHI" else "⚠️ PHI",
+                        color = if (isExpired) SageGreen else Color(0xFFFFB74D),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                val reiExpiryStr = log.parameters.split("|").find { it.startsWith("rei_expiry:") }?.substringAfter("rei_expiry:")
+                if (reiExpiryStr != null) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    val isExpired = System.currentTimeMillis() >= (reiExpiryStr.toLongOrNull() ?: 0L)
+                    Text(
+                        text = if (isExpired) "✅ REI" else "⚠️ REI",
                         color = if (isExpired) SageGreen else Color(0xFFFFB74D),
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold
@@ -440,8 +571,8 @@ fun CompactLogItem(
                     Icon(Icons.Default.MoreVert, null, tint = Color.Gray, modifier = Modifier.size(16.dp))
                 }
                 DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }, modifier = Modifier.background(Color(0xFF1E2120))) {
-                    if (onEditClick != null) DropdownMenuItem(text = { Text("✏️ Edit", color = Color.White) }, onClick = { showMenu = false; onEditClick() })
-                    if (onDeleteClick != null) DropdownMenuItem(text = { Text("🗑️ Delete", color = Color.Red) }, onClick = { showMenu = false; onDeleteClick() })
+                    if (onEditClick != null) DropdownMenuItem(text = { Text("Edit", color = Color.White) }, onClick = { showMenu = false; onEditClick() })
+                    if (onDeleteClick != null) DropdownMenuItem(text = { Text("Delete", color = Color.Red) }, onClick = { showMenu = false; onDeleteClick() })
                 }
             }
         }
@@ -470,6 +601,39 @@ fun PhiBadge(log: JournalLogEntity) {
         Color(0xFFFFB74D) to "⚠️ PHI: $remainingDays Days Left"
     } else {
         SageGreen to "✅ PHI Cleared"
+    }
+
+    Surface(
+        color = badgeColor.copy(alpha = 0.2f),
+        shape = RoundedCornerShape(16.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, badgeColor),
+        modifier = Modifier.padding(top = 4.dp)
+    ) {
+        Text(
+            text = label,
+            color = badgeColor,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+@Composable
+fun ReiBadge(log: JournalLogEntity) {
+    val reiExpiryStr = log.parameters.split("|").find { it.startsWith("rei_expiry:") }?.substringAfter("rei_expiry:")
+    val reiExpiry = reiExpiryStr?.toLongOrNull() ?: return
+    
+    val currentTime = System.currentTimeMillis()
+    val isExpired = currentTime >= reiExpiry
+    
+    val (badgeColor, label) = if (!isExpired) {
+        val remainingMillis = reiExpiry - currentTime
+        val remainingHours = (remainingMillis / (60L * 60 * 1000)).coerceAtLeast(1)
+        val remainingMins = ((remainingMillis % (60L * 60 * 1000)) / (60L * 1000))
+        Color(0xFFFFB74D) to "⚠️ REI: $remainingHours h ${remainingMins}m Left"
+    } else {
+        SageGreen to "✅ REI Cleared"
     }
 
     Surface(

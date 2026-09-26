@@ -13,7 +13,7 @@ import kotlinx.serialization.Serializable
             entity = PlantAssetEntity::class,
             parentColumns = ["id"],
             childColumns = ["assetId"],
-            onDelete = ForeignKey.CASCADE
+            onDelete = ForeignKey.SET_NULL
         ),
         ForeignKey(
             entity = JournalLogEntity::class,
@@ -37,7 +37,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class JournalLogEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val assetId: Long,
+    val assetId: Long? = null,
     val title: String,
     val note: String,
     val timestamp: Long,
@@ -53,5 +53,6 @@ data class JournalLogEntity(
     val supplyId: Long? = null,
     val customInputName: String? = null,
     val batchGroupId: String? = null,
-    val targetZones: String? = null // Comma-separated zones targeted by this activity
+    val targetZones: String? = null, // Comma-separated zones targeted by this activity
+    val displayId: String = "" // Added in v21 for human-readable IDs like OB1, FE1.1
 )
