@@ -1,17 +1,23 @@
+# Gradle & Build
+.gradle/
+build/
+**/build/
+
+# IDE & Settings
+.idea/
 *.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
 local.properties
-GEMINI WEB INITIALIZATION PROMPT.txt
-ANDROID STUDIO INITIALIZATION PROMPT.txt
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Output binaries
+*.apk
+*.aab
+*.dex
+*.class
+
+# OS & Logs
+.DS_Store
+Thumbs.db
+*.log
