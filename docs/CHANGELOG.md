@@ -1,5 +1,15 @@
 # PlanFora Project Changelog
 
+## [Milestone 2.80] - Asset Manager UI Redesign — View Toggle & Filter Bottom Sheet
+* **Status:** Completed & Verified
+* **Goal:** Redesign Asset Manager to support switching between Hierarchy List and 2-column Visual Grid views, with a top action bar and Filter Bottom Sheet replacing dual static filter bars.
+
+### Changes Summary:
+* `AssetsViewModel.kt`: Added `AssetViewMode` enum (`HIERARCHY_LIST`, `VISUAL_GRID`) and `viewMode` StateFlow with `toggleViewMode()` function.
+* `AssetsScreen.kt`: Replaced static header and dual horizontal filter rows with a Material 3 `TopAppBar` featuring inline Search toggle, `FilterBottomSheet` trigger with active filter badges, and `AssetViewMode` toggle button. Added `FilterBottomSheet` composable for Category and Location filters with Reset and Apply actions. Flattened unassigned block groupings in `HIERARCHY_LIST` view mode. Implemented `ListAssetCard` (compact 56dp thumbnail row) and `GridAssetCard` (2-column 1:1 image grid card with gradient overlay, category pill, and population badge).
+
+---
+
 ## [Milestone 2.79] - Redesign Log Cards with Smart Parameter Parsing and Passport Design Language
 * **Status:** Completed & Verified
 * **Goal:** Eliminate title redundancy and unformatted parameter dumps across Log Cards and LogDetailSheet using a Passport-style 2-column metric grid and clean badge hierarchy.

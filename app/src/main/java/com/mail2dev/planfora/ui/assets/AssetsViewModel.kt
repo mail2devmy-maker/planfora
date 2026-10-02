@@ -14,6 +14,8 @@ import androidx.compose.material.icons.rounded.Place
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.mail2dev.planfora.R
 
+enum class AssetViewMode { HIERARCHY_LIST, VISUAL_GRID }
+
 enum class AssetCategory(val displayName: String, val description: String = "", val icon: String = "", val iconVector: ImageVector? = null) {
     ALL("All", "", "📁"),
     TREE("Tree", "For old orchard trees, mature perennials", "🌳"),
@@ -53,6 +55,17 @@ class AssetsViewModel(private val repository: JournalRepository) : ViewModel() {
 
     private val _selectedLocation = MutableStateFlow<String?>(null)
     val selectedLocation: StateFlow<String?> = _selectedLocation.asStateFlow()
+
+    private val _viewMode = MutableStateFlow(AssetViewMode.HIERARCHY_LIST)
+    val viewMode: StateFlow<AssetViewMode> = _viewMode.asStateFlow()
+
+    fun toggleViewMode() {
+        _viewMode.value = if (_viewMode.value == AssetViewMode.HIERARCHY_LIST) {
+            AssetViewMode.VISUAL_GRID
+        } else {
+            AssetViewMode.HIERARCHY_LIST
+        }
+    }
 
     val availableLocations: StateFlow<List<String>> = repository.getAllAssets()
         .map { assets ->
