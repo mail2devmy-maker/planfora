@@ -1331,7 +1331,7 @@ fun TreatmentDetailsCard(
         }
 
         PlanForaFieldGroup(isImportant = true) {
-            listOf("FOLIAR SPRAY", "SOIL DRENCH", "SPOT").forEach { method ->
+            listOf("FOLIAR SPRAY", "SOIL DRENCH", "SPREAD").forEach { method ->
                 val isSelected = appMethod == method
                 Surface(
                     onClick = { onMethodChange(method) },

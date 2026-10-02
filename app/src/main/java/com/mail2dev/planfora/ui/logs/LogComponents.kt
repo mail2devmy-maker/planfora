@@ -37,6 +37,7 @@ fun ActivityThread(
     parentLog: JournalLogEntity,
     followUps: List<JournalLogEntity>,
     assetName: String,
+    location: String? = null,
     supplies: List<com.mail2dev.planfora.data.local.entity.DiySupplyEntity>,
     use24Hour: Boolean,
     onFollowUpClick: () -> Unit,
@@ -48,6 +49,7 @@ fun ActivityThread(
         ExpandedLogCard(
             log = parentLog,
             assetName = assetName,
+            location = location,
             supplies = supplies,
             use24Hour = use24Hour,
             onFollowUpClick = onFollowUpClick,
@@ -100,6 +102,7 @@ fun ActivityThread(
 fun ExpandedLogCard(
     log: JournalLogEntity, 
     assetName: String, 
+    location: String? = null,
     supplies: List<com.mail2dev.planfora.data.local.entity.DiySupplyEntity>,
     use24Hour: Boolean, 
     onFollowUpClick: () -> Unit,
@@ -109,13 +112,37 @@ fun ExpandedLogCard(
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
+    val resolvedLocation = remember(location, log.parameters) {
+        if (!location.isNullOrBlank()) {
+            location
+        } else {
+            val params = log.parameters.split("|").associate { 
+                val parts = it.split(":")
+                if (parts.size == 2) parts[0].trim() to parts[1].trim() else "" to ""
+            }
+            val loc = params["location"]
+            val subLoc = params["subLocation"]
+            when {
+                !loc.isNullOrBlank() && !subLoc.isNullOrBlank() -> "$loc [$subLoc]"
+                !loc.isNullOrBlank() -> loc
+                else -> null
+            }
+        }
+    }
+
+    val photoCount = remember(log.imageUris) { log.imageUris.split(",").filter { it.isNotBlank() }.size }
+    val audioCount = remember(log.audioFilePath) { if (log.audioFilePath.isNullOrBlank()) 0 else 1 }
+
     Card(
         colors = CardDefaults.cardColors(containerColor = Color(0xFF1E2120)),
         shape = RoundedCornerShape(12.dp),
         modifier = Modifier.fillMaxWidth().clickable { onClick() }
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
                 if (log.displayId.isNotBlank()) {
                     Surface(
                         color = Color.White.copy(alpha = 0.1f),
@@ -129,7 +156,6 @@ fun ExpandedLogCard(
                             fontWeight = FontWeight.Bold
                         )
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
                 }
 
                 Surface(
@@ -144,9 +170,23 @@ fun ExpandedLogCard(
                         fontWeight = FontWeight.Bold
                     )
                 }
+
+                if (!resolvedLocation.isNullOrBlank()) {
+                    Surface(
+                        color = Color.White.copy(alpha = 0.08f),
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text(
+                            text = "📍 $resolvedLocation",
+                            color = Color.LightGray,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
                 
                 if (log.batchGroupId != null) {
-                    Spacer(modifier = Modifier.width(8.dp))
                     Surface(
                         color = Color.White.copy(alpha = 0.1f),
                         shape = RoundedCornerShape(4.dp)
@@ -168,7 +208,6 @@ fun ExpandedLogCard(
                 }
                 
                 if (log.activityType != "Observation") {
-                    Spacer(modifier = Modifier.width(8.dp))
                     Surface(
                         color = ForestGreen.copy(alpha = 0.2f),
                         shape = RoundedCornerShape(4.dp)
@@ -293,41 +332,97 @@ fun ExpandedLogCard(
                 }
             }
             
-            if (log.photoPath != null || log.audioFilePath != null) {
+            if (log.audioFilePath != null) {
                 Spacer(modifier = Modifier.height(12.dp))
-                if (log.audioFilePath != null) {
-                    InlineAudioPlayer(log.audioFilePath)
-                    Spacer(modifier = Modifier.height(12.dp))
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (log.photoPath != null) Icon(Icons.Default.CameraAlt, contentDescription = null, tint = SageGreen, modifier = Modifier.size(16.dp))
-                    if (log.audioFilePath != null) Icon(Icons.Default.Mic, contentDescription = null, tint = SageGreen, modifier = Modifier.size(16.dp))
-                }
+                InlineAudioPlayer(log.audioFilePath)
             }
 
             Spacer(modifier = Modifier.height(12.dp))
             HorizontalDivider(color = Color.DarkGray.copy(alpha = 0.5f))
             Spacer(modifier = Modifier.height(8.dp))
             
-            TextButton(
-                onClick = {
-                    if (log.activityType == "PRODUCTION" || log.activityType == "Production") {
-                        onEditClick()
-                    } else {
-                        onFollowUpClick()
-                    }
-                },
-                modifier = Modifier.align(Alignment.End),
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp), tint = SageGreen)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = if (log.activityType == "PRODUCTION" || log.activityType == "Production") "Log Update" else "Add Follow-up", 
-                    color = SageGreen, 
-                    fontSize = 12.sp, 
-                    fontWeight = FontWeight.Bold
-                )
+                // Bottom Notification Pill Badges
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (photoCount > 0) {
+                        Surface(
+                            color = Color.White.copy(alpha = 0.1f),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CameraAlt,
+                                    contentDescription = null,
+                                    tint = SageGreen,
+                                    modifier = Modifier.size(12.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "$photoCount",
+                                    color = Color.White,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+
+                    if (audioCount > 0) {
+                        Surface(
+                            color = Color.White.copy(alpha = 0.1f),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Mic,
+                                    contentDescription = null,
+                                    tint = SageGreen,
+                                    modifier = Modifier.size(12.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "$audioCount",
+                                    color = Color.White,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                }
+
+                TextButton(
+                    onClick = {
+                        if (log.activityType == "PRODUCTION" || log.activityType == "Production") {
+                            onEditClick()
+                        } else {
+                            onFollowUpClick()
+                        }
+                    },
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp), tint = SageGreen)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = if (log.activityType == "PRODUCTION" || log.activityType == "Production") "Log Update" else "Add Follow-up", 
+                        color = SageGreen, 
+                        fontSize = 12.sp, 
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
     }
@@ -343,6 +438,9 @@ fun FollowUpLogCard(
     onClick: () -> Unit = {}
 ) {
     var showMenu by remember { mutableStateOf(false) }
+
+    val photoCount = remember(log.imageUris) { log.imageUris.split(",").filter { it.isNotBlank() }.size }
+    val audioCount = remember(log.audioFilePath) { if (log.audioFilePath.isNullOrBlank()) 0 else 1 }
 
     Card(
         colors = CardDefaults.cardColors(containerColor = Color(0xFF1E2120).copy(alpha = 0.6f)),
@@ -432,6 +530,65 @@ fun FollowUpLogCard(
                 Spacer(modifier = Modifier.height(8.dp))
                 InlineAudioPlayer(log.audioFilePath)
             }
+
+            if (photoCount > 0 || audioCount > 0) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (photoCount > 0) {
+                        Surface(
+                            color = Color.White.copy(alpha = 0.1f),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CameraAlt,
+                                    contentDescription = null,
+                                    tint = SageGreen,
+                                    modifier = Modifier.size(10.dp)
+                                )
+                                Spacer(modifier = Modifier.width(3.dp))
+                                Text(
+                                    text = "$photoCount",
+                                    color = Color.White,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                    if (audioCount > 0) {
+                        Surface(
+                            color = Color.White.copy(alpha = 0.1f),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Mic,
+                                    contentDescription = null,
+                                    tint = SageGreen,
+                                    modifier = Modifier.size(10.dp)
+                                )
+                                Spacer(modifier = Modifier.width(3.dp))
+                                Text(
+                                    text = "$audioCount",
+                                    color = Color.White,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -441,6 +598,7 @@ fun CompactActivityThread(
     parentLog: JournalLogEntity,
     followUps: List<JournalLogEntity>,
     assetName: String,
+    location: String? = null,
     use24Hour: Boolean,
     onDeleteLog: (JournalLogEntity) -> Unit,
     onEditLog: (JournalLogEntity) -> Unit,
@@ -455,6 +613,7 @@ fun CompactActivityThread(
         CompactLogItem(
             log = parentLog,
             assetName = assetName,
+            location = location,
             use24Hour = use24Hour,
             onDeleteClick = { onDeleteLog(parentLog) },
             onEditClick = { onEditLog(parentLog) },
@@ -480,6 +639,7 @@ fun CompactActivityThread(
                 CompactLogItem(
                     log = childLog,
                     assetName = "↳ Follow-up",
+                    location = null,
                     use24Hour = use24Hour,
                     onDeleteClick = { onDeleteLog(childLog) },
                     onEditClick = { onEditLog(childLog) },
@@ -496,6 +656,7 @@ fun CompactActivityThread(
 fun CompactLogItem(
     log: JournalLogEntity, 
     assetName: String, 
+    location: String? = null,
     use24Hour: Boolean,
     onDeleteClick: (() -> Unit)? = null,
     onEditClick: (() -> Unit)? = null,
@@ -504,6 +665,27 @@ fun CompactLogItem(
     backgroundColor: Color = Color(0xFF1E2120)
 ) {
     var showMenu by remember { mutableStateOf(false) }
+
+    val resolvedLocation = remember(location, log.parameters) {
+        if (!location.isNullOrBlank()) {
+            location
+        } else {
+            val params = log.parameters.split("|").associate { 
+                val parts = it.split(":")
+                if (parts.size == 2) parts[0].trim() to parts[1].trim() else "" to ""
+            }
+            val loc = params["location"]
+            val subLoc = params["subLocation"]
+            when {
+                !loc.isNullOrBlank() && !subLoc.isNullOrBlank() -> "$loc [$subLoc]"
+                !loc.isNullOrBlank() -> loc
+                else -> null
+            }
+        }
+    }
+
+    val photoCount = remember(log.imageUris) { log.imageUris.split(",").filter { it.isNotBlank() }.size }
+    val audioCount = remember(log.audioFilePath) { if (log.audioFilePath.isNullOrBlank()) 0 else 1 }
 
     Row(
         modifier = Modifier
@@ -532,7 +714,17 @@ fun CompactLogItem(
         Column(modifier = Modifier.weight(1f)) {
             Text(text = log.title, color = Color.White, fontWeight = FontWeight.Medium, fontSize = 14.sp)
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(text = assetName, color = SageGreen, fontSize = 10.sp)
+                Text(text = assetName, color = SageGreen, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+
+                if (!resolvedLocation.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "📍 $resolvedLocation",
+                        color = Color.LightGray,
+                        fontSize = 10.sp
+                    )
+                }
+
                 val phiExpiryStr = log.parameters.split("|").find { it.startsWith("phi_expiry:") }?.substringAfter("phi_expiry:")
                 if (phiExpiryStr != null) {
                     Spacer(modifier = Modifier.width(8.dp))
@@ -558,8 +750,65 @@ fun CompactLogItem(
             }
         }
         
-        if (log.photoPath != null) Icon(Icons.Default.CameraAlt, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(14.dp).padding(horizontal = 4.dp))
-        if (log.audioFilePath != null) Icon(Icons.Default.Mic, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(14.dp).padding(horizontal = 4.dp))
+        // Media Notification Pill Badges
+        if (photoCount > 0 || audioCount > 0) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(horizontal = 4.dp)
+            ) {
+                if (photoCount > 0) {
+                    Surface(
+                        color = Color.White.copy(alpha = 0.1f),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CameraAlt,
+                                contentDescription = null,
+                                tint = SageGreen,
+                                modifier = Modifier.size(11.dp)
+                            )
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text(
+                                text = "$photoCount",
+                                color = Color.White,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+                if (audioCount > 0) {
+                    Surface(
+                        color = Color.White.copy(alpha = 0.1f),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Mic,
+                                contentDescription = null,
+                                tint = SageGreen,
+                                modifier = Modifier.size(11.dp)
+                            )
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text(
+                                text = "$audioCount",
+                                color = Color.White,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
+        }
         
         Spacer(modifier = Modifier.width(8.dp))
         Text(

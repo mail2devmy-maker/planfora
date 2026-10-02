@@ -27,7 +27,7 @@ fun AddLogBottomSheet(
     var phValue by remember { mutableStateOf("") }
     var showAssetPicker by remember { mutableStateOf(false) }
 
-    val sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,

@@ -222,21 +222,23 @@ fun LogsScreen(
 
                     items(rootLogs) { rootLog ->
                         val asset = assets.find { it.id == rootLog.assetId }
-                        val assetName = if (asset != null) {
-                            asset.name
-                        } else {
-                            val params = rootLog.parameters.split("|").associate { 
-                                val parts = it.split(":")
-                                if (parts.size == 2) parts[0] to parts[1] else "" to ""
-                            }
-                            val loc = params["location"]
-                            val subLoc = params["subLocation"]
-                            when {
-                                !loc.isNullOrBlank() && !subLoc.isNullOrBlank() -> "📍 $loc [$subLoc]"
-                                !loc.isNullOrBlank() -> "📍 $loc"
-                                else -> "General Log"
-                            }
+                        val params = rootLog.parameters.split("|").associate { 
+                            val parts = it.split(":")
+                            if (parts.size == 2) parts[0].trim() to parts[1].trim() else "" to ""
                         }
+                        val paramLoc = params["location"]
+                        val paramSubLoc = params["subLocation"]
+
+                        val assetName = asset?.name ?: "General Log"
+
+                        val locationNote = when {
+                            !paramLoc.isNullOrBlank() && !paramSubLoc.isNullOrBlank() -> "$paramLoc [$paramSubLoc]"
+                            !paramLoc.isNullOrBlank() -> paramLoc
+                            asset != null && asset.locationNote.isNotBlank() && asset.subLocation.isNotBlank() -> "${asset.locationNote} [${asset.subLocation}]"
+                            asset != null && asset.locationNote.isNotBlank() -> asset.locationNote
+                            else -> null
+                        }
+
                         val followUps = logs.filter { it.parentLogId == rootLog.id }.sortedBy { it.timestamp }
                         
                         if (layoutMode == LayoutMode.EXPANDED_CARD) {
@@ -244,6 +246,7 @@ fun LogsScreen(
                                 parentLog = rootLog,
                                 followUps = followUps,
                                 assetName = assetName,
+                                location = locationNote,
                                 supplies = supplies,
                                 use24Hour = use24HourFormat,
                                 onFollowUpClick = {
@@ -262,6 +265,7 @@ fun LogsScreen(
                                 parentLog = rootLog,
                                 followUps = followUps,
                                 assetName = assetName,
+                                location = locationNote,
                                 use24Hour = use24HourFormat,
                                 onDeleteLog = { logToDelete = it },
                                 onEditLog = { log ->
@@ -319,8 +323,11 @@ fun LogDetailSheet(
     val customFieldValues by viewModel.getCustomFieldValues(log.id).collectAsState(emptyList())
     val customFieldDefinitions by viewModel.getCustomFieldDefinitions(com.mail2dev.planfora.data.local.entity.FieldTargetType.LOG_ACTIVITY, log.activityType).collectAsState(emptyList())
 
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
+        sheetState = sheetState,
         containerColor = Color(0xFF0B121C),
         tonalElevation = 0.dp
     ) {

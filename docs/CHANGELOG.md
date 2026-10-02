@@ -1,5 +1,17 @@
 # PlanFora Project Changelog
 
+## [Milestone 2.81] - Logs UI Polish — Full-Height Detail Sheet, Location Badge & Media Counters
+* **Status:** Completed & Verified
+* **Goal:** Eliminate bottom sheet dragging friction, enhance log card visibility with Plant/Asset name, Location badge, and notification-style media counters (`📷 count`, `🎙️ count`), and update feeding application method option "SPOT" to "SPREAD".
+
+### Changes Summary:
+* `LogsScreen.kt`: Configured `ModalBottomSheet` in `LogDetailSheet` with `rememberModalBottomSheetState(skipPartiallyExpanded = true)`. Extracted plant/asset name and location note for log card items.
+* `AddLogBottomSheet.kt`: Configured `ModalBottomSheet` with `rememberModalBottomSheetState(skipPartiallyExpanded = true)`.
+* `LogComponents.kt`: Updated `ExpandedLogCard`, `CompactLogItem`, and `FollowUpLogCard` to render distinct Plant/Asset name and Location badges (`📍 location`). Added notification-style media pill badges (`📷 photoCount`, `🎙️ audioCount`).
+* `NewLogEntryScreen.kt`: Renamed feeding application method option `"SPOT"` to `"SPREAD"`.
+
+---
+
 ## [Milestone 2.80] - Asset Manager UI Redesign — View Toggle & Filter Bottom Sheet
 * **Status:** Completed & Verified
 * **Goal:** Redesign Asset Manager to support switching between Hierarchy List and 2-column Visual Grid views, with a top action bar and Filter Bottom Sheet replacing dual static filter bars.

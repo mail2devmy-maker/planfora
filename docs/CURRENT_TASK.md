@@ -1,24 +1,24 @@
 # Current Task Status
 
 ## Status: Idle
-Asset Manager UI Redesign — View Toggle (Hierarchy List vs Visual Grid) & Filter Bottom Sheet
+**Sprint Milestone:** Logs UI Polish — Full-Height Detail Sheet, 3-Zone Card with Media Badges & Feeding Method Rename
 
 ---
 
 ### Key Deliverables:
-- [x] Add `AssetViewMode` enum (`HIERARCHY_LIST`, `VISUAL_GRID`) and StateFlow in `AssetsViewModel.kt`.
-- [x] Replace static filter bars and header in `AssetsScreen.kt` with a Material 3 TopAppBar containing Search, Filter Bottom Sheet trigger, and View Toggle actions.
-- [x] Implement `FilterBottomSheet` in `AssetsScreen.kt` for Category and Location filters.
-- [x] Flatten `"UNASSIGNED ZONE"` grouping in Hierarchy List mode to render direct assets without nested wrappers.
-- [x] Create `ListAssetCard` (56dp square thumbnail, compact row) and `GridAssetCard` (2-column 1:1 image grid card) in `AssetsScreen.kt`.
+- [x] Configure `ModalBottomSheet` with `skipPartiallyExpanded = true` in `LogsScreen.kt` and `AddLogBottomSheet.kt`.
+- [x] Update `LogComponents.kt` (`CompactLogItem` & `ExpandedLogCard`) to render Plant/Asset Name, Location Pill, and Notification-style Media Badges (`📷 count`, `🎙️ count`).
+- [x] Update feeding application methods in `NewLogEntryScreen.kt` from `SPOT` to `SPREAD`.
 
 ---
 
 ### Execution Scope & Rules:
 * Modify ONLY:
-  * `ui/screens/AssetsScreen.kt`
-  * `ui/assets/AssetsViewModel.kt`
-* Do NOT change database schema or entity relationship
+  * `ui/screens/LogsScreen.kt`
+  * `ui/logs/AddLogBottomSheet.kt`
+  * `ui/logs/LogComponents.kt`
+  * `ui/screens/NewLogEntryScreen.kt`
+* Do NOT alter database schema or entity definitions.
 
 ### Instructions for AI Agent:
 If Status is **Idle**, reply with:
