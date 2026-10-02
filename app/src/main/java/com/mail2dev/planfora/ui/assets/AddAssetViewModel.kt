@@ -59,10 +59,8 @@ class AddAssetViewModel(private val repository: JournalRepository) : ViewModel()
     private val _acquisitionDate = MutableStateFlow<Long?>(null)
     private val _costValue = MutableStateFlow("")
     private val _batchTrayId = MutableStateFlow("")
-    private val _motherPlantLink = MutableStateFlow("")
     private val _physicalId = MutableStateFlow("")
     private val _quantity = MutableStateFlow("")
-    private val _propagatedDate = MutableStateFlow<Long?>(null)
     private val _rootstock = MutableStateFlow("")
     private val _plotRowId = MutableStateFlow("")
     private val _zones = MutableStateFlow("")
@@ -268,7 +266,6 @@ class AddAssetViewModel(private val repository: JournalRepository) : ViewModel()
         _selectedTags.value = emptySet()
         _plantedDate.value = null
         _acquisitionDate.value = null
-        _propagatedDate.value = null
         _expectedHarvestDate.value = null
         _batchTrayId.value = ""
         _physicalId.value = ""
@@ -281,6 +278,5 @@ class AddAssetViewModel(private val repository: JournalRepository) : ViewModel()
         _customFieldValues.value = mutableMapOf()
         _selectedCategory.value = AssetCategory.TREE
         _costValue.value = ""
-        _motherPlantLink.value = ""
     }
 }

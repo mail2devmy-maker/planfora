@@ -23,9 +23,11 @@ import com.mail2dev.planfora.data.local.entity.PlantAssetEntity
 import com.mail2dev.planfora.ui.assets.AssetCategory
 import com.mail2dev.planfora.ui.logs.ActivityThread
 import com.mail2dev.planfora.ui.logs.LogsViewModel
+import com.mail2dev.planfora.ui.components.formatCustomFieldValue
 import com.mail2dev.planfora.ui.navigation.Screen
 import com.mail2dev.planfora.ui.theme.DarkBackground
 import com.mail2dev.planfora.ui.theme.ForestGreen
+import com.mail2dev.planfora.util.TimeFormatter
 import androidx.compose.foundation.BorderStroke
 import java.text.SimpleDateFormat
 import java.util.*
@@ -179,7 +181,7 @@ fun PlantDetailScreen(
                 contentPadding = PaddingValues(bottom = 80.dp)
             ) {
                 item {
-                    AssetPassportHeader(plant, customFieldValues, customFieldDefinitions)
+                    AssetPassportHeader(plant, customFieldValues, customFieldDefinitions, use24Hour = use24HourFormat)
                 }
 
                 if (zonesList.isNotEmpty()) {
@@ -303,7 +305,8 @@ fun PlantDetailScreen(
 fun AssetPassportHeader(
     plant: PlantAssetEntity, 
     customFieldValues: List<com.mail2dev.planfora.data.local.entity.CustomFieldValueEntity> = emptyList(),
-    customFieldDefinitions: List<com.mail2dev.planfora.data.local.entity.CustomFieldDefinitionEntity> = emptyList()
+    customFieldDefinitions: List<com.mail2dev.planfora.data.local.entity.CustomFieldDefinitionEntity> = emptyList(),
+    use24Hour: Boolean = false
 ) {
     val category = AssetCategory.fromDatabase(plant.category)
     
@@ -337,25 +340,39 @@ fun AssetPassportHeader(
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
-            
-            HorizontalDivider(color = Color.Gray.copy(alpha = 0.1f))
-            
-            Spacer(modifier = Modifier.height(16.dp))
+            val hasMetadata = plant.totalPlants > 0 ||
+                    plant.subLocation.isNotBlank() ||
+                    plant.zones.isNotBlank() ||
+                    (plant.plantedDate != null && plant.plantedDate > 0L)
 
-            MetadataGrid(plant)
+            val hasLowerSection = hasMetadata || customFieldValues.any { valItem ->
+                customFieldDefinitions.any { it.id == valItem.fieldDefId } && valItem.value.isNotBlank()
+            } || plant.notes.isNotBlank() || plant.tags.isNotBlank()
+
+            if (hasLowerSection) {
+                Spacer(modifier = Modifier.height(16.dp))
+                HorizontalDivider(color = Color.Gray.copy(alpha = 0.1f))
+            }
+
+            if (hasMetadata) {
+                Spacer(modifier = Modifier.height(16.dp))
+                MetadataGrid(plant)
+            }
 
             if (customFieldValues.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(12.dp))
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    customFieldValues.forEach { value ->
-                        val def = customFieldDefinitions.find { it.id == value.fieldDefId }
-                        if (def != null && value.value.isNotBlank()) {
+                val validCustomFields = customFieldValues.filter { valItem ->
+                    customFieldDefinitions.any { it.id == valItem.fieldDefId } && valItem.value.isNotBlank()
+                }
+                if (validCustomFields.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        validCustomFields.forEach { value ->
+                            val def = customFieldDefinitions.find { it.id == value.fieldDefId }!!
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.Adjust, null, tint = Color.Gray, modifier = Modifier.size(14.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(text = "${def.fieldName}: ", color = Color.Gray, fontSize = 13.sp)
-                                Text(text = value.value, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                Text(text = formatCustomFieldValue(def.fieldType, value.value, use24Hour), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -476,40 +493,38 @@ fun YieldComplianceCard(
 
 @Composable
 fun MetadataGrid(plant: PlantAssetEntity) {
-    val category = AssetCategory.fromDatabase(plant.category)
-    
+    val items = mutableListOf<Triple<ImageVector, String, String>>()
+
+    if (plant.totalPlants > 0) {
+        items.add(Triple(Icons.Default.Inventory, "Population / Qty", plant.totalPlants.toString()))
+    }
+
+    val blockZoneStr = when {
+        plant.subLocation.isNotBlank() && plant.zones.isNotBlank() -> "${plant.subLocation} • ${plant.zones}"
+        plant.subLocation.isNotBlank() -> plant.subLocation
+        plant.zones.isNotBlank() -> plant.zones
+        else -> ""
+    }
+    if (blockZoneStr.isNotBlank()) {
+        items.add(Triple(Icons.Default.GridView, "Block / Zone", blockZoneStr))
+    }
+
+    if (plant.plantedDate != null && plant.plantedDate > 0L) {
+        items.add(Triple(Icons.Default.CalendarToday, "Planted Date", TimeFormatter.formatDate(plant.plantedDate)))
+    }
+
+    if (items.isEmpty()) return
+
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        when (category) {
-            AssetCategory.SEEDLING -> {
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    MetadataItem(Icons.Default.Science, "Batch / Tray ID", plant.tags.split(",").find { it.startsWith("Batch:") }?.substringAfter(":") ?: "N/A", Modifier.weight(1f))
-                    MetadataItem(Icons.Default.Inventory, "Quantity", plant.tags.split(",").find { it.startsWith("Qty:") }?.substringAfter(":") ?: "N/A", Modifier.weight(1f))
+        items.chunked(2).forEach { rowItems ->
+            Row(modifier = Modifier.fillMaxWidth()) {
+                rowItems.forEach { item ->
+                    MetadataItem(item.first, item.second, item.third, Modifier.weight(1f))
+                }
+                if (rowItems.size == 1) {
+                    Spacer(modifier = Modifier.weight(1f))
                 }
             }
-            AssetCategory.CUTTING -> {
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    MetadataItem(Icons.Default.Link, "Mother Plant Link", plant.tags.split(",").find { it.startsWith("Mother:") }?.substringAfter(":") ?: "N/A", Modifier.weight(1f))
-                    MetadataItem(Icons.Default.CalendarToday, "Propagated", plant.tags.split(",").find { it.startsWith("PropDate:") }?.substringAfter(":") ?: "N/A", Modifier.weight(1f))
-                }
-            }
-            AssetCategory.TREE -> {
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    MetadataItem(Icons.Default.Fingerprint, "Physical ID", plant.tags.split(",").find { it.startsWith("PhysID:") }?.substringAfter(":") ?: "N/A", Modifier.weight(1f))
-                    MetadataItem(Icons.Default.LocationOn, "GPS", plant.tags.split(",").find { it.startsWith("GPS:") }?.substringAfter(":") ?: "N/A", Modifier.weight(1f))
-                }
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    MetadataItem(Icons.Default.Nature, "Rootstock", plant.tags.split(",").find { it.startsWith("Rootstock:") }?.substringAfter(":") ?: "N/A", Modifier.weight(1f))
-                    val plantedDateStr = plant.plantedDate?.let { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(it)) } ?: "Unassigned"
-                    MetadataItem(Icons.Default.CalendarToday, "Planted Date", plantedDateStr, Modifier.weight(1f))
-                }
-            }
-            AssetCategory.CROP -> {
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    MetadataItem(Icons.Default.GridOn, "Plot / Row ID", plant.tags.split(",").find { it.startsWith("Plot:") }?.substringAfter(":") ?: "N/A", Modifier.weight(1f))
-                    MetadataItem(Icons.Default.Event, "Exp. Harvest", plant.tags.split(",").find { it.startsWith("ExpHarv:") }?.substringAfter(":") ?: "N/A", Modifier.weight(1f))
-                }
-            }
-            else -> {}
         }
     }
 }

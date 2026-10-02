@@ -31,6 +31,7 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.mail2dev.planfora.data.local.entity.JournalLogEntity
 import com.mail2dev.planfora.ui.components.InlineAudioPlayer
+import com.mail2dev.planfora.ui.components.formatCustomFieldValue
 import com.mail2dev.planfora.ui.logs.CalendarMode
 import com.mail2dev.planfora.ui.logs.LayoutMode
 import com.mail2dev.planfora.ui.logs.LogsViewModel
@@ -103,7 +104,7 @@ fun LogsScreen(
         containerColor = MaterialTheme.colorScheme.background,
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { navController.navigate(Screen.NewLog.createRoute(timestamp = System.currentTimeMillis())) },
+                onClick = { navController.navigate(Screen.NewLog.createRoute(timestamp = selectedDate)) },
                 containerColor = com.mail2dev.planfora.ui.theme.ForestGreen,
                 contentColor = Color.White
             ) {
@@ -473,17 +474,7 @@ fun LogDetailSheet(
                 }
 
                 if (log.parameters.isNotBlank()) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        log.parameters.split("|").forEach { param ->
-                            val parts = param.split(":")
-                            if (parts.size == 2 && parts[0] != "phi_expiry" && parts[0] != "rei_expiry") {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(text = "${parts[0].replace("_", " ").uppercase()}: ", color = Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                                    Text(text = parts[1], color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                                }
-                            }
-                        }
-                    }
+                    com.mail2dev.planfora.ui.logs.LogParameterGrid(log)
                 }
 
                 if (customFieldValues.isNotEmpty()) {
@@ -492,7 +483,7 @@ fun LogDetailSheet(
                         if (def != null && value.value.isNotBlank()) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(text = "${def.fieldName.uppercase()}: ", color = Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                                Text(text = value.value, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                Text(text = formatCustomFieldValue(def.fieldType, value.value, use24Hour), color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }

@@ -22,6 +22,7 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.mail2dev.planfora.data.local.entity.DiySupplyEntity
 import com.mail2dev.planfora.ui.components.InlineAudioPlayer
+import com.mail2dev.planfora.ui.components.formatCustomFieldValue
 import com.mail2dev.planfora.ui.logs.LogsViewModel
 import com.mail2dev.planfora.ui.navigation.Screen
 import com.mail2dev.planfora.ui.supplies.SuppliesViewModel
@@ -472,7 +473,7 @@ fun ProductHeaderCard(
                                 Icon(Icons.Default.Adjust, null, tint = Color.Gray, modifier = Modifier.size(14.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(text = "${def.fieldName}: ", color = Color.Gray, fontSize = 13.sp)
-                                Text(text = value.value, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                Text(text = formatCustomFieldValue(def.fieldType, value.value), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }

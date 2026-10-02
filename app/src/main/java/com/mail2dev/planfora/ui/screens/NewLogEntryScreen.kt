@@ -293,33 +293,18 @@ fun NewLogEntryScreen(
     // Auto-Generated Title Logic
     LaunchedEffect(selectedAssetIds, selectedLocation, selectedSubLocation, activityType, selectedSupplyId, customInputName, yieldAmount, yieldUnit, substrateMix, pruningType, dosageAmount, dosageRatio, weedingMethod, usedQty, usedQtyUnit) {
         if (!userEditedTitle) {
-            val locDisplay = if (selectedLocation.isNotBlank() && selectedSubLocation.isNotBlank()) "$selectedLocation [$selectedSubLocation]" else selectedLocation
-            val assetName = when {
-                activityType == "Production" -> supplies.find { it.id == selectedSupplyId }?.name ?: "DIY Project"
-                activityType == "Weeding" && locDisplay.isNotBlank() -> locDisplay
-                selectedAssetIds.isEmpty() -> if (locDisplay.isNotBlank()) locDisplay else "General Log"
-                selectedAssetIds.size == 1 -> assets.find { it.id == selectedAssetIds.first() }?.name ?: "Unknown Asset"
-                else -> "${selectedAssetIds.size} Assets"
+            val cleanTitle = when (activityType) {
+                "Weeding" -> if (weedingMethod.isNotBlank()) "$weedingMethod Weeding" else "Weeding"
+                "Pest Control" -> "Pest Control"
+                "Feeding" -> "Nutrient Feeding"
+                "Harvest" -> "Harvest Entry"
+                "Repotting" -> "Repotting & Substrate"
+                "Pruning" -> if (pruningType.isNotBlank()) "$pruningType Pruning" else "Pruning"
+                "Production" -> "Laboratory Update"
+                "Observation" -> "Field Observation"
+                else -> if (customActivity.isNotBlank()) customActivity else activityType
             }
-
-            val keyParam = when (activityType) {
-                "Pest Control", "Feeding" -> {
-                    val supply = supplies.find { it.id == selectedSupplyId }?.displayName ?: customInputName
-                    if (dosageAmount.isNotBlank()) "$supply ($dosageAmount $dosageRatio)" else supply
-                }
-                "Harvest" -> if (yieldAmount.isNotBlank()) "$yieldAmount $yieldUnit" else ""
-                "Repotting" -> substrateMix
-                "Pruning" -> pruningType
-                "Weeding" -> if (weedingMethod == "Chemical") {
-                    val supply = supplies.find { it.id == selectedSupplyId }?.displayName ?: customInputName
-                    val qtyText = if (usedQty.isNotBlank()) " ($usedQty $usedQtyUnit)" else ""
-                    if (supply.isNotBlank()) "Chemical • $supply$qtyText" else "Chemical"
-                } else weedingMethod
-                "Production" -> "Update"
-                else -> ""
-            }
-
-            title = if (keyParam.isNotBlank()) "$assetName • $activityType • $keyParam" else "$assetName • $activityType"
+            title = cleanTitle
         }
     }
 

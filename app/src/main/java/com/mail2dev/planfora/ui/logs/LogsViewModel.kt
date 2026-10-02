@@ -84,12 +84,17 @@ class LogsViewModel(
 
         logs.filter { log -> 
             // Exclude pure DIY Production logs from the main timeline
-            val isPureProduction = log.supplyId != null && log.assetId == null
+            val isPureProduction = log.supplyId != null && 
+                    log.assetId == null && 
+                    (log.activityType.equals("PRODUCTION", ignoreCase = true) || 
+                     supplies.value.find { it.id == log.supplyId }?.category == "DIY")
             if (isPureProduction) return@filter false
 
             val dateMatch = isSameDay(log.timestamp, date)
-            val locationMatch = location == null || assets.value.find { it.id == log.assetId }?.locationNote == location
-            val activityMatch = activityType == null || log.activityType == activityType
+            val locationMatch = location == null || 
+                    assets.value.find { it.id == log.assetId }?.locationNote == location ||
+                    log.parameters.split("|").any { it == "location:$location" }
+            val activityMatch = activityType == null || log.activityType.equals(activityType, ignoreCase = true)
             val queryMatch = query.isBlank() || 
                 log.title.contains(query, ignoreCase = true) || 
                 log.note.contains(query, ignoreCase = true) || 
@@ -107,8 +112,38 @@ class LogsViewModel(
         return System.currentTimeMillis() < phiExpiry
     }
 
-    val logEventDates: StateFlow<Set<Long>> = _allLogs.map { logs ->
-        logs.map { normalizeToStartOfDay(it.timestamp) }.toSet()
+    val logEventDates: StateFlow<Set<Long>> = combine(
+        _allLogs,
+        _locationFilter,
+        _activityTypeFilter,
+        _searchQuery,
+        _phiFilterActive
+    ) { args ->
+        val logs = args[0] as List<JournalLogEntity>
+        val location = args[1] as String?
+        val activityType = args[2] as String?
+        val query = args[3] as String
+        val phiOnly = args[4] as Boolean
+
+        logs.filter { log ->
+            val isPureProduction = log.supplyId != null && 
+                    log.assetId == null && 
+                    (log.activityType.equals("PRODUCTION", ignoreCase = true) || 
+                     supplies.value.find { it.id == log.supplyId }?.category == "DIY")
+            if (isPureProduction) return@filter false
+
+            val locationMatch = location == null || 
+                    assets.value.find { it.id == log.assetId }?.locationNote == location ||
+                    log.parameters.split("|").any { it == "location:$location" }
+            val activityMatch = activityType == null || log.activityType.equals(activityType, ignoreCase = true)
+            val queryMatch = query.isBlank() || 
+                log.title.contains(query, ignoreCase = true) || 
+                log.note.contains(query, ignoreCase = true) || 
+                log.displayId.contains(query, ignoreCase = true)
+            val phiMatch = !phiOnly || isPhiActive(log)
+
+            locationMatch && activityMatch && queryMatch && phiMatch
+        }.map { normalizeToStartOfDay(it.timestamp) }.toSet()
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
 
     val allLogs: StateFlow<List<JournalLogEntity>> = _allLogs

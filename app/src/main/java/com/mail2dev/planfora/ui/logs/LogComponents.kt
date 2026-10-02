@@ -219,7 +219,7 @@ fun ExpandedLogCard(
                         Icon(Icons.Default.Inventory, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(14.dp))
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = supplyName,
+                            text = "Product: $supplyName",
                             color = SageGreen,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium
@@ -228,8 +228,23 @@ fun ExpandedLogCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(text = log.note, color = Color.LightGray, fontSize = 14.sp)
+            LogParameterGrid(log = log)
+
+            if (log.note.isNotBlank()) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Surface(
+                    color = Color.White.copy(alpha = 0.04f),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = log.note,
+                        color = Color.LightGray,
+                        fontSize = 13.sp,
+                        modifier = Modifier.padding(10.dp)
+                    )
+                }
+            }
 
             if (log.imageUris.isNotBlank()) {
                 Spacer(modifier = Modifier.height(12.dp))
@@ -265,18 +280,6 @@ fun ExpandedLogCard(
                                 modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
                                 fontSize = 10.sp
                             )
-                        }
-                    }
-                }
-            }
-
-            if (log.parameters.isNotBlank()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    log.parameters.split("|").forEach { param ->
-                        val parts = param.split(":")
-                        if (parts.size == 2 && parts[0] != "phi_expiry") {
-                            MetricBadge(parts[0], parts[1])
                         }
                     }
                 }
@@ -573,6 +576,165 @@ fun CompactLogItem(
                 DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }, modifier = Modifier.background(Color(0xFF1E2120))) {
                     if (onEditClick != null) DropdownMenuItem(text = { Text("Edit", color = Color.White) }, onClick = { showMenu = false; onEditClick() })
                     if (onDeleteClick != null) DropdownMenuItem(text = { Text("Delete", color = Color.Red) }, onClick = { showMenu = false; onDeleteClick() })
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun LogParameterGrid(log: JournalLogEntity, modifier: Modifier = Modifier) {
+    if (log.parameters.isBlank()) return
+
+    val rawParams = remember(log.parameters) {
+        log.parameters.split("|").mapNotNull { param ->
+            val parts = param.split(":")
+            if (parts.size == 2 && parts[0].isNotBlank()) parts[0].trim() to parts[1].trim() else null
+        }.toMap()
+    }
+
+    val metrics = remember(rawParams) {
+        val list = mutableListOf<Pair<String, String>>()
+        
+        // 1. Applied / Used Quantity & Unit
+        val userQty = rawParams["user_entered_qty"]
+        val usedQty = rawParams["used_qty"]
+        val usedUnit = rawParams["used_unit"] ?: rawParams["unit"] ?: ""
+        
+        if (!userQty.isNullOrBlank()) {
+            val formattedQty = if (usedUnit.isNotBlank()) "$userQty $usedUnit" else userQty
+            list.add("Applied Quantity" to formattedQty)
+        } else if (!usedQty.isNullOrBlank()) {
+            val formattedQty = if (usedUnit.isNotBlank()) "$usedQty $usedUnit" else usedQty
+            list.add("Used Quantity" to formattedQty)
+        }
+
+        // 2. Dosage & Ratio
+        val dosage = rawParams["dosage"]
+        val ratio = rawParams["ratio"]
+        if (!dosage.isNullOrBlank()) {
+            val formattedDosage = if (!ratio.isNullOrBlank()) "$dosage $ratio" else dosage
+            list.add("Dosage" to formattedDosage)
+        }
+
+        // 3. Application Method
+        val method = rawParams["method"]
+        if (!method.isNullOrBlank()) {
+            list.add("Application Method" to method)
+        }
+
+        // 4. Weeding Method
+        val weedingMethod = rawParams["weeding_method"]
+        if (!weedingMethod.isNullOrBlank()) {
+            list.add("Weeding Method" to weedingMethod)
+        }
+
+        // 5. Harvest Yield & Grade
+        val yieldVal = rawParams["yield"]
+        val unitVal = rawParams["unit"]
+        if (!yieldVal.isNullOrBlank()) {
+            val formattedYield = if (!unitVal.isNullOrBlank()) "$yieldVal $unitVal" else yieldVal
+            list.add("Total Yield" to formattedYield)
+        }
+        val grade = rawParams["grade"]
+        if (!grade.isNullOrBlank()) {
+            list.add("Quality Grade" to "Grade $grade")
+        }
+        val yieldBreakdown = rawParams["yield_breakdown"]
+        if (!yieldBreakdown.isNullOrBlank()) {
+            val formattedBreakdown = yieldBreakdown.replace(";", ", ").replace("=", ": ")
+            list.add("Yield Breakdown" to formattedBreakdown)
+        }
+
+        // 6. Substrate Mix
+        val substrate = rawParams["substrate"]
+        if (!substrate.isNullOrBlank()) {
+            list.add("Substrate Mix" to substrate)
+        }
+
+        // 7. Pot Size / Vessel
+        val potSize = rawParams["pot_size"]
+        if (!potSize.isNullOrBlank()) {
+            list.add("Container / Vessel" to potSize)
+        }
+
+        // 8. Pruning Type
+        val pruningType = rawParams["pruning_type"]
+        if (!pruningType.isNullOrBlank()) {
+            list.add("Pruning Type" to pruningType)
+        }
+
+        // 9. Targeted Zones
+        val targetedZones = rawParams["targeted_zones"]
+        if (!targetedZones.isNullOrBlank()) {
+            list.add("Targeted Zones" to targetedZones)
+        }
+
+        // 10. Tool Used
+        val toolUsed = rawParams["tool_used"]
+        if (!toolUsed.isNullOrBlank()) {
+            list.add("Tool Used" to toolUsed)
+        }
+
+        // 11. Custom / Unhandled Keys
+        val handledKeys = setOf(
+            "dosage", "ratio", "method", "phi_expiry", "rei_expiry", 
+            "targeted_zones", "used_qty", "used_unit", "user_entered_qty", 
+            "tool_used", "yield", "yield_breakdown", "unit", "grade", 
+            "substrate", "pot_size", "pruning_type", "weeding_method", 
+            "location", "subLocation"
+        )
+
+        rawParams.forEach { (key, value) ->
+            if (key !in handledKeys && value.isNotBlank()) {
+                val formattedKey = key.replace("_", " ").split(" ")
+                    .joinToString(" ") { word -> word.replaceFirstChar { c -> c.uppercase() } }
+                list.add(formattedKey to value)
+            }
+        }
+
+        list
+    }
+
+    if (metrics.isEmpty()) return
+
+    Surface(
+        color = Color.White.copy(alpha = 0.03f),
+        shape = RoundedCornerShape(10.dp),
+        border = androidx.compose.foundation.BorderStroke(0.5.dp, Color.White.copy(alpha = 0.08f)),
+        modifier = modifier.fillMaxWidth().padding(vertical = 6.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            val rows = metrics.chunked(2)
+            rows.forEach { rowItems ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    rowItems.forEach { (label, value) ->
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = label.uppercase(),
+                                color = Color.Gray,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.5.sp
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = value,
+                                color = Color.White,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                    if (rowItems.size == 1) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
                 }
             }
         }

@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.sp
 import com.mail2dev.planfora.data.local.entity.CustomFieldDefinitionEntity
 import com.mail2dev.planfora.data.local.entity.CustomFieldType
 import com.mail2dev.planfora.data.local.entity.FieldTargetType
+import com.mail2dev.planfora.util.TimeFormatter
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.text.SimpleDateFormat
@@ -408,3 +409,19 @@ fun DynamicCustomFieldInput(
         }
     }
 }
+
+fun formatCustomFieldValue(
+    fieldType: CustomFieldType,
+    rawValue: String,
+    use24Hour: Boolean = false
+): String {
+    if (rawValue.isBlank()) return ""
+    val timestamp = rawValue.toLongOrNull() ?: return rawValue
+    return when (fieldType) {
+        CustomFieldType.DATE -> TimeFormatter.formatDate(timestamp)
+        CustomFieldType.TIME -> TimeFormatter.formatTime(timestamp, use24Hour)
+        CustomFieldType.DATETIME -> TimeFormatter.formatDateTime(timestamp, use24Hour)
+        else -> rawValue
+    }
+}
+
